@@ -1,0 +1,243 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/theme/app_colors.dart';
+import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/view/Dev/dev_02.dart';
+import 'package:table_now_app/view/Dev/dev_03.dart';
+import 'package:table_now_app/view/Dev/dev_04.dart';
+import 'package:table_now_app/view/Dev/dev_05.dart';
+import 'package:table_now_app/view/Dev/dev_06.dart';
+import 'package:table_now_app/view/Dev/dev_firebase_test.dart';
+import 'package:table_now_app/vm/theme_notifier.dart';
+
+class Home extends ConsumerStatefulWidget {
+  const Home({super.key});
+
+  @override
+  ConsumerState<Home> createState() => _HomeState();
+}
+
+class _HomeState extends ConsumerState<Home> {
+  final List<Widget> _devPages = [
+    const Dev_03(),
+    const Dev_02(),
+    const Dev_03(),
+    const Dev_04(),
+    const Dev_05(),
+    const Dev_06(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        final p = context.palette;
+
+        // 현재 방식: ThemeNotifier의 메서드 사용 (ThemeMode.system 처리 포함)
+        final isDarkMode = ref
+            .read(themeNotifierProvider.notifier)
+            .isDarkMode(context);
+
+        // 기존 방식 1: 간단한 비교 (ThemeMode.system 미처리)
+        // final themeMode = ref.watch(themeNotifierProvider);
+        // final isDarkMode = themeMode == ThemeMode.dark;
+
+        // 기존 방식 2: 삼항 연산자 사용 (ThemeMode.system 처리 포함)
+        // final themeMode = ref.watch(themeNotifierProvider);
+        // final isDarkMode = themeMode == ThemeMode.dark
+        //     ? true
+        //     : (themeMode == ThemeMode.light
+        //         ? false
+        //         : MediaQuery.of(context).platformBrightness == Brightness.dark);
+
+        return Scaffold(
+          backgroundColor: p.background,
+          appBar: AppBar(
+            title: Text(
+              '홈',
+              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+            ),
+            centerTitle: mainAppBarCenterTitle,
+            backgroundColor: p.background,
+            foregroundColor: p.textPrimary,
+            actions: [
+              // 테마 스위치
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    Icon(
+                      Icons.light_mode,
+                      size: 20,
+                      color: isDarkMode ? p.textSecondary : p.primary,
+                    ),
+                    Switch(
+                      value: isDarkMode,
+                      onChanged: (value) {
+                        ref.read(themeNotifierProvider.notifier).toggleTheme();
+                      },
+                      activeThumbColor: p.primary,
+                    ),
+                    Icon(
+                      Icons.dark_mode,
+                      size: 20,
+                      color: isDarkMode ? p.primary : p.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: mainDefaultPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: mainLargeSpacing,
+                children: [
+                  // 개발 페이지 버튼 (항상 표시)
+                  ..._buildDevPageButtons(context),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 개발 페이지 버튼 목록 생성
+  List<Widget> _buildDevPageButtons(BuildContext context) {
+    final p = context.palette;
+    return [
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(0),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '이광태 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(1),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '이예은 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(2),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '유다원 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(3),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '임소연 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(4),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '정진석 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(5),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '김택권 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: ElevatedButton(
+            onPressed: () => _navigateToFirebaseTest(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: p.primary,
+              foregroundColor: p.textOnPrimary,
+            ),
+            child: Text(
+              '🔥 Firebase 연결 테스트',
+              style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  //--------Functions ------------
+
+  /// 개발 페이지로 이동
+  void _navigateToDevPage(int index) async {
+    await CustomNavigationUtil.to(context, _devPages[index]);
+  }
+
+  /// Firebase 테스트 페이지로 이동
+  void _navigateToFirebaseTest() async {
+    await CustomNavigationUtil.to(context, const DevFirebaseTest());
+  }
+
+  //------------------------------
+}

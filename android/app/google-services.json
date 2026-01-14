@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "447164902457",
+    "project_id": "tablenow-dcfc4",
+    "storage_bucket": "tablenow-dcfc4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:447164902457:android:d8e57d21af00dc660f71e8",
+        "android_client_info": {
+          "package_name": "com.team01.tablenowapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFY0It19yVcECapeFXLDT79kTQqHfLPSA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
