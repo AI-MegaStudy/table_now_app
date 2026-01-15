@@ -8,12 +8,12 @@ import pymysql
 
 # TODO: 실제 데이터베이스 설정으로 변경 필요
 DB_CONFIG = {
-    'host': 'localhost',  # 데이터베이스 호스트
-    'user': 'your_user',  # 데이터베이스 사용자
-    'password': 'your_password',  # 데이터베이스 비밀번호
-    'database': 'table_now_db',  # 데이터베이스 이름
+    'host': 'cheng80.myqnapcloud.com',
+    'user': 'team0101',
+    'password': 'qwer1234',
+    'database': 'table_now_db',  # 소셜 로그인 지원 데이터베이스
     'charset': 'utf8mb4',
-    'port': 3306  # MySQL 포트
+    'port': 13306
 }
 
 
