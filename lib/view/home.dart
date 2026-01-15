@@ -8,6 +8,7 @@ import 'package:table_now_app/view/Dev/dev_03.dart';
 import 'package:table_now_app/view/Dev/dev_04.dart';
 import 'package:table_now_app/view/Dev/dev_05.dart';
 import 'package:table_now_app/view/Dev/dev_06.dart';
+import 'package:table_now_app/view/Dev/dev_07.dart';
 import 'package:table_now_app/view/Dev/dev_firebase_test.dart';
 import 'package:table_now_app/vm/theme_notifier.dart';
 
@@ -26,6 +27,7 @@ class _HomeState extends ConsumerState<Home> {
     const Dev_04(),
     const Dev_05(),
     const Dev_06(),
+    const Dev_07(),
   ];
 
   @override
@@ -202,6 +204,20 @@ class _HomeState extends ConsumerState<Home> {
             style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
             child: Text(
               '김택권 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(6),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '프로젝트 관리자 페이지',
               style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
             ),
           ),

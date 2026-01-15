@@ -32,9 +32,9 @@ app.add_middleware(
 # from app.api import example_router
 # app.include_router(example_router.router, prefix="/api/example", tags=["example"])
 
-# 예시: 기본 라우터 구조
-# app.include_router(users.router, prefix="/api/users", tags=["users"])
-# app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+# Customer API 라우터 등록
+from app.api import customer
+app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
 
 
 @app.get("/")
