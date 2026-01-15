@@ -59,9 +59,10 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
 
     try {
       // Form 데이터 준비
+      final phoneNumber = _phoneController.text.trim();
       final requestBody = {
         'customer_name': _nameController.text.trim(),
-        'customer_phone': _phoneController.text.trim(),
+        'customer_phone': phoneNumber.isEmpty ? '' : phoneNumber, // 빈 문자열이면 빈 문자열로 전송 (백엔드에서 null 처리)
         'customer_email': _emailController.text.trim(),
         'customer_pw': _passwordController.text,
       };
@@ -209,16 +210,14 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
                 },
               ),
 
-              // 전화번호 입력 필드
+              // 전화번호 입력 필드 (선택사항)
               CustomTextField(
                 controller: _phoneController,
-                labelText: '전화번호',
-                hintText: '전화번호를 입력하세요',
+                labelText: '전화번호 (선택사항)',
+                hintText: '전화번호를 입력하세요 (선택사항)',
                 keyboardType: TextInputType.phone,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '전화번호를 입력해주세요';
-                  }
+                  // 전화번호는 선택사항이므로 빈 값도 허용
                   // 전화번호 형식 검증 (선택사항)
                   return null;
                 },
@@ -288,3 +287,8 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
 //   - 회원가입 API 연동 (/api/customer/register)
 //   - 회원가입 성공 시 폼 초기화 및 성공 다이얼로그 표시
 //   - 에러 처리 및 로딩 상태 관리
+//
+// 2026-01-15 김택권: 전화번호 필드 선택사항 처리
+//   - 전화번호 필드를 선택사항으로 변경
+//   - 라벨 텍스트를 "전화번호 (선택사항)"으로 변경
+//   - 전화번호 검증 로직 제거 (빈 값 허용)

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/config/ui_config.dart';
@@ -13,6 +12,7 @@ import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/Dev/dev_07.dart';
+import 'package:table_now_app/vm/auth_notifier.dart';
 
 /// 로그인 탭 위젯
 ///
@@ -99,9 +99,8 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           // Customer 모델 생성
           final customer = Customer.fromJson(customerData);
 
-          // GetStorage에 저장
-          final storage = GetStorage();
-          await storage.write(storageKeyCustomer, customer.toJson());
+          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
+          await ref.read(authNotifierProvider.notifier).login(customer);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -284,9 +283,8 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           // Customer 모델 생성
           final customer = Customer.fromJson(customerData);
 
-          // GetStorage에 저장
-          final storage = GetStorage();
-          await storage.write(storageKeyCustomer, customer.toJson());
+          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
+          await ref.read(authNotifierProvider.notifier).login(customer);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -398,9 +396,8 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           // Customer 모델 생성
           final customer = Customer.fromJson(customerData);
 
-          // GetStorage에 저장
-          final storage = GetStorage();
-          await storage.write(storageKeyCustomer, customer.toJson());
+          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
+          await ref.read(authNotifierProvider.notifier).login(customer);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -526,7 +523,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
                 children: [
                   Expanded(child: Divider(color: p.divider)),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: mainDefaultSpacing),
                     child: Text(
                       '또는',
                       style: mainSmallTextStyle.copyWith(
@@ -576,3 +573,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
 // 2026-01-15 김택권: GetStorage 키 상수화
 //   - 'customer' 문자열을 config.dart의 storageKeyCustomer 상수로 변경
 //   - 오타 방지 및 일관성 유지
+//
+// 2026-01-15 김택권: UI 일관성 개선
+//   - 하드코딩된 padding 값을 ui_config.dart의 상수로 변경
+//   - mainDefaultSpacing 상수 사용

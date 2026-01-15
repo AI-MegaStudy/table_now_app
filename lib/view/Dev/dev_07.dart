@@ -2,15 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_storage/get_storage.dart';
-import '../../config.dart';
 import '../../config/ui_config.dart';
-import '../../model/customer.dart';
 import '../../theme/app_colors.dart';
 import '../../custom/util/navigation/custom_navigation_util.dart';
-import '../../utils/custom_common_util.dart';
 import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
+import '../weather/weather_screen.dart';
+import '../../vm/auth_notifier.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
   const Dev_07({super.key});
@@ -20,53 +18,31 @@ class Dev_07 extends ConsumerStatefulWidget {
 }
 
 class _Dev_07State extends ConsumerState<Dev_07> {
-  Customer? _customer;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCustomerData();
-  }
-
-  /// GetStorage에서 회원 정보 로드
-  void _loadCustomerData() {
-    final storage = GetStorage();
-    final customerData = storage.read<Map<String, dynamic>>(storageKeyCustomer);
-
-    if (customerData != null &&
-        customerData['customer_name'] != null &&
-        customerData['customer_email'] != null) {
-      try {
-        setState(() {
-          _customer = Customer.fromJson(customerData);
-        });
-      } catch (e) {
-        CustomCommonUtil.logError(functionName: '_loadCustomerData', error: e);
-        setState(() {
-          _customer = null;
-        });
-      }
-    } else {
-      setState(() {
-        _customer = null;
-      });
-    }
-  }
-
-  /// 로그아웃 처리
-  void _handleLogout() {
-    final storage = GetStorage();
-    storage.remove(storageKeyCustomer);
-    _loadCustomerData(); // 화면 재실행
-  }
-
   @override
   void dispose() {
     super.dispose();
   }
 
+  /// 로그아웃 처리
+  void _handleLogout() {
+    // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
+    ref.read(authNotifierProvider.notifier).logout();
+    
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('로그아웃 되었습니다.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 인증 Notifier에서 로그인 정보 구독 (자동 업데이트)
+    final authState = ref.watch(authNotifierProvider);
+    final customer = authState.customer;
     return Builder(
       builder: (context) {
         final p = context.palette;
@@ -93,7 +69,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     '회원 정보',
                     style: mainTitleStyle.copyWith(color: p.textPrimary),
                   ),
-                  if (_customer != null) ...[
+                  if (customer != null) ...[
                     // 회원 정보가 있는 경우
                     Container(
                       padding: mainDefaultPadding,
@@ -119,7 +95,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  _customer!.customerName,
+                                  customer.customerName,
                                   style: mainMediumTextStyle.copyWith(
                                     color: p.textPrimary,
                                   ),
@@ -140,7 +116,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  _customer!.customerEmail,
+                                  customer.customerEmail,
                                   style: mainMediumTextStyle.copyWith(
                                     color: p.textPrimary,
                                   ),
@@ -148,8 +124,8 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               ),
                             ],
                           ),
-                          if (_customer!.customerPhone != null &&
-                              _customer!.customerPhone!.isNotEmpty)
+                          if (customer.customerPhone != null &&
+                              customer.customerPhone!.isNotEmpty)
                             Row(
                               children: [
                                 Icon(Icons.phone, color: p.primary),
@@ -163,7 +139,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    _customer!.customerPhone!,
+                                    customer.customerPhone!,
                                     style: mainMediumTextStyle.copyWith(
                                       color: p.textPrimary,
                                     ),
@@ -174,7 +150,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                           Row(
                             children: [
                               Icon(
-                                _customer!.isGoogleAccount
+                                customer.isGoogleAccount
                                     ? Icons.account_circle
                                     : Icons.lock,
                                 color: p.primary,
@@ -189,7 +165,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  _customer!.isGoogleAccount
+                                  customer.isGoogleAccount
                                       ? '구글 로그인'
                                       : '일반 로그인',
                                   style: mainMediumTextStyle.copyWith(
@@ -287,7 +263,30 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     ),
                   ),
 
-                  // 여기에 추가 페이지 연결 버튼 추가 가능
+                  // 날씨 관련 페이지
+                  Text(
+                    '날씨 관련',
+                    style: mainTitleStyle.copyWith(color: p.textPrimary),
+                  ),
+                  Center(
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToWeatherScreen(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
+                        ),
+                        child: Text(
+                          '날씨 화면',
+                          style: mainMediumTitleStyle.copyWith(
+                            color: p.textOnPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -304,14 +303,18 @@ class _Dev_07State extends ConsumerState<Dev_07> {
     await CustomNavigationUtil.to(context, const AuthScreen());
   }
 
-  /// 회원 정보 수정 화면으로 이동
-  /// GetStorage에서 로그인 정보를 확인하여 이동
-  void _navigateToProfileEdit() {
-    // GetStorage에서 로그인 정보 확인
-    final storage = GetStorage();
-    final customerData = storage.read<Map<String, dynamic>>(storageKeyCustomer);
+  /// 날씨 화면으로 이동
+  void _navigateToWeatherScreen() async {
+    await CustomNavigationUtil.to(context, const WeatherScreen());
+  }
 
-    if (customerData == null) {
+  /// 회원 정보 수정 화면으로 이동
+  /// 인증 Notifier에서 로그인 정보를 확인하여 이동
+  void _navigateToProfileEdit() {
+    // 인증 Notifier에서 로그인 정보 확인
+    final authState = ref.read(authNotifierProvider);
+
+    if (authState.customer == null) {
       // 로그인 정보가 없으면 로그인 화면으로 이동
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -328,9 +331,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
     CustomNavigationUtil.to(context, const ProfileEditScreen()).then((result) {
       // 수정 완료 시 처리
       if (result == true && mounted) {
-        // 회원 정보 다시 로드
-        _loadCustomerData();
-
+        // 인증 Notifier에서 자동으로 업데이트되므로 별도 처리 불필요
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('회원 정보가 수정되었습니다.'),
@@ -365,3 +366,8 @@ class _Dev_07State extends ConsumerState<Dev_07> {
 // 2026-01-15 김택권: GetStorage 키 상수화
 //   - 'customer' 문자열을 config.dart의 storageKeyCustomer 상수로 변경
 //   - 오타 방지 및 일관성 유지
+//
+// 2026-01-15 김택권: 날씨 화면 네비게이션 추가
+//   - 날씨 관련 섹션 추가
+//   - 날씨 화면으로 이동하는 버튼 추가
+//   - _navigateToWeatherScreen() 함수 구현

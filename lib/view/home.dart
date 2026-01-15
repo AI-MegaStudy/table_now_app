@@ -76,10 +76,10 @@ class _HomeState extends ConsumerState<Home> {
             actions: [
               // 테마 스위치
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: EdgeInsets.symmetric(horizontal: mainSmallSpacing),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 8,
+                  spacing: mainSmallSpacing,
                   children: [
                     Icon(
                       Icons.light_mode,
@@ -257,3 +257,22 @@ class _HomeState extends ConsumerState<Home> {
 
   //------------------------------
 }
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-15
+// 작성자: 김택권
+// 설명: 홈 화면 - 개발 페이지 네비게이션 및 테마 스위치 기능
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-15 김택권: 초기 생성
+//   - 개발 페이지 버튼 목록 구현
+//   - 테마 스위치 기능 구현
+//   - Firebase 테스트 페이지 네비게이션 추가
+//
+// 2026-01-15 김택권: UI 일관성 개선
+//   - 하드코딩된 UI 값을 ui_config.dart의 상수로 변경
+//   - mainSmallSpacing 상수 사용

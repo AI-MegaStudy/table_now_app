@@ -340,10 +340,10 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
       children: [
         // 안내 메시지
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: mainDefaultPadding,
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: mainSmallBorderRadius,
             border: Border.all(color: Colors.blue.shade200),
           ),
           child: Column(
@@ -352,7 +352,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
               Row(
                 children: [
                   Icon(Icons.info_outline, color: Colors.blue.shade700),
-                  const SizedBox(width: 8),
+                  SizedBox(width: mainSmallSpacing),
                   Text(
                     '이메일 인증',
                     style: mainMediumTextStyle.copyWith(
@@ -362,7 +362,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              mainSmallVerticalSpacing,
               Text(
                 '${widget.customerEmail}로 인증 코드가 발송됩니다.',
                 style: mainSmallTextStyle.copyWith(
@@ -430,16 +430,16 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
         children: [
           // 안내 메시지
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: mainDefaultPadding,
             decoration: BoxDecoration(
               color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: mainSmallBorderRadius,
               border: Border.all(color: Colors.green.shade200),
             ),
             child: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.green.shade700),
-                const SizedBox(width: 8),
+                SizedBox(width: mainSmallSpacing),
                 Expanded(
                   child: Text(
                     '인증이 완료되었습니다. 새 비밀번호를 입력해주세요.',
@@ -518,3 +518,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
 //   - 비밀번호 일치 검증 로직 구현
 //   - 에러 처리 및 로딩 상태 관리
 //   - 422 에러 상세 로깅 추가 (디버깅용)
+//
+// 2026-01-15 김택권: UI 일관성 개선
+//   - 하드코딩된 UI 값을 ui_config.dart의 상수로 변경
+//   - mainDefaultPadding, mainSmallBorderRadius, mainSmallSpacing, mainSmallVerticalSpacing 상수 사용

@@ -140,7 +140,7 @@ async def select_customer(customer_seq: int):
 @router.post("/register")
 async def register_customer(
     customer_name: str = Form(...),
-    customer_phone: str = Form(...),
+    customer_phone: Optional[str] = Form(None),  # 선택사항
     customer_email: str = Form(...),
     customer_pw: str = Form(...)
 ):
@@ -167,10 +167,12 @@ async def register_customer(
         
         # 2. 고객 정보 저장
         # TODO: 향후 비밀번호 해시화 필요 (bcrypt 등)
+        # 전화번호가 빈 문자열이면 None으로 처리
+        phone_value = customer_phone if customer_phone and customer_phone.strip() else None
         curs.execute("""
             INSERT INTO customer (customer_name, customer_phone, customer_email, customer_pw, provider, created_at) 
             VALUES (%s, %s, %s, %s, 'local', NOW())
-        """, (customer_name, customer_phone, customer_email, customer_pw))
+        """, (customer_name, phone_value, customer_email, customer_pw))
         customer_seq = curs.lastrowid
         
         conn.commit()
@@ -972,3 +974,8 @@ async def verify_password_change_code(
 #   - provider 및 provider_subject 필드 지원
 #   - 구글 계정 비밀번호 변경 제한 로직 구현
 #   - 이메일 서비스 연동 (EmailService)
+#
+# 2026-01-15 김택권: 회원가입 API 개선
+#   - customer_phone 필드를 선택사항(Optional)으로 변경
+#   - Form(None)으로 설정하여 전화번호 없이도 회원가입 가능하도록 수정
+#   - 빈 문자열을 None으로 변환하여 DB에 NULL 저장 처리

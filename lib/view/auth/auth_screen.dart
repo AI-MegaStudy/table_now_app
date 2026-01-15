@@ -24,6 +24,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void initState() {
     super.initState();
     // 로그인 화면 진입 시 기존 사용자 정보 삭제 (새로운 로그인을 위함)
+    // GetStorage만 직접 삭제 (provider 상태 변경 없이, 빌드 중에도 안전)
     final storage = GetStorage();
     storage.remove(storageKeyCustomer);
   }
@@ -83,3 +84,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 // 2026-01-15 김택권: GetStorage 키 상수화
 //   - 'customer' 문자열을 config.dart의 storageKeyCustomer 상수로 변경
 //   - 오타 방지 및 일관성 유지
+//
+// 2026-01-15 김택권: Riverpod 빌드 중 상태 변경 오류 수정
+//   - initState에서 authNotifierProvider.logout() 호출 제거
+//   - GetStorage에서 직접 customer 키 삭제하도록 변경
+//   - 빌드 중 provider 상태 변경으로 인한 오류 방지

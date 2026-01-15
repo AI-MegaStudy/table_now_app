@@ -45,6 +45,10 @@ app.add_middleware(
 from app.api import customer
 app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
 
+# Weather API 라우터 등록
+from app.api import weather
+app.include_router(weather.router, prefix="/api/weather", tags=["weather"])
+
 
 @app.get("/")
 async def root():
@@ -99,3 +103,7 @@ if __name__ == "__main__":
 #   - .env 파일에서 환경변수 로드 (dotenv)
 #   - Customer API 라우터 등록 (/api/customer)
 #   - 루트 엔드포인트 및 헬스 체크 엔드포인트 구현
+#
+# 2026-01-15 김택권: Weather API 라우터 등록
+#   - Weather API 라우터 등록 (/api/weather)
+#   - 날씨 데이터 조회 및 OpenWeatherMap API 연동 기능 추가

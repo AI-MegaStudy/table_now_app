@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_button.dart';
@@ -12,6 +11,7 @@ import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/auth/password_change_screen.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/vm/auth_notifier.dart';
 
 /// 회원 정보 수정 화면
 ///
@@ -54,16 +54,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   /// 고객 정보 조회
   Future<void> _loadCustomerData() async {
-    // GetStorage에서 로그인 정보 가져오기
-    final storage = GetStorage();
-    final customerData = storage.read<Map<String, dynamic>>(storageKeyCustomer);
+    // 인증 Notifier에서 로그인 정보 가져오기
+    final authState = ref.read(authNotifierProvider);
 
-    if (customerData != null &&
-        customerData['customer_name'] != null &&
-        customerData['customer_email'] != null) {
-      // GetStorage에 저장된 데이터가 있으면 사용
+    if (authState.customer != null) {
+      // 전역 상태에 저장된 데이터가 있으면 사용
       try {
-        _customer = Customer.fromJson(customerData);
+        _customer = authState.customer;
         _customerSeq = _customer!.customerSeq;
         _nameController.text = _customer!.customerName;
         _emailController.text = _customer!.customerEmail;
@@ -74,7 +71,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         });
         return;
       } catch (e) {
-        // GetStorage 데이터 파싱 실패 시 API로 조회
+        // 데이터 파싱 실패 시 API로 조회
         CustomCommonUtil.logError(functionName: '_loadCustomerData', error: e);
       }
     }
@@ -109,9 +106,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           _phoneController.text = _customer!.customerPhone ?? '';
           _provider = _customer!.provider;
 
-          // GetStorage에도 저장 (최신 정보로 업데이트)
-          final storage = GetStorage();
-          await storage.write(storageKeyCustomer, _customer!.toJson());
+          // 인증 Notifier에도 업데이트 (GetStorage 자동 저장 및 전역 상태 업데이트)
+          await ref
+              .read(authNotifierProvider.notifier)
+              .updateCustomer(_customer!);
         } else {
           _errorMessage = responseData['errorMsg'] ?? '고객 정보를 불러올 수 없습니다.';
         }
@@ -140,7 +138,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-
 
     // 로딩 시작
     if (!mounted) return;
@@ -190,7 +187,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
       if (response.statusCode == 200) {
         if (responseData['result'] == 'OK') {
-          // 수정 성공 - GetStorage 업데이트
+          // 수정 성공 - 인증 Notifier 업데이트 (GetStorage 자동 저장 및 전역 상태 업데이트)
           if (_customer != null) {
             final updatedCustomer = _customer!.copyWith(
               customerName: _nameController.text.trim(),
@@ -199,8 +196,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   ? null
                   : _phoneController.text.trim(),
             );
-            final storage = GetStorage();
-            await storage.write(storageKeyCustomer, updatedCustomer.toJson());
+            await ref
+                .read(authNotifierProvider.notifier)
+                .updateCustomer(updatedCustomer);
           }
 
           if (mounted) {
@@ -291,13 +289,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
+                  mainDefaultVerticalSpacing,
                   Text(
                     _errorMessage!,
                     style: mainMediumTextStyle.copyWith(color: p.textPrimary),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
+                  mainDefaultVerticalSpacing,
                   CustomButton(
                     btnText: '다시 시도',
                     onCallBack: () {
@@ -324,10 +322,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       // 계정 타입 표시
                       if (_provider == 'google')
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: mainMediumPadding,
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: mainSmallBorderRadius,
                             border: Border.all(color: Colors.blue.shade200),
                           ),
                           child: Row(
@@ -336,7 +334,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 Icons.account_circle,
                                 color: Colors.blue.shade700,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: mainSmallSpacing),
                               Text(
                                 '구글 로그인 계정',
                                 style: mainSmallTextStyle.copyWith(
@@ -450,3 +448,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 // 2026-01-15 김택권: GetStorage 키 상수화
 //   - 'customer' 문자열을 config.dart의 storageKeyCustomer 상수로 변경
 //   - 오타 방지 및 일관성 유지
+//
+// 2026-01-15 김택권: UI 일관성 개선
+//   - 하드코딩된 UI 값을 ui_config.dart의 상수로 변경
+//   - mainDefaultVerticalSpacing, mainMediumPadding, mainSmallBorderRadius, mainSmallSpacing 상수 사용
