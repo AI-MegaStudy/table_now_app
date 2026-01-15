@@ -1,10 +1,19 @@
 """
 Table Now FastAPI 메인 애플리케이션
 기본 구조만 포함하며, 엔드포인트는 나중에 추가할 수 있도록 설계
+작성일: 2026-01-15
+작성자: 김택권
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# .env 파일에서 환경변수 로드
+# fastapi 폴더의 .env 파일을 읽습니다
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(dotenv_path=env_path)
 
 # 데이터베이스 연결 (필요시 주석 해제)
 # from app.database.connection import connect_db
@@ -72,3 +81,21 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ============================================================
+# 생성 이력
+# ============================================================
+# 작성일: 2026-01-15
+# 작성자: 김택권
+# 설명: Table Now FastAPI 메인 애플리케이션 - FastAPI 앱 초기화 및 라우터 등록
+#
+# ============================================================
+# 수정 이력
+# ============================================================
+# 2026-01-15 김택권: 초기 생성
+#   - FastAPI 앱 초기화 및 기본 설정
+#   - CORS 미들웨어 설정 (Flutter 앱과 통신을 위해)
+#   - .env 파일에서 환경변수 로드 (dotenv)
+#   - Customer API 라우터 등록 (/api/customer)
+#   - 루트 엔드포인트 및 헬스 체크 엔드포인트 구현

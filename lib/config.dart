@@ -17,10 +17,10 @@ const int dormantAccountDays = 180;
 /// Windows + Android 에뮬레이터 사용자는 자신의 호스트 IP를 설정하세요
 /// 예: 'http://192.168.1.50:8000'
 /// null이면 플랫폼에 따라 자동 선택 (Android: 10.0.2.2, iOS: 127.0.0.1)
-// const String? customApiBaseUrl = null;
+const String? customApiBaseUrl = null;
 //윈도우 사용자는 윗줄 주석 처리 하고 아래 줄 주석 해제하여 자신의 호스트 IP를 설정하세요.
 // const String? customApiBaseUrl = 'http://192.168.1.50:8000';
-const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';
+// const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';
 
 /// FastAPI 서버 기본 URL
 /// customApiBaseUrl이 설정되어 있으면 사용하고, 없으면 플랫폼에 따라 자동 선택
@@ -28,34 +28,56 @@ String getApiBaseUrl() {
   return CustomCommonUtil.getApiBaseUrl(customApiBaseUrl);
 }
 
-// 회원 상태
-Map loginStatus = {0: '활동 회원', 1: '휴면 회원', 2: '탈퇴 회원'};
+// GetStorage 키 상수
+/// 고객 정보 저장 키 (GetStorage)
+const String storageKeyCustomer = 'customer';
 
-// 서울 내 자치구 리스트.
-const List<String> district = [
-  '강남구',
-  '강동구',
-  '강북구',
-  '강서구',
-  '관악구',
-  '광진구',
-  '구로구',
-  '금천구',
-  '노원구',
-  '도봉구',
-  '동대문구',
-  '동작구',
-  '마포구',
-  '서대문구',
-  '서초구',
-  '성동구',
-  '성북구',
-  '송파구',
-  '양천구',
-  '영등포구',
-  '용산구',
-  '은평구',
-  '종로구',
-  '중구',
-  '중랑구',
-];
+// 회원 상태 (현재 미사용)
+// Map loginStatus = {0: '활동 회원', 1: '휴면 회원', 2: '탈퇴 회원'};
+
+//-----------------------------------------------------
+
+// 서울 내 자치구 리스트 (현재 미사용)
+// const List<String> district = [
+//   '강남구',
+//   '강동구',
+//   '강북구',
+//   '강서구',
+//   '관악구',
+//   '광진구',
+//   '구로구',
+//   '금천구',
+//   '노원구',
+//   '도봉구',
+//   '동대문구',
+//   '동작구',
+//   '마포구',
+//   '서대문구',
+//   '서초구',
+//   '성동구',
+//   '성북구',
+//   '송파구',
+//   '양천구',
+//   '영등포구',
+//   '용산구',
+//   '은평구',
+//   '종로구',
+//   '중구',
+//   '중랑구',
+// ];
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-15
+// 작성자: 김택권
+// 설명: 앱 전역 설정 파일 - API URL, 비즈니스 규칙, 상수 정의
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-15 김택권: 초기 생성
+//   - API 기본 URL 설정 함수 추가 (getApiBaseUrl)
+//   - 커스텀 API URL 설정 옵션 추가 (customApiBaseUrl)
+//   - 회원 상태 맵 추가 (loginStatus)
+//   - GetStorage 키 상수 추가 (storageKeyCustomer)

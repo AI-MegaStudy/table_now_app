@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:table_now_app/config.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_button.dart';
 import 'package:table_now_app/custom/custom_text_field.dart';
+import 'package:table_now_app/utils/custom_common_util.dart';
 
 /// 회원가입 탭 위젯
 ///
@@ -22,6 +26,7 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,12 +38,133 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // TODO: 회원가입 로직 구현
-      // - 입력값 검증
-      // - API 호출
-      // - 회원가입 성공 시 로그인 화면으로 전환 또는 자동 로그인
+  Future<void> _handleRegister() async {
+    // 폼 검증
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    // 로딩 시작
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    // 로딩 오버레이 표시
+    CustomCommonUtil.showLoadingOverlay(context, message: '회원가입 중...');
+
+    // API URL 구성
+    final apiBaseUrl = getApiBaseUrl();
+    final url = Uri.parse('$apiBaseUrl/api/customer/register');
+
+    try {
+      // Form 데이터 준비
+      final requestBody = {
+        'customer_name': _nameController.text.trim(),
+        'customer_phone': _phoneController.text.trim(),
+        'customer_email': _emailController.text.trim(),
+        'customer_pw': _passwordController.text,
+      };
+
+      // HTTP POST 요청 (Form 데이터)
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: requestBody,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      // 로딩 오버레이 숨기기
+      if (mounted) {
+        CustomCommonUtil.hideLoadingOverlay(context);
+      }
+
+      // 응답 처리
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // 응답 파싱
+      final responseData = json.decode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200) {
+        // 성공 처리
+        if (responseData['result'] != null &&
+            responseData['result'] != 'Error') {
+          // 회원가입 성공
+          if (mounted) {
+            CustomCommonUtil.showSuccessDialog(
+              context: context,
+              title: '회원가입 성공',
+              message: '회원가입이 완료되었습니다.\n로그인 탭에서 로그인해주세요.',
+              onConfirm: () {
+                // 입력 필드 초기화
+                _nameController.clear();
+                _emailController.clear();
+                _phoneController.clear();
+                _passwordController.clear();
+                _passwordConfirmController.clear();
+              },
+              confirmText: '확인',
+            );
+          }
+        } else {
+          // 서버 에러 응답
+          final errorMsg = responseData['errorMsg'] ?? '회원가입에 실패했습니다.';
+          if (mounted) {
+            CustomCommonUtil.showErrorSnackbar(
+              context: context,
+              message: errorMsg,
+            );
+          }
+        }
+      } else {
+        // HTTP 에러
+        final errorMsg =
+            responseData['errorMsg'] ??
+            '서버 오류가 발생했습니다. (${response.statusCode})';
+        if (mounted) {
+          CustomCommonUtil.showErrorSnackbar(
+            context: context,
+            message: errorMsg,
+          );
+        }
+      }
+    } catch (e) {
+      // 로딩 오버레이 숨기기
+      if (mounted) {
+        CustomCommonUtil.hideLoadingOverlay(context);
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // 에러 처리
+      String errorMessage = '회원가입 중 오류가 발생했습니다.';
+      if (e.toString().contains('TimeoutException')) {
+        errorMessage = '요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.';
+      } else if (e.toString().contains('SocketException')) {
+        errorMessage = '네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.';
+      } else {
+        errorMessage = '오류: ${e.toString()}';
+      }
+
+      if (mounted) {
+        CustomCommonUtil.showErrorSnackbar(
+          context: context,
+          message: errorMessage,
+        );
+      }
+
+      // 디버깅을 위한 에러 로그
+      CustomCommonUtil.logError(
+        functionName: '_handleRegister',
+        error: e,
+        url: '$apiBaseUrl/api/customer/register',
+      );
     }
   }
 
@@ -134,8 +260,8 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
 
               // 회원가입 버튼
               CustomButton(
-                btnText: '회원가입',
-                onCallBack: _handleRegister,
+                btnText: _isLoading ? '처리 중...' : '회원가입',
+                onCallBack: _isLoading ? () {} : _handleRegister,
                 buttonType: ButtonType.elevated,
               ),
             ],
@@ -145,3 +271,20 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
     );
   }
 }
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-15
+// 작성자: 김택권
+// 설명: 회원가입 탭 위젯 - 일반 회원가입 기능 구현
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-15 김택권: 초기 생성
+//   - 회원가입 폼 구현 (이름, 이메일, 전화번호, 비밀번호, 비밀번호 확인)
+//   - 폼 검증 로직 구현
+//   - 회원가입 API 연동 (/api/customer/register)
+//   - 회원가입 성공 시 폼 초기화 및 성공 다이얼로그 표시
+//   - 에러 처리 및 로딩 상태 관리
