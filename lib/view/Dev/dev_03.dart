@@ -52,9 +52,11 @@ class _Dev_03State extends ConsumerState<Dev_03> {
                 children: [
                   // 여기에 컨텐츠 추가
                   Center(
-                    child: Text(
-                      'Hello World!',
-                      style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        
+                      }, 
+                      child: Text("1번 페이지")
                     ),
                   ),
                 ],
