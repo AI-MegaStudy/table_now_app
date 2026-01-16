@@ -87,7 +87,7 @@ async def select_one(item_id: int):
     curs.execute("""
         SELECT store_seq, store_address, store_lat, store_lng, store_phone, store_opentime, store_closetime, store_description, store_image, store_placement, created_at
         FROM store 
-        WHERE id = %s
+        WHERE store_seq = %s
     """, (item_id,))
     
     row = curs.fetchone()
@@ -124,18 +124,15 @@ async def select_one(item_id: int):
 async def insert_one(
     # TODO: Form 파라미터 정의
     # 예: columnName: str = Form(...)
-    store_seq: int = Form(...),
     store_address: str = Form(...),
     store_lat: float = Form(...),
     store_lng: float = Form(...),
-    store_phone: float = Form(...),
+    store_phone: str = Form(...),
     store_opentime: Optional[str] = Form(None),
     store_closetime: Optional[str] = Form(None),
     store_description: Optional[str] = Form(None),
     store_image: Optional[str] = Form(None),
-    store_placement: str = Form(...),
-    created_at: str = Form(...)
-
+    store_placement: str = Form(...)
 ):
     try:
         conn = connect_db()
@@ -144,7 +141,7 @@ async def insert_one(
         # TODO: SQL 작성
         sql = """
             INSERT INTO store (store_address, store_lat, store_lng, store_phone, store_opentime, store_closetime, store_description, store_image, store_placement, created_at) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         """
         curs.execute(sql, (store_address, store_lat, store_lng, store_phone, store_opentime, store_closetime, store_description, store_image, store_placement))
         
@@ -168,13 +165,12 @@ async def update_one(
     store_address: str = Form(...),
     store_lat: float = Form(...),
     store_lng: float = Form(...),
-    store_phone: float = Form(...),
+    store_phone: str = Form(...),
     store_opentime: Optional[str] = Form(None),
     store_closetime: Optional[str] = Form(None),
     store_description: Optional[str] = Form(None),
     store_image: Optional[str] = Form(None),
-    store_placement: str = Form(...),
-    created_at: str = Form(...)
+    store_placement: str = Form(...)
     # TODO: 수정할 Form 파라미터 정의
 ):
     try:
@@ -184,7 +180,7 @@ async def update_one(
         # TODO: SQL 작성
         sql = """
             UPDATE store 
-            SET store_address=%s, store_lat=%s, store_lng=%s, store_phone=%s, store_opentime=%s, store_closetime=%s,store_description=%s, store_image=%s, store_placement=%s
+            SET store_address=%s, store_lat=%s, store_lng=%s, store_phone=%s, store_opentime=%s, store_closetime=%s, store_description=%s, store_image=%s, store_placement=%s
             WHERE store_seq=%s
         """
         curs.execute(sql, (store_address, store_lat, store_lng, store_phone, store_opentime, store_closetime, store_description, store_image, store_placement, store_seq))

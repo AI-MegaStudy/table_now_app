@@ -122,17 +122,14 @@ async def select_one(item_id: int):
 async def insert_one(
     # TODO: Form 파라미터 정의
     # 예: columnName: str = Form(...)
-    reserve_seq: int = Form(...),
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: str = Form(...),
+    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
-    created_at: str = Form(...),
     payment_key: Optional[str] = Form(None),
     payment_status: Optional[str] = Form(None)
-
 ):
     try:
         conn = connect_db()
@@ -141,9 +138,9 @@ async def insert_one(
         # TODO: SQL 작성
         sql = """
             INSERT INTO reserve (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status) 
-            VALUES (%s, %s, %s, %s, %s, %s, now(), %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s)
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status))
+        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status))
         
         conn.commit()
         inserted_id = curs.lastrowid
@@ -164,11 +161,10 @@ async def update_one(
     reserve_seq: int = Form(...),
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: str = Form(...),
+    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
-    created_at: str = Form(...),
     payment_key: Optional[str] = Form(None),
     payment_status: Optional[str] = Form(None)
     # TODO: 수정할 Form 파라미터 정의
@@ -180,10 +176,10 @@ async def update_one(
         # TODO: SQL 작성
         sql = """
             UPDATE reserve 
-            SET store_seq=%s, customer_seq=%s, weather_datetime=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, created_at=%s, payment_key=%s, payment_status=%s     
+            SET store_seq=%s, customer_seq=%s, weather_datetime=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, payment_key=%s, payment_status=%s     
             WHERE reserve_seq=%s
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status, reserve_seq))
+        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status, reserve_seq))
         
         conn.commit()
         conn.close()
