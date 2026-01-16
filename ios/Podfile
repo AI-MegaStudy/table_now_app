@@ -10,12 +10,13 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# Firebase Core 모듈을 찾기 위한 Podfile 설정
+# 참고: https://github.com/sirkev/Failed-to-build-iOS-app-Parse-Issue-Xcode-Module-firebase_core-not-found
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
     raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
   end
-
   File.foreach(generated_xcode_build_settings_path) do |line|
     matches = line.match(/FLUTTER_ROOT\=(.*)/)
     return matches[1].strip if matches
@@ -29,8 +30,9 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
-
+  use_modular_headers!
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -41,3 +43,20 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
   end
 end
+
+# ============================================================
+# 생성 이력
+# ============================================================
+# 작성일: 2026-01-15
+# 작성자: 김택권
+# 설명: iOS CocoaPods 의존성 관리 파일 - Firebase Core 모듈 인식 문제 해결
+#
+# ============================================================
+# 수정 이력
+# ============================================================
+# 2026-01-15 김택권: 초기 생성
+#   - 기본 Podfile 구조 설정
+#   - Firebase Core 모듈 인식 문제 해결을 위한 flutter_root 함수 추가
+#   - use_modular_headers! 설정 추가
+#   - post_install 블록 추가 (flutter_additional_ios_build_settings 적용)
+#   - 참고: https://github.com/sirkev/Failed-to-build-iOS-app-Parse-Issue-Xcode-Module-firebase_core-not-found

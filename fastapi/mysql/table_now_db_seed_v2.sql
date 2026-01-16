@@ -1,6 +1,8 @@
 -- =========================================================
 -- table_now_db Seed Data (Upsert)
 -- 실행해도 중복 삽입되지 않도록 ON DUPLICATE KEY UPDATE 사용
+-- 작성일: 2026-01-15
+-- 작성자: 김택권
 -- =========================================================
 
 USE `table_now_db`;
@@ -11,12 +13,19 @@ START TRANSACTION;
 SET FOREIGN_KEY_CHECKS = 0;
 
 
-INSERT INTO `customer` (`customer_seq`, `customer_name`, `customer_phone`, `customer_email`, `customer_pw`, `created_at`)
+INSERT INTO `customer` (`customer_seq`, `customer_name`, `customer_phone`, `customer_email`, `customer_pw`, `provider`, `provider_subject`, `created_at`)
 VALUES
-(1, '테스트유저01', '010-0000-0001', 'user001@gmail.com', 'qwer1234', '2026-01-15 09:00:00'),
-(2, '테스트유저02', '010-0000-0002', 'user002@gmail.com', 'qwer1234', '2026-01-15 09:00:00'),
-(3, '테스트유저03', '010-0000-0003', 'user003@gmail.com', 'qwer1234', '2026-01-15 09:00:00')
-ON DUPLICATE KEY UPDATE `customer_name` = VALUES(`customer_name`),`customer_phone` = VALUES(`customer_phone`),`customer_email` = VALUES(`customer_email`),`customer_pw` = VALUES(`customer_pw`),`created_at` = VALUES(`created_at`);
+(1, '테스트유저01', '010-0000-0001', 'user001@gmail.com', 'qwer1234', 'local', NULL, '2026-01-15 09:00:00'),
+(2, '테스트유저02', '010-0000-0002', 'user002@gmail.com', 'qwer1234', 'local', NULL, '2026-01-15 09:00:00'),
+(3, '테스트유저03', '010-0000-0003', 'user003@gmail.com', 'qwer1234', 'local', NULL, '2026-01-15 09:00:00')
+ON DUPLICATE KEY UPDATE 
+  `customer_name` = VALUES(`customer_name`),
+  `customer_phone` = VALUES(`customer_phone`),
+  `customer_email` = VALUES(`customer_email`),
+  `customer_pw` = VALUES(`customer_pw`),
+  `provider` = VALUES(`provider`),
+  `provider_subject` = VALUES(`provider_subject`),
+  `created_at` = VALUES(`created_at`);
 
 INSERT INTO `store` (`store_seq`, `store_address`, `store_lat`, `store_lng`, `store_phone`, `store_opentime`, `store_closetime`, `store_description`, `store_image`, `store_placement`, `created_at`)
 VALUES
@@ -120,3 +129,25 @@ ON DUPLICATE KEY UPDATE `reserve_seq` = VALUES(`reserve_seq`),`store_seq` = VALU
 SET FOREIGN_KEY_CHECKS = 1;
 
 COMMIT;
+
+-- ============================================================
+-- 생성 이력
+-- ============================================================
+-- 작성일: 2026-01-15
+-- 작성자: 김택권
+-- 설명: table_now_db 시드 데이터 스크립트 - 개발 및 테스트를 위한 초기 데이터 삽입
+--       ON DUPLICATE KEY UPDATE를 사용하여 중복 실행 시에도 안전하게 업데이트
+--
+-- ============================================================
+-- 수정 이력
+-- ============================================================
+-- 2026-01-15 김택권: 초기 생성
+--   - customer 테이블 시드 데이터 추가 (테스트유저01~03, provider='local')
+--   - store 테이블 시드 데이터 추가 (코코이찌방야, 아비꼬, 토모토 카레)
+--   - store_table 테이블 시드 데이터 추가 (각 식당별 테이블 12개)
+--   - menu 테이블 시드 데이터 추가 (각 식당별 메뉴 4개)
+--   - option 테이블 시드 데이터 추가 (각 메뉴별 옵션)
+--   - weather 테이블 시드 데이터 추가 (날씨 정보)
+--   - reserve 테이블 시드 데이터 추가 (예약 정보)
+--   - pay 테이블 시드 데이터 추가 (결제 정보)
+--   - customer 테이블에 provider, provider_subject 컬럼 추가 반영
