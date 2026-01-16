@@ -40,17 +40,17 @@ class WeatherService:
         if not self.api_key:
             raise ValueError("OpenWeatherMap API 키가 설정되지 않았습니다. 환경변수 OPENWEATHER_API_KEY를 설정하거나 api_key 파라미터를 제공하세요.")
     
-    def fetch_daily_weather(self, lat: str = DEFAULT_LAT, lon: str = DEFAULT_LON) -> List[Dict]:
+    def fetch_today_weather(self, lat: str = DEFAULT_LAT, lon: str = DEFAULT_LON) -> Dict:
         """
-        OpenWeatherMap OneCall API에서 일별 날씨 데이터 가져오기
+        OpenWeatherMap OneCall API에서 오늘 날씨 데이터만 가져오기
         
         Args:
             lat: 위도 (기본값: 서울)
             lon: 경도 (기본값: 서울)
             
         Returns:
-            List[Dict]: 일별 날씨 데이터 리스트
-            각 딕셔너리는 다음 키를 포함:
+            Dict: 오늘 날씨 데이터
+            다음 키를 포함:
             - dt: Unix timestamp
             - weather_datetime: DATETIME 형식의 날짜 (00:00:00)
             - weather_type: 날씨 상태 (한글)
@@ -71,134 +71,132 @@ class WeatherService:
             response.raise_for_status()
             data = response.json()
             
-            if "daily" not in data:
+            if "daily" not in data or len(data["daily"]) == 0:
                 raise ValueError("API 응답에 'daily' 데이터가 없습니다.")
             
-            daily_forecasts = []
+            # 오늘 날씨만 가져오기 (첫 번째 요소)
+            today = data["daily"][0]
             
-            for day in data["daily"]:
-                # Unix timestamp를 datetime으로 변환
-                dt = datetime.fromtimestamp(day["dt"])
-                # 날짜의 시작 시간 (00:00:00)으로 설정
-                weather_datetime = dt.replace(hour=0, minute=0, second=0, microsecond=0)
-                
-                # 날씨 정보 추출
-                weather_info = day["weather"][0] if day.get("weather") else {}
-                weather_main = weather_info.get("main", "Clear")
-                icon_code = weather_info.get("icon", "01d")
-                
-                # 온도 정보 추출
-                temp = day.get("temp", {})
-                weather_low = temp.get("min", 0.0)
-                weather_high = temp.get("max", 0.0)
-                
-                daily_forecasts.append({
-                    "dt": day["dt"],
-                    "weather_datetime": weather_datetime,
-                    "weather_type": get_weather_type_korean(weather_main),
-                    "weather_type_en": weather_main,
-                    "weather_low": float(weather_low),
-                    "weather_high": float(weather_high),
-                    "icon_code": icon_code,
-                    "icon_url": get_weather_icon_url(icon_code)
-                })
+            # Unix timestamp를 datetime으로 변환
+            dt = datetime.fromtimestamp(today["dt"])
+            # 날짜의 시작 시간 (00:00:00)으로 설정
+            weather_datetime = dt.replace(hour=0, minute=0, second=0, microsecond=0)
             
-            return daily_forecasts
+            # 날씨 정보 추출
+            weather_info = today["weather"][0] if today.get("weather") else {}
+            weather_main = weather_info.get("main", "Clear")
+            icon_code = weather_info.get("icon", "01d")
+            
+            # 온도 정보 추출
+            temp = today.get("temp", {})
+            weather_low = temp.get("min", 0.0)
+            weather_high = temp.get("max", 0.0)
+            
+            return {
+                "dt": today["dt"],
+                "weather_datetime": weather_datetime,
+                "weather_type": get_weather_type_korean(weather_main),
+                "weather_type_en": weather_main,
+                "weather_low": float(weather_low),
+                "weather_high": float(weather_high),
+                "icon_code": icon_code,
+                "icon_url": get_weather_icon_url(icon_code)
+            }
             
         except requests.RequestException as e:
             raise requests.RequestException(f"OpenWeatherMap API 요청 실패: {str(e)}") from e
         except (KeyError, ValueError, TypeError) as e:
             raise ValueError(f"API 응답 파싱 실패: {str(e)}") from e
     
-    def save_weather_to_db(self, lat: str = DEFAULT_LAT, lon: str = DEFAULT_LON, 
-                           overwrite: bool = False) -> Dict:
+    def save_weather_to_db(self, store_seq: int, overwrite: bool = True) -> Dict:
         """
-        OpenWeatherMap API에서 날씨 데이터를 가져와서 데이터베이스에 저장
+        OpenWeatherMap API에서 오늘 날씨 데이터를 가져와서 데이터베이스에 저장
         
         Args:
-            lat: 위도
-            lon: 경도
-            overwrite: 기존 데이터가 있으면 덮어쓸지 여부 (기본값: False)
+            store_seq: 식당 번호 (store 테이블의 store_seq)
+            overwrite: 기존 데이터가 있으면 덮어쓸지 여부 (기본값: True)
             
         Returns:
             Dict: 저장 결과
             - success: 성공 여부
-            - inserted_count: 삽입된 레코드 수
-            - updated_count: 업데이트된 레코드 수
+            - inserted: 삽입 여부 (True면 INSERT, False면 UPDATE)
+            - message: 결과 메시지
             - errors: 에러 리스트
         """
         conn = None
         curs = None
         
         try:
-            # API에서 데이터 가져오기
-            daily_forecasts = self.fetch_daily_weather(lat, lon)
-            
-            if not daily_forecasts:
-                return {
-                    "success": False,
-                    "message": "가져올 날씨 데이터가 없습니다.",
-                    "inserted_count": 0,
-                    "updated_count": 0,
-                    "errors": []
-                }
-            
-            # 데이터베이스 연결
+            # store 정보 조회 (store_lat, store_lng 가져오기)
             conn = connect_db()
             curs = conn.cursor()
             
-            inserted_count = 0
-            updated_count = 0
-            errors = []
+            curs.execute("""
+                SELECT store_lat, store_lng FROM store WHERE store_seq = %s
+            """, (store_seq,))
             
-            for forecast in daily_forecasts:
-                try:
-                    weather_datetime = forecast["weather_datetime"]
-                    weather_type = forecast["weather_type"]
-                    weather_low = forecast["weather_low"]
-                    weather_high = forecast["weather_high"]
-                    
-                    # 기존 데이터 확인
-                    curs.execute("""
-                        SELECT weather_datetime FROM weather 
-                        WHERE weather_datetime = %s
-                    """, (weather_datetime,))
-                    existing = curs.fetchone()
-                    
-                    if existing:
-                        if overwrite:
-                            # 업데이트 (icon_code 제거)
-                            curs.execute("""
-                                UPDATE weather 
-                                SET weather_type = %s, weather_low = %s, weather_high = %s
-                                WHERE weather_datetime = %s
-                            """, (weather_type, weather_low, weather_high, weather_datetime))
-                            updated_count += 1
-                        else:
-                            # 건너뛰기
-                            continue
-                    else:
-                        # 삽입 (icon_code 제거)
-                        curs.execute("""
-                            INSERT INTO weather (weather_datetime, weather_type, weather_low, weather_high)
-                            VALUES (%s, %s, %s, %s)
-                        """, (weather_datetime, weather_type, weather_low, weather_high))
-                        inserted_count += 1
-                        
-                except Exception as e:
-                    errors.append({
-                        "datetime": forecast.get("weather_datetime"),
-                        "error": str(e)
-                    })
+            store_row = curs.fetchone()
+            if not store_row:
+                return {
+                    "success": False,
+                    "message": f"store_seq={store_seq}인 식당을 찾을 수 없습니다.",
+                    "inserted": False,
+                    "errors": []
+                }
+            
+            store_lat = str(store_row[0])
+            store_lng = str(store_row[1])
+            
+            # API에서 오늘 날씨 데이터 가져오기
+            today_forecast = self.fetch_today_weather(store_lat, store_lng)
+            
+            if not today_forecast:
+                return {
+                    "success": False,
+                    "message": "가져올 날씨 데이터가 없습니다.",
+                    "inserted": False,
+                    "errors": []
+                }
+            
+            weather_datetime = today_forecast["weather_datetime"]
+            weather_type = today_forecast["weather_type"]
+            weather_low = today_forecast["weather_low"]
+            weather_high = today_forecast["weather_high"]
+            
+            # 오늘 날씨 데이터만 저장 (기존 데이터는 삭제하지 않음 - 예약 데이터 참조 유지)
+            # UPSERT 패턴: 이미 있으면 업데이트, 없으면 삽입
+            curs.execute("""
+                SELECT weather_datetime FROM weather 
+                WHERE store_seq = %s AND weather_datetime = %s
+            """, (store_seq, weather_datetime))
+            existing_new = curs.fetchone()
+            
+            if not existing_new:
+                # 새로운 데이터가 없으면 삽입
+                curs.execute("""
+                    INSERT INTO weather (store_seq, weather_datetime, weather_type, weather_low, weather_high)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (store_seq, weather_datetime, weather_type, weather_low, weather_high))
+                is_inserted = True
+            else:
+                # 이미 있으면 업데이트 (날씨 예보는 시간이 지나면서 업데이트될 수 있음)
+                curs.execute("""
+                    UPDATE weather 
+                    SET weather_type = %s, weather_low = %s, weather_high = %s
+                    WHERE store_seq = %s AND weather_datetime = %s
+                """, (weather_type, weather_low, weather_high, store_seq, weather_datetime))
+                is_inserted = False
+            
+            # reserve 테이블의 weather_datetime은 변경하지 않음 (예약한 날짜의 날씨를 유지)
             
             conn.commit()
             
+            action = "삽입" if is_inserted else "업데이트"
             return {
                 "success": True,
-                "message": f"날씨 데이터 저장 완료 (삽입: {inserted_count}, 업데이트: {updated_count})",
-                "inserted_count": inserted_count,
-                "updated_count": updated_count,
-                "errors": errors
+                "message": f"날씨 데이터 저장 완료 ({action})",
+                "inserted": is_inserted,
+                "errors": []
             }
             
         except Exception as e:

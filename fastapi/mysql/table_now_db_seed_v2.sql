@@ -105,16 +105,17 @@ VALUES
   (11, 3, 10, '고로케 토핑', 2500, 750, '2026-01-15 10:15:00')
 ON DUPLICATE KEY UPDATE `store_seq` = VALUES(`store_seq`),`menu_seq` = VALUES(`menu_seq`),`option_name` = VALUES(`option_name`),`option_price` = VALUES(`option_price`),`option_cost` = VALUES(`option_cost`),`created_at` = VALUES(`created_at`);
 
-INSERT INTO `weather` (`weather_datetime`, `weather_type`, `weather_low`, `weather_high`)
+INSERT INTO `weather` (`store_seq`, `weather_datetime`, `weather_type`, `weather_low`, `weather_high`)
 VALUES
-  ('2026-01-15 12:00:00', '맑음', -2, 5),
-  ('2026-01-15 18:00:00', '구름', -1, 3)
+  (1, '2026-01-15 00:00:00', '맑음', -2, 5),
+  (2, '2026-01-15 00:00:00', '구름', -1, 3),
+  (3, '2026-01-15 00:00:00', '맑음', 0, 4)
 ON DUPLICATE KEY UPDATE `weather_type` = VALUES(`weather_type`),`weather_low` = VALUES(`weather_low`),`weather_high` = VALUES(`weather_high`);
 
 INSERT INTO `reserve` (`reserve_seq`, `store_seq`, `customer_seq`, `weather_datetime`, `reserve_tables`, `reserve_capacity`, `reserve_date`, `created_at`, `payment_key`, `payment_status`)
 VALUES
-  (1, 1, 1, '2026-01-15 12:00:00', '1,2', 2, '2026-01-15 12:30:00', '2026-01-15 12:20:00', 'paykey_demo_001', 'DONE'),
-  (2, 2, 2, '2026-01-15 18:00:00', '6', 1, '2026-01-15 18:30:00', '2026-01-15 18:25:00', 'paykey_demo_002', 'DONE')
+  (1, 1, 1, '2026-01-15 00:00:00', '1,2', 2, '2026-01-15 12:30:00', '2026-01-15 12:20:00', 'paykey_demo_001', 'DONE'),
+  (2, 2, 2, '2026-01-15 00:00:00', '6', 1, '2026-01-15 18:30:00', '2026-01-15 18:25:00', 'paykey_demo_002', 'DONE')
 ON DUPLICATE KEY UPDATE `store_seq` = VALUES(`store_seq`),`customer_seq` = VALUES(`customer_seq`),`weather_datetime` = VALUES(`weather_datetime`),`reserve_tables` = VALUES(`reserve_tables`),`reserve_capacity` = VALUES(`reserve_capacity`),`reserve_date` = VALUES(`reserve_date`),`created_at` = VALUES(`created_at`),`payment_key` = VALUES(`payment_key`),`payment_status` = VALUES(`payment_status`);
 
 INSERT INTO `pay` (`pay_id`, `reserve_seq`, `store_seq`, `menu_seq`, `option_seq`, `pay_quantity`, `pay_amount`, `created_at`)
@@ -151,3 +152,7 @@ COMMIT;
 --   - reserve 테이블 시드 데이터 추가 (예약 정보)
 --   - pay 테이블 시드 데이터 추가 (결제 정보)
 --   - customer 테이블에 provider, provider_subject 컬럼 추가 반영
+-- 2026-01-16 김택권: weather 테이블 구조 변경 반영
+--   - weather 테이블 시드 데이터에 store_seq 추가 (각 식당별 오늘 날씨)
+--   - weather_datetime을 00:00:00으로 통일 (오늘 날짜만 저장)
+--   - reserve 테이블 시드 데이터의 weather_datetime을 00:00:00으로 변경

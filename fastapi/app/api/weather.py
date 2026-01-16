@@ -18,39 +18,48 @@ router = APIRouter()
 # ============================================
 @router.get("")
 async def select_weathers(
+    store_seq: Optional[int] = Query(None, description="식당 번호 (필수)"),
     start_date: Optional[str] = Query(None, description="시작 날짜 (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="종료 날짜 (YYYY-MM-DD)")
 ):
     """
-    전체 날씨 데이터 조회
+    날씨 데이터 조회
+    - store_seq: 식당 번호 (필수)
     - start_date와 end_date가 제공되면 해당 기간의 데이터만 조회
     """
     try:
+        if store_seq is None:
+            return {
+                "result": "Error",
+                "errorMsg": "store_seq 파라미터가 필요합니다."
+            }
+        
         conn = connect_db()
         curs = conn.cursor()
         
         if start_date and end_date:
             # 기간별 조회
             curs.execute("""
-                SELECT weather_datetime, weather_type, weather_low, weather_high
+                SELECT store_seq, weather_datetime, weather_type, weather_low, weather_high
                 FROM weather
-                WHERE weather_datetime >= %s AND weather_datetime <= %s
+                WHERE store_seq = %s AND weather_datetime >= %s AND weather_datetime <= %s
                 ORDER BY weather_datetime
-            """, (start_date, end_date))
+            """, (store_seq, start_date, end_date))
         else:
-            # 전체 조회
+            # 전체 조회 (해당 store_seq의 모든 날씨 데이터)
             curs.execute("""
-                SELECT weather_datetime, weather_type, weather_low, weather_high
+                SELECT store_seq, weather_datetime, weather_type, weather_low, weather_high
                 FROM weather
+                WHERE store_seq = %s
                 ORDER BY weather_datetime
-            """)
+            """, (store_seq,))
         
         rows = curs.fetchall()
         conn.close()
         
         result = []
         for row in rows:
-            weather_datetime = row[0]
+            weather_datetime = row[1]
             if isinstance(weather_datetime, datetime):
                 weather_datetime = weather_datetime.isoformat()
             elif hasattr(weather_datetime, 'isoformat'):
@@ -59,17 +68,18 @@ async def select_weathers(
                 weather_datetime = str(weather_datetime)
             
             # weather_type을 기반으로 아이콘 코드 결정
-            weather_type = row[1]
+            weather_type = row[2]
             from ..utils.weather_mapping import get_default_icon_code
             icon_code = get_default_icon_code(weather_type)
             from ..utils.weather_mapping import get_weather_icon_url
             icon_url = get_weather_icon_url(icon_code)
             
             result.append({
+                'store_seq': row[0],
                 'weather_datetime': weather_datetime,
                 'weather_type': weather_type,
-                'weather_low': float(row[2]),
-                'weather_high': float(row[3]),
+                'weather_low': float(row[3]),
+                'weather_high': float(row[4]),
                 'icon_url': icon_url
             })
         
@@ -84,10 +94,11 @@ async def select_weathers(
 # ============================================
 # 특정 날짜의 날씨 데이터 조회
 # ============================================
-@router.get("/{weather_datetime}")
-async def select_weather(weather_datetime: str):
+@router.get("/{store_seq}/{weather_datetime}")
+async def select_weather(store_seq: int, weather_datetime: str):
     """
-    특정 날짜의 날씨 데이터 조회
+    특정 식당의 특정 날짜 날씨 데이터 조회
+    - store_seq: 식당 번호
     - weather_datetime: 날짜 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM:SS)
     """
     try:
@@ -99,10 +110,10 @@ async def select_weather(weather_datetime: str):
             weather_datetime = f"{weather_datetime} 00:00:00"
         
         curs.execute("""
-            SELECT weather_datetime, weather_type, weather_low, weather_high
+            SELECT store_seq, weather_datetime, weather_type, weather_low, weather_high
             FROM weather
-            WHERE weather_datetime = %s
-        """, (weather_datetime,))
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
         
         row = curs.fetchone()
         conn.close()
@@ -110,7 +121,7 @@ async def select_weather(weather_datetime: str):
         if row is None:
             return {"result": "Error", "message": "날씨 데이터를 찾을 수 없습니다."}
         
-        weather_datetime_val = row[0]
+        weather_datetime_val = row[1]
         if isinstance(weather_datetime_val, datetime):
             weather_datetime_val = weather_datetime_val.isoformat()
         elif hasattr(weather_datetime_val, 'isoformat'):
@@ -119,16 +130,17 @@ async def select_weather(weather_datetime: str):
             weather_datetime_val = str(weather_datetime_val)
         
         # weather_type을 기반으로 아이콘 코드 결정
-        weather_type = row[1]
+        weather_type = row[2]
         from ..utils.weather_mapping import get_default_icon_code, get_weather_icon_url
         icon_code = get_default_icon_code(weather_type)
         icon_url = get_weather_icon_url(icon_code)
         
         result = {
+            'store_seq': row[0],
             'weather_datetime': weather_datetime_val,
             'weather_type': weather_type,
-            'weather_low': float(row[2]),
-            'weather_high': float(row[3]),
+            'weather_low': float(row[3]),
+            'weather_high': float(row[4]),
             'icon_url': icon_url
         }
         return {"result": result}
@@ -144,6 +156,7 @@ async def select_weather(weather_datetime: str):
 # ============================================
 @router.post("")
 async def insert_weather(
+    store_seq: int = Form(..., description="식당 번호"),
     weather_datetime: str = Form(..., description="날짜 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM:SS)"),
     weather_type: str = Form(..., description="날씨 상태 (한글)"),
     weather_low: float = Form(..., description="최저 온도"),
@@ -160,23 +173,24 @@ async def insert_weather(
         if len(weather_datetime) == 10:  # YYYY-MM-DD
             weather_datetime = f"{weather_datetime} 00:00:00"
         
-        # 중복 확인
+        # 중복 확인 (store_seq와 weather_datetime 복합키)
         curs.execute("""
-            SELECT weather_datetime FROM weather WHERE weather_datetime = %s
-        """, (weather_datetime,))
+            SELECT weather_datetime FROM weather 
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
         existing = curs.fetchone()
         
         if existing:
             return {
                 "result": "Error",
-                "errorMsg": "해당 날짜의 날씨 데이터가 이미 존재합니다."
+                "errorMsg": "해당 식당의 해당 날짜 날씨 데이터가 이미 존재합니다."
             }
         
         # 삽입
         curs.execute("""
-            INSERT INTO weather (weather_datetime, weather_type, weather_low, weather_high)
-            VALUES (%s, %s, %s, %s)
-        """, (weather_datetime, weather_type, weather_low, weather_high))
+            INSERT INTO weather (store_seq, weather_datetime, weather_type, weather_low, weather_high)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (store_seq, weather_datetime, weather_type, weather_low, weather_high))
         
         conn.commit()
         
@@ -201,8 +215,9 @@ async def insert_weather(
 # ============================================
 # 날씨 데이터 수정
 # ============================================
-@router.put("/{weather_datetime}")
+@router.put("/{store_seq}/{weather_datetime}")
 async def update_weather(
+    store_seq: int,
     weather_datetime: str,
     weather_type: Optional[str] = Form(None),
     weather_low: Optional[float] = Form(None),
@@ -223,8 +238,8 @@ async def update_weather(
         curs.execute("""
             SELECT weather_type, weather_low, weather_high
             FROM weather
-            WHERE weather_datetime = %s
-        """, (weather_datetime,))
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
         existing = curs.fetchone()
         
         if existing is None:
@@ -242,8 +257,8 @@ async def update_weather(
         curs.execute("""
             UPDATE weather
             SET weather_type = %s, weather_low = %s, weather_high = %s
-            WHERE weather_datetime = %s
-        """, (update_type, update_low, update_high, weather_datetime))
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (update_type, update_low, update_high, store_seq, weather_datetime))
         
         conn.commit()
         
@@ -265,8 +280,8 @@ async def update_weather(
 # ============================================
 # 날씨 데이터 삭제
 # ============================================
-@router.delete("/{weather_datetime}")
-async def delete_weather(weather_datetime: str):
+@router.delete("/{store_seq}/{weather_datetime}")
+async def delete_weather(store_seq: int, weather_datetime: str):
     """
     날씨 데이터 삭제
     """
@@ -280,8 +295,9 @@ async def delete_weather(weather_datetime: str):
         
         # 존재 확인
         curs.execute("""
-            SELECT weather_datetime FROM weather WHERE weather_datetime = %s
-        """, (weather_datetime,))
+            SELECT weather_datetime FROM weather 
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
         existing = curs.fetchone()
         
         if existing is None:
@@ -290,8 +306,24 @@ async def delete_weather(weather_datetime: str):
                 "errorMsg": "날씨 데이터를 찾을 수 없습니다."
             }
         
-        # 삭제
-        curs.execute("DELETE FROM weather WHERE weather_datetime = %s", (weather_datetime,))
+        # reserve 테이블에서 참조 중인지 확인
+        curs.execute("""
+            SELECT COUNT(*) FROM reserve 
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
+        reserve_count = curs.fetchone()[0]
+        
+        if reserve_count > 0:
+            return {
+                "result": "Error",
+                "errorMsg": f"예약 데이터가 {reserve_count}개 참조 중이어서 삭제할 수 없습니다. 예약 데이터를 먼저 삭제하거나 수정해주세요."
+            }
+        
+        # 삭제 (참조가 없을 때만)
+        curs.execute("""
+            DELETE FROM weather 
+            WHERE store_seq = %s AND weather_datetime = %s
+        """, (store_seq, weather_datetime))
         conn.commit()
         conn.close()
         
@@ -312,23 +344,19 @@ async def delete_weather(weather_datetime: str):
 # ============================================
 @router.post("/fetch-from-api")
 async def fetch_weather_from_api(
-    lat: Optional[str] = Form(None, description="위도 (기본값: 서울)"),
-    lon: Optional[str] = Form(None, description="경도 (기본값: 서울)"),
-    overwrite: bool = Form(False, description="기존 데이터 덮어쓰기 여부")
+    store_seq: int = Form(..., description="식당 번호 (필수)"),
+    overwrite: bool = Form(True, description="기존 데이터 덮어쓰기 여부 (기본값: True - 날씨 예보는 항상 최신으로 갱신)")
 ):
     """
-    OpenWeatherMap API에서 날씨 데이터를 가져와서 데이터베이스에 저장
+    OpenWeatherMap API에서 오늘 날씨 데이터를 가져와서 데이터베이스에 저장
     
-    - lat, lon이 제공되지 않으면 서울 좌표 사용
-    - 최대 8일치 데이터를 가져옴 (오늘 포함)
+    - store_seq를 받아서 해당 식당의 store_lat, store_lng를 사용
+    - 오늘 날씨 데이터만 저장 (당일 하루치)
     """
     try:
         weather_service = WeatherService()
-        # lat, lon이 None이면 기본값(서울) 사용
-        from ..utils.weather_service import DEFAULT_LAT, DEFAULT_LON
         result = weather_service.save_weather_to_db(
-            lat=lat if lat else DEFAULT_LAT,
-            lon=lon if lon else DEFAULT_LON,
+            store_seq=store_seq,
             overwrite=overwrite
         )
         
@@ -336,8 +364,7 @@ async def fetch_weather_from_api(
             return {
                 "result": "OK",
                 "message": result["message"],
-                "inserted_count": result["inserted_count"],
-                "updated_count": result["updated_count"],
+                "inserted": result["inserted"],
                 "errors": result["errors"]
             }
         else:

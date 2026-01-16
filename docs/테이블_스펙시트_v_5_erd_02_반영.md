@@ -96,15 +96,22 @@
 
 ## 4. weather (날씨)
 
-- 구분: 엔티티(Entity)
-- 설명: 특정 시점의 날씨 정보
+- 구분: 릴레이션쉽(Relationship)
+- 설명: 식당별 특정 시점의 날씨 정보
 
-| 컬럼명           | 타입         | 키  | NULL | 비고 | 설명           |
-| ---------------- | ------------ | --- | ---- | ---- | -------------- |
-| weather_datetime | DATETIME     | PK  | N    |      | 날씨 기준 일시 |
-| weather_type     | VARCHAR(255) |     | N    |      | 날씨 상태      |
-| weather_low      | DOUBLE       |     | N    |      | 최저 기온      |
-| weather_high     | DOUBLE       |     | N    |      | 최고 기온      |
+| 컬럼명           | 타입         | 키  | NULL | 비고            | 설명           |
+| ---------------- | ------------ | --- | ---- | --------------- | -------------- |
+| store_seq        | INT          | PK  | N    | store.store_seq | 식당 번호      |
+| weather_datetime | DATETIME     | PK  | N    |                 | 날씨 기준 일시 |
+| weather_type     | VARCHAR(255) |     | N    |                 | 날씨 상태      |
+| weather_low      | DOUBLE       |     | N    |                 | 최저 기온      |
+| weather_high     | DOUBLE       |     | N    |                 | 최고 기온      |
+
+**비고:**
+
+- PK는 `(store_seq, weather_datetime)` 복합키
+- 각 식당별로 날씨 정보를 저장
+- OpenWeatherMap API 호출 시 해당 식당의 `store_lat`, `store_lng`를 사용하여 오늘 날씨만 저장
 
 ---
 
@@ -113,18 +120,24 @@
 - 구분: 릴레이션쉽(Relationship)
 - 설명: 예약 기본 정보 및 결제 상태
 
-| 컬럼명           | 타입         | 키  | NULL | 비고                     | 설명             |
-| ---------------- | ------------ | --- | ---- | ------------------------ | ---------------- |
-| reserve_seq      | INT          | PK  | N    | Auto_Increment           | 예약 번호        |
-| store_seq        | INT          | FK  | N    | store.store_seq          | 식당 번호        |
-| customer_seq     | INT          | FK  | N    | customer.customer_seq    | 고객 번호        |
-| weather_datetime | DATETIME     | FK  | N    | weather.weather_datetime | 날씨 기준 일시   |
-| reserve_tables   | VARCHAR(255) |     | N    | 테이블 번호 콤마로 묶음  | 테이블 번호들    |
-| reserve_capacity | INT          |     | N    |                          | 예약 인원        |
-| reserve_date     | DATETIME     |     | N    |                          | 예약 일시        |
-| created_at       | DATETIME     |     | N    |                          | 생성 일자        |
-| payment_key      | VARCHAR(255) |     | Y    |                          | Toss Payment Key |
-| payment_status   | VARCHAR(255) |     | Y    |                          | 결제 상태        |
+| 컬럼명           | 타입         | 키  | NULL | 비고                    | 설명             |
+| ---------------- | ------------ | --- | ---- | ----------------------- | ---------------- |
+| reserve_seq      | INT          | PK  | N    | Auto_Increment          | 예약 번호        |
+| store_seq        | INT          | FK  | N    | store.store_seq         | 식당 번호        |
+| customer_seq     | INT          | FK  | N    | customer.customer_seq   | 고객 번호        |
+| weather_datetime | DATETIME     | FK  | N    | weather 복합키 참조     | 날씨 기준 일시   |
+| reserve_tables   | VARCHAR(255) |     | N    | 테이블 번호 콤마로 묶음 | 테이블 번호들    |
+| reserve_capacity | INT          |     | N    |                         | 예약 인원        |
+| reserve_date     | DATETIME     |     | N    |                         | 예약 일시        |
+| created_at       | DATETIME     |     | N    |                         | 생성 일자        |
+| payment_key      | VARCHAR(255) |     | Y    |                         | Toss Payment Key |
+| payment_status   | VARCHAR(255) |     | Y    |                         | 결제 상태        |
+
+**비고:**
+
+- `weather_datetime`: `weather` 테이블의 복합키 `(store_seq, weather_datetime)`를 참조하는 FK의 일부
+- `reserve` 테이블의 FK는 `(store_seq, weather_datetime)` 복합키로 `weather` 테이블의 복합키를 참조
+- `reserve.store_seq`와 `weather.store_seq`가 자동으로 일치해야 함 (FK 제약조건)
 
 ---
 
@@ -217,3 +230,8 @@
 - **2026-01-15**: v5로 버전 업데이트 (작성자: 김택권)
   - 문서 버전을 v4에서 v5로 업데이트
   - 이전 문서 폐기 대상에 v4 추가
+- **2026-01-16**: weather 테이블 구조 변경 (작성자: 김택권)
+  - `weather` 테이블에 `store_seq` 컬럼 추가 (FK)
+  - `weather` 테이블 PK를 `(store_seq, weather_datetime)` 복합키로 변경
+  - `reserve` 테이블의 `weather_datetime` FK를 복합키 FK `(store_seq, weather_datetime)`로 변경
+  - 각 식당별로 날씨를 저장할 수 있도록 복합키 구조 적용

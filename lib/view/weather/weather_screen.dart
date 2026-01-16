@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_button.dart';
 import 'package:table_now_app/model/weather.dart';
+import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/vm/weather_notifier.dart';
@@ -18,20 +19,61 @@ class WeatherScreen extends ConsumerStatefulWidget {
 }
 
 class _WeatherScreenState extends ConsumerState<WeatherScreen> {
+  List<Store> _storeList = [];
+  Store? _selectedStore;
+  bool _isLoadingStores = false;
+
   @override
   void initState() {
     super.initState();
-    // 화면 진입 시 날씨 데이터 가져오기
+    // 화면 진입 시 지점 리스트 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(weatherNotifierProvider.notifier).fetchWeather();
+      _loadStores();
     });
   }
 
-  /// OpenWeatherMap API에서 데이터 가져오기
+  /// 지점 리스트 가져오기
+  Future<void> _loadStores() async {
+    setState(() {
+      _isLoadingStores = true;
+    });
+
+    try {
+      final stores = await ref
+          .read(weatherNotifierProvider.notifier)
+          .fetchStores();
+      if (mounted) {
+        setState(() {
+          _storeList = stores;
+          _isLoadingStores = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingStores = false;
+        });
+        CustomCommonUtil.showErrorSnackbar(
+          context: context,
+          message: '지점 리스트를 가져오는 중 오류가 발생했습니다.',
+        );
+      }
+    }
+  }
+
+  /// OpenWeatherMap API에서 데이터 가져오기 및 저장
   Future<void> _fetchFromApi() async {
+    if (_selectedStore == null) {
+      CustomCommonUtil.showErrorSnackbar(
+        context: context,
+        message: '지점을 선택해주세요.',
+      );
+      return;
+    }
+
     final success = await ref
         .read(weatherNotifierProvider.notifier)
-        .fetchWeatherFromApi();
+        .fetchWeatherFromApi(storeSeq: _selectedStore!.storeSeq);
 
     if (mounted) {
       if (success) {
@@ -62,109 +104,148 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         backgroundColor: p.background,
         foregroundColor: p.textPrimary,
         actions: [
-          // 새로고침 버튼
+          // 새로고침 버튼 (리스트만 지우기)
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: weatherState.isLoading
                 ? null
                 : () {
-                    ref.read(weatherNotifierProvider.notifier).fetchWeather();
+                    ref.read(weatherNotifierProvider.notifier).reset();
                   },
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(weatherNotifierProvider.notifier).fetchWeather();
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: mainDefaultPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // OpenWeatherMap API에서 데이터 가져오기 버튼
-              CustomButton(
-                btnText: 'OpenWeatherMap에서 날씨 데이터 가져오기',
-                onCallBack: weatherState.isLoading ? null : _fetchFromApi,
-                buttonType: ButtonType.outlined,
+      body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: mainDefaultPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 지점 선택 드롭다운
+            Text('지점 선택', style: mainTitleStyle.copyWith(color: p.textPrimary)),
+            mainDefaultVerticalSpacing,
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: mainDefaultSpacing),
+              decoration: BoxDecoration(
+                color: p.cardBackground,
+                borderRadius: mainSmallBorderRadius,
+                border: Border.all(color: p.divider),
               ),
-              mainLargeVerticalSpacing,
-
-              // 로딩 중
-              if (weatherState.isLoading)
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(mainLargeSpacing * 1.33), // 32.0
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-
-              // 에러 메시지
-              if (weatherState.errorMessage != null && !weatherState.isLoading)
-                Container(
-                  padding: mainDefaultPadding,
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: mainSmallBorderRadius,
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade700),
-                      SizedBox(width: mainSmallSpacing),
-                      Expanded(
-                        child: Text(
-                          weatherState.errorMessage!,
+              child: _isLoadingStores
+                  ? Padding(
+                      padding: mainDefaultPadding,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : DropdownButtonHideUnderline(
+                      child: DropdownButton<Store>(
+                        value: _selectedStore,
+                        hint: Text(
+                          '지점을 선택하세요',
                           style: mainBodyTextStyle.copyWith(
-                            color: Colors.red.shade700,
+                            color: p.textSecondary,
                           ),
+                        ),
+                        isExpanded: true,
+                        items: _storeList.map((store) {
+                          return DropdownMenuItem<Store>(
+                            value: store,
+                            child: Text(
+                              store.storeDescription ?? store.storeAddress,
+                              style: mainBodyTextStyle.copyWith(
+                                color: p.textPrimary,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (Store? newValue) {
+                          setState(() {
+                            _selectedStore = newValue;
+                            // 지점 선택 시 기존 날씨 데이터 초기화
+                            if (newValue == null) {
+                              ref
+                                  .read(weatherNotifierProvider.notifier)
+                                  .reset();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+            ),
+            mainLargeVerticalSpacing,
+
+            // 받기! 버튼
+            CustomButton(
+              btnText: '받기!',
+              onCallBack: (weatherState.isLoading || _selectedStore == null)
+                  ? null
+                  : _fetchFromApi,
+              buttonType: ButtonType.elevated,
+            ),
+            mainLargeVerticalSpacing,
+
+            // 로딩 중
+            if (weatherState.isLoading)
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(mainLargeSpacing * 1.33), // 32.0
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+
+            // 에러 메시지
+            if (weatherState.errorMessage != null && !weatherState.isLoading)
+              Container(
+                padding: mainDefaultPadding,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: mainSmallBorderRadius,
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade700),
+                    SizedBox(width: mainSmallSpacing),
+                    Expanded(
+                      child: Text(
+                        weatherState.errorMessage!,
+                        style: mainBodyTextStyle.copyWith(
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // 날씨 데이터 목록
+            if (!weatherState.isLoading && weatherState.weatherList.isNotEmpty)
+              ...weatherState.weatherList.map(
+                (weather) => _buildWeatherCard(context, weather, p),
+              ),
+
+            // 데이터 없음
+            if (!weatherState.isLoading &&
+                weatherState.weatherList.isEmpty &&
+                weatherState.errorMessage == null)
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(mainLargeSpacing * 1.33), // 32.0
+                  child: Column(
+                    children: [
+                      Icon(Icons.cloud_off, size: 64, color: p.textSecondary),
+                      mainDefaultVerticalSpacing,
+                      Text(
+                        '날씨 데이터가 없습니다.\n지점을 선택하고 "받기!" 버튼을 눌러주세요.',
+                        textAlign: TextAlign.center,
+                        style: mainBodyTextStyle.copyWith(
+                          color: p.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
-
-              // 날씨 데이터 목록
-              if (!weatherState.isLoading &&
-                  weatherState.weatherList.isNotEmpty)
-                ...weatherState.weatherList.map(
-                  (weather) => _buildWeatherCard(context, weather, p),
-                ),
-
-              // 데이터 없음
-              if (!weatherState.isLoading &&
-                  weatherState.weatherList.isEmpty &&
-                  weatherState.errorMessage == null)
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(mainLargeSpacing * 1.33), // 32.0
-                    child: Column(
-                      children: [
-                        Icon(Icons.cloud_off, size: 64, color: p.textSecondary),
-                        mainDefaultVerticalSpacing,
-                        Text(
-                          '날씨 데이터가 없습니다.',
-                          style: mainBodyTextStyle.copyWith(
-                            color: p.textSecondary,
-                          ),
-                        ),
-                        mainDefaultVerticalSpacing,
-                        CustomButton(
-                          btnText: '데이터 가져오기',
-                          onCallBack: () {
-                            ref
-                                .read(weatherNotifierProvider.notifier)
-                                .fetchWeather();
-                          },
-                          buttonType: ButtonType.elevated,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -334,3 +415,8 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 //   - 네트워크 이미지 대신 Material Icons 사용
 //   - weather_type에 따라 적절한 아이콘 매핑 함수 추가 (_getWeatherIcon)
 //   - DB에 아이콘 저장하지 않고 프론트엔드에서만 표시
+// 2026-01-16 김택권: 지점 선택 드롭다운 추가
+//   - 지점 리스트를 드롭다운으로 표시
+//   - 선택한 지점의 날씨 데이터만 조회 및 표시
+//   - "받기!" 버튼으로 OpenWeatherMap API에서 날씨 데이터 가져오기 및 저장
+//   - store_seq 기반 날씨 조회로 변경

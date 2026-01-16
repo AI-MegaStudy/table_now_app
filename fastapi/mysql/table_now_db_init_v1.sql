@@ -120,11 +120,17 @@ CREATE TABLE `password_reset_auth` (
 -- 5) weather
 -- ---------------------------------------------------------
 CREATE TABLE `weather` (
+    `store_seq` INT NOT NULL COMMENT '식당 번호',
     `weather_datetime` DATETIME NOT NULL COMMENT '날씨 기준 일시',
     `weather_type` VARCHAR(255) NOT NULL COMMENT '날씨 상태',
     `weather_low` DOUBLE NOT NULL COMMENT '최저 기온',
     `weather_high` DOUBLE NOT NULL COMMENT '최고 기온',
-    PRIMARY KEY (`weather_datetime`)
+    PRIMARY KEY (
+        `store_seq`,
+        `weather_datetime`
+    ),
+    KEY `idx_weather_store_seq` (`store_seq`),
+    CONSTRAINT `fk_weather_store_seq` FOREIGN KEY (`store_seq`) REFERENCES `store` (`store_seq`) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
@@ -147,7 +153,13 @@ CREATE TABLE `reserve` (
     KEY `idx_reserve_weather_datetime` (`weather_datetime`),
     CONSTRAINT `fk_reserve_store_seq` FOREIGN KEY (`store_seq`) REFERENCES `store` (`store_seq`) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT `fk_reserve_customer_seq` FOREIGN KEY (`customer_seq`) REFERENCES `customer` (`customer_seq`) ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT `fk_reserve_weather_datetime` FOREIGN KEY (`weather_datetime`) REFERENCES `weather` (`weather_datetime`) ON UPDATE RESTRICT ON DELETE RESTRICT
+    CONSTRAINT `fk_reserve_weather` FOREIGN KEY (
+        `store_seq`,
+        `weather_datetime`
+    ) REFERENCES `weather` (
+        `store_seq`,
+        `weather_datetime`
+    ) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
@@ -225,3 +237,7 @@ CREATE TABLE `pay` (
 --   - customer_phone, customer_pw를 NULL 허용으로 변경 (소셜 로그인 지원)
 --   - password_reset_auth 테이블 추가 (비밀번호 변경 이메일 인증용)
 --   - 인덱스 및 외래키 제약조건 설정
+-- 2026-01-16 김택권: weather 테이블 구조 변경
+--   - weather 테이블에 store_seq 컬럼 추가 (FK)
+--   - weather 테이블 PK를 (store_seq, weather_datetime) 복합키로 변경
+--   - reserve 테이블의 weather_datetime FK 제약조건 제거 (인덱스만 유지)
