@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
@@ -13,14 +14,18 @@ Future<void> main() async {
   // GetStorage 초기화 (get_storage는 GetX와 독립적으로 사용 가능)
   await GetStorage.init();
 
-  // GT ADDED: Firebase initialize
+  // Firebase 초기화
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    print('Firebase initialized successfully');
+    if (kDebugMode) {
+      print('✅ Firebase initialized successfully');
+    }
   } catch (e) {
-    print('Firebase initialization error: $e');
+    if (kDebugMode) {
+      print('❌ Firebase initialization error: $e');
+    }
     // 실기기 빌드에서 GoogleService-Info.plist를 찾지 못하는 경우를 대비
-    rethrow;
+    // 앱은 계속 실행되지만 Firebase 기능은 사용할 수 없음
   }
   
   runApp(const ProviderScope(child: MyApp()));

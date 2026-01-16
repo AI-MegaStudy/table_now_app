@@ -10,11 +10,36 @@ class StoreRegion {
     required this.storeCount,
     required this.stores,
   });
+
+  factory StoreRegion.fromJson(Map<String, dynamic> json) {
+    return StoreRegion(
+      name: json['name'] ?? "",
+      storeCount: json['storeCount'] ?? "",
+      stores: json['stores'] ?? "",
+    );
+  }
+  Map<String, dynamic> toJSON() {
+    return {
+      'name': name,
+      'storeCount': storeCount,
+      'stores': stores,
+    };
+  }
 }
 
 class Store {
-  final String name;
+  final String description;
   final LatLng location;
 
-  Store({required this.name, required this.location});
+  Store({
+    required this.description,
+    required this.location,
+  });
+
+  factory Store.fromJson(Map<String, dynamic> json) {
+    return Store(
+      description: json['description'],
+      location: json['location'],
+    );
+  }
 }
