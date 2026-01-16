@@ -73,7 +73,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
     final success = await ref
         .read(weatherNotifierProvider.notifier)
-        .fetchWeatherFromApi(storeSeq: _selectedStore!.storeSeq);
+        .fetchWeatherFromApi(storeSeq: _selectedStore!.store_seq);
 
     if (mounted) {
       if (success) {
@@ -150,7 +150,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                           return DropdownMenuItem<Store>(
                             value: store,
                             child: Text(
-                              store.storeDescription ?? store.storeAddress,
+                              store.store_description ?? store.store_address,
                               style: mainBodyTextStyle.copyWith(
                                 color: p.textPrimary,
                               ),

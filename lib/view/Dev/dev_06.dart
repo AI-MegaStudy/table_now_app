@@ -18,6 +18,10 @@ class _Dev_06State extends ConsumerState<Dev_06> {
   @override
   void initState() {
     super.initState();
+    // 화면 진입 시 로그인 상태 새로고침
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(loginNotifierProvider.notifier).refresh();
+    });
   }
 
   @override

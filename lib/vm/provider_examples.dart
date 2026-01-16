@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:table_now_app/config.dart';
 
 // ============================================
 // 1. Provider - 단순한 값 제공 (변경 불가)
@@ -59,11 +61,25 @@ final counterNotifierProvider = NotifierProvider<CounterNotifier, int>(
   CounterNotifier.new,
 );
 
-// 간단한 boolean 상태 예제
+// 간단한 boolean 상태 예제 (GetStorage와 동기화)
 class LoginNotifier extends Notifier<bool> {
+  final GetStorage _storage = GetStorage();
+
   @override
   bool build() {
-    return false;
+    // 초기화 시 GetStorage에서 로그인 상태 확인
+    // 실제 로그인 상태는 authNotifierProvider를 통해 관리되므로
+    // GetStorage에 customer 정보가 있으면 로그인 상태로 간주
+    try {
+      final customerData = _storage.read<Map<String, dynamic>>(
+        storageKeyCustomer,
+      );
+      return customerData != null &&
+          customerData['customer_name'] != null &&
+          customerData['customer_email'] != null;
+    } catch (e) {
+      return false;
+    }
   }
 
   void login() {
@@ -71,7 +87,24 @@ class LoginNotifier extends Notifier<bool> {
   }
 
   void logout() {
+    // GetStorage에서도 로그인 정보 제거
+    _storage.remove(storageKeyCustomer);
     state = false;
+  }
+
+  /// GetStorage에서 로그인 상태 새로고침
+  void refresh() {
+    try {
+      final customerData = _storage.read<Map<String, dynamic>>(
+        storageKeyCustomer,
+      );
+      state =
+          customerData != null &&
+          customerData['customer_name'] != null &&
+          customerData['customer_email'] != null;
+    } catch (e) {
+      state = false;
+    }
   }
 }
 
