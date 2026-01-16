@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/custom.dart';
 import 'package:table_now_app/vm/payment_notifier.dart';
 
 class PaymentListView extends ConsumerWidget {
@@ -10,23 +11,30 @@ class PaymentListView extends ConsumerWidget {
     final paymentState = ref.watch(paymentAsyncNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text('payment test')
+        title: Text('payment list')
       ),
-      body: paymentState.when(
-        data: (data) => ListView.builder(
-          itemCount: data.length,
-          itemBuilder: (context, index) {
-            return Card(
-              child: Row(
-                children: [
-                  Text("${data[index].pay_id}")
-                ],
-              )
-            );
-          },
-        ), 
-        error: (error, stackTrace) => Text('ERROR: $stackTrace'), 
-        loading: ()=> Text('....loading')
+      body: Center(
+        child: paymentState.when(
+          data: (data) => data.length>0 
+          ?ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              return Card(
+                child: Row(
+                  spacing: 5,
+                  children: [
+                    Text("PayID: ${data[index].pay_id}"),
+                    Text("Price: ${data[index].pay_amount}"),
+                  ],
+                )
+              );
+            },
+          )
+          : Text('no data')
+          , 
+          error: (error, stackTrace) => Text('ERROR: $error'), 
+          loading: ()=> Text('....loading')
+        ),
       )
 
     );

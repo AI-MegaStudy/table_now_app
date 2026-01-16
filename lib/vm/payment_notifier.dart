@@ -8,30 +8,35 @@ import 'package:http/http.dart' as http;
 import 'package:table_now_app/vm/auth_notifier.dart';
 
 
-
 class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>>{
   int? customerSeq;
-
+  final String url = 'http://172.16.250.187:8000';
+  final String error = '';
   @override
   FutureOr<List<Payment>> build() async {
     
     // Payment는 기본적으로 유저ID가 required됨. 
     // 요청할때 유저가 없다면 return []
     final authState = ref.watch(authNotifierProvider);   
-    if (authState.customer==null) return [];
-    
+    if (authState.customer==null) {
+      print('==== invalid ==================');
+      state = AsyncValue.error(Exception('401: no access'),StackTrace.empty);
+      await Future.delayed(Duration(seconds: 3));
+      return [];
+    }
     customerSeq = authState.customer!.customerSeq;
-    return await fetchData(null);
+    return await _fetchData(null);
   }
 
   // id가 있다면 특정 payment만 가져온다. 
   // 유저의 payments를 전부 가져온다.
-  Future<List<Payment>> fetchData(int? id) async {
+  Future<List<Payment>> _fetchData(int? id) async {
     
     print('=====customerSeq => $customerSeq');
+    
 
     // Get Data from Backend
-      final uri = Uri.parse('https://zeushahn.github.io/Test/movies.json');
+      final uri = Uri.parse('$url/api/pay');
       final response = await http.get(uri);
       if(response.statusCode != 200){
         throw Exception( "데이터 로딩 실패: ${response.statusCode}");
@@ -40,15 +45,25 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>>{
       final List results = jsonData["results"];
    
       return results.map((data)=>Payment(
-      pay_id: 1,
-      reserve_seq: 1, 
-      store_seq: 1, 
-      menu_seq: 1, 
-      pay_quantitiy: 1, 
-      pay_amount: 1)).toList();  
+      pay_id: data['pay_id'],
+      reserve_seq: data['reserve_seq'], 
+      store_seq: data['store_seq'], 
+      menu_seq: data['menu_seq'], 
+      pay_quantity: data['pay_quantity'], 
+      pay_amount: data['pay_amount'])).toList();  
 
 
   }
+
+  // id가 있다면 특정 payment만 가져온다. 
+  // 유저의 payments를 전부 가져온다.
+  Future<void> refreshData(int? id) async {
+    if(customerSeq == null) 
+      state = AsyncValue.error(Exception('401: no access'),StackTrace.empty);
+    else
+      state = AsyncValue.data(await _fetchData(id));
+  }
+
 
   // 유저의 Payment를 추가 한다.
   Future<void> addData(Payment payment) async {

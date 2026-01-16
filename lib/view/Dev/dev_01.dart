@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/custom.dart';
 import 'package:table_now_app/view/payment/list_view.dart';
+import 'package:table_now_app/view/payment/purchase/toss_home.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -63,8 +64,14 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
                           onPressed: ()=>CustomNavigationUtil.to(context,const PaymentListView() ), 
-                          child: Text('payment')
+                          child: Text('Payment List By CustomerID')
+                        ),
+                        ElevatedButton(
+                          // CustomNavigationUtil.to(context, const AuthScreen());
+                          onPressed: ()=>CustomNavigationUtil.to(context,const TossHome() ), 
+                          child: Text('TOSS PAY')
                         )
+
 
                       ],
                     ),
