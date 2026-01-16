@@ -1,121 +1,63 @@
-/// Store 모델 클래스
-///
-/// 식당(매장) 정보를 담는 모델입니다.
-/// API 응답을 파싱하여 사용합니다.
 class Store {
-  final int storeSeq;
-  final String storeAddress;
-  final double storeLat;
-  final double storeLng;
-  final String storePhone;
-  final String? storeOpentime;
-  final String? storeClosetime;
-  final String? storeDescription;
-  final String? storeImage;
-  final String storePlacement;
-  final DateTime? createdAt;
+  final int store_seq;
+  final String store_address;
+  final double store_lat;
+  final double store_lng;
+  final String store_phone;
+  final String? store_open_time;
+  final String? store_close_time;
+  final String? store_description;
+  final String? store_image;
+  final String store_placement;
+  final DateTime created_at;
 
   Store({
-    required this.storeSeq,
-    required this.storeAddress,
-    required this.storeLat,
-    required this.storeLng,
-    required this.storePhone,
-    this.storeOpentime,
-    this.storeClosetime,
-    this.storeDescription,
-    this.storeImage,
-    required this.storePlacement,
-    this.createdAt,
+    required this.store_seq,
+    required this.store_address,
+    required this.store_lat,
+    required this.store_lng,
+    required this.store_phone,
+    this.store_open_time,
+    this.store_close_time,
+    this.store_description,
+    this.store_image,
+    required this.store_placement,
+    required this.created_at,
   });
 
-  /// JSON에서 Store 객체 생성
-  factory Store.fromJson(Map<String, dynamic> json) {
-    DateTime? createdAt;
-    if (json['created_at'] != null) {
-      if (json['created_at'] is String) {
-        try {
-          createdAt = DateTime.parse(json['created_at']);
-        } catch (e) {
-          createdAt = null;
-        }
-      }
-    }
+  //LatLng get location => LatLng(storeLat, storeLng);
 
+  factory Store.fromJson(Map<String, dynamic> json) {
     return Store(
-      storeSeq: json['store_seq'] as int,
-      storeAddress: json['store_address'] as String,
-      storeLat: (json['store_lat'] as num).toDouble(),
-      storeLng: (json['store_lng'] as num).toDouble(),
-      storePhone: json['store_phone'] as String,
-      storeOpentime: json['store_opentime'] as String?,
-      storeClosetime: json['store_closetime'] as String?,
-      storeDescription: json['store_description'] as String?,
-      storeImage: json['store_image'] as String?,
-      storePlacement: json['store_placement'] as String,
-      createdAt: createdAt,
+      store_seq: json['store_seq'] as int,
+      store_address: json['store_address'] ?? "",
+      store_lat: (json['store_lat'] as num).toDouble(),
+      store_lng: (json['store_lng'] as num).toDouble(),
+      store_phone: json['store_phone'] ?? "",
+      store_open_time: json['store_opentime'],
+      store_close_time: json['store_closetime'],
+      store_description: json['store_description'],
+      store_image: json['store_image'],
+      store_placement: json['store_placement'] ?? "v1",
+      created_at: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
     );
   }
 
-  /// Store 객체를 JSON으로 변환
   Map<String, dynamic> toJson() {
     return {
-      'store_seq': storeSeq,
-      'store_address': storeAddress,
-      'store_lat': storeLat,
-      'store_lng': storeLng,
-      'store_phone': storePhone,
-      'store_opentime': storeOpentime,
-      'store_closetime': storeClosetime,
-      'store_description': storeDescription,
-      'store_image': storeImage,
-      'store_placement': storePlacement,
-      'created_at': createdAt?.toIso8601String(),
+      'store_seq': store_seq,
+      'store_address': store_address,
+      'store_lat': store_lat,
+      'store_lng': store_lng,
+      'store_phone': store_phone,
+      'store_open_time': store_open_time,
+      'store_close_time': store_close_time,
+      'store_description': store_description,
+      'store_image': store_image,
+      'store_placement': store_placement,
+      'created_at': created_at,
     };
   }
-
-  /// Store 객체 복사
-  Store copyWith({
-    int? storeSeq,
-    String? storeAddress,
-    double? storeLat,
-    double? storeLng,
-    String? storePhone,
-    String? storeOpentime,
-    String? storeClosetime,
-    String? storeDescription,
-    String? storeImage,
-    String? storePlacement,
-    DateTime? createdAt,
-  }) {
-    return Store(
-      storeSeq: storeSeq ?? this.storeSeq,
-      storeAddress: storeAddress ?? this.storeAddress,
-      storeLat: storeLat ?? this.storeLat,
-      storeLng: storeLng ?? this.storeLng,
-      storePhone: storePhone ?? this.storePhone,
-      storeOpentime: storeOpentime ?? this.storeOpentime,
-      storeClosetime: storeClosetime ?? this.storeClosetime,
-      storeDescription: storeDescription ?? this.storeDescription,
-      storeImage: storeImage ?? this.storeImage,
-      storePlacement: storePlacement ?? this.storePlacement,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
 }
-
-// ============================================================
-// 생성 이력
-// ============================================================
-// 작성일: 2026-01-16
-// 작성자: 김택권
-// 설명: Store 모델 클래스 - 식당 정보를 담는 모델, API 응답 파싱 지원
-//
-// ============================================================
-// 수정 이력
-// ============================================================
-// 2026-01-16 김택권: 초기 생성
-//   - Store 클래스 생성
-//   - storeSeq, storeAddress, storeLat, storeLng 등 필드 추가
-//   - fromJson, toJson 메서드 구현
-//   - copyWith 메서드 구현
