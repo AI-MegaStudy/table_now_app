@@ -28,9 +28,9 @@ port = 8000
 class StoreTable(BaseModel):
     store_table_seq: Optional[int] = None
     store_seq: Optional[int] = None
-    store_table_name: Optional[str] = None  # int -> str 수정
+    store_table_name: Optional[int] = None  # 스키마상 INT 타입 (주의: 테이블 이름이 INT인 것은 비정상적일 수 있음)
     store_table_capacity: Optional[int] = None
-    store_table_inuse: Optional[str] = None
+    store_table_inuse: Optional[bool] = None  # 스키마상 BOOLEAN 타입
     created_at: Optional[str] = None
 
 
@@ -44,7 +44,7 @@ async def select_all():
     
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
-        FROM StoreTable 
+        FROM store_table 
         ORDER BY store_table_seq
     """)
     
@@ -73,7 +73,7 @@ async def select_one(store_table_seq: int):
     
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
-        FROM StoreTable
+        FROM store_table
         WHERE store_table_seq = %s
     """, (store_table_seq,))
     
@@ -100,9 +100,9 @@ async def select_one(store_table_seq: int):
 @router.post("/insert_StoreTable")
 async def insert_one(
     store_seq: int = Form(...),
-    store_table_name: str = Form(...),  # int -> str 수정
+    store_table_name: int = Form(...),  # 스키마상 INT 타입
     store_table_capacity: int = Form(...), 
-    store_table_inuse: str = Form(...),
+    store_table_inuse: bool = Form(...),  # 스키마상 BOOLEAN 타입
     # created_at은 DB에서 NOW()로 자동 생성되므로 제거
 ):
     try:
@@ -110,7 +110,7 @@ async def insert_one(
         curs = conn.cursor()
         
         sql = """
-            INSERT INTO StoreTable (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at) 
+            INSERT INTO store_table (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at) 
             VALUES (%s, %s, %s, %s, NOW())
         """
         curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse))
@@ -131,9 +131,9 @@ async def insert_one(
 async def update_one(
     store_table_seq: int = Form(...),
     store_seq: int = Form(...),
-    store_table_name: str = Form(...),  # int -> str 수정
+    store_table_name: int = Form(...),  # 스키마상 INT 타입
     store_table_capacity: int = Form(...),
-    store_table_inuse: Optional[str] = Form(None),
+    store_table_inuse: Optional[bool] = Form(None),  # 스키마상 BOOLEAN 타입
     # created_at은 일반적으로 수정하지 않으므로 제거
 ):
     try:
@@ -141,7 +141,7 @@ async def update_one(
         curs = conn.cursor()
         
         sql = """
-            UPDATE StoreTable 
+            UPDATE store_table 
             SET store_seq=%s, store_table_name=%s, store_table_capacity=%s, store_table_inuse=%s
             WHERE store_table_seq=%s 
         """
@@ -164,7 +164,7 @@ async def delete_one(store_table_seq: int):
         conn = connect_db()
         curs = conn.cursor()
         
-        sql = "DELETE FROM StoreTable WHERE store_table_seq=%s"
+        sql = "DELETE FROM store_table WHERE store_table_seq=%s"
         curs.execute(sql, (store_table_seq,))
         
         conn.commit()
