@@ -7,16 +7,17 @@ store_table API - store_table CRUD
 
 수정 이력:
 | 날짜     | 작성자| 내용 |
-|2026.01.15|이예은| ———|
-|      |        |      |
+|2026.01.15|이예은| 초기 생성 |
+|2026.01.16|이예은| APIRouter로 변경, 중복 코드 제거, import 수정 |
 """
 
-from fastapi import FastAPI, Form, UploadFile, File, Response
+from fastapi import APIRouter, Form
+# UploadFile, File, Response는 이미지 기능 구현 시 사용 예정
 from pydantic import BaseModel
 from typing import Optional
-from database.connection import connect_db
+from ..database.connection import connect_db
 
-app = FastAPI()
+router = APIRouter()
 ipAddress = "127.0.0.1"
 port = 8000
 
@@ -24,50 +25,39 @@ port = 8000
 # ============================================
 # 모델 정의
 # ============================================
-# TODO: 테이블 컬럼에 맞게 모델 정의
-# - id는 Optional[int] = None 으로 정의 (자동 생성)
-# - 필수 컬럼은 타입만 지정 (예: cEmail: str)
-# - 선택 컬럼은 Optional로 지정 (예: cProfileImage: Optional[bytes] = None)
-
 class StoreTable(BaseModel):
-        store_table_seq: Optional[int] = None
-        store_seq: Optional[int] = None
-        store_table_name: Optional[int] = None
-        store_table_capacity: Optional[int] = None
-        store_table_inuse: Optional[str] = None
-        created_at: Optional[str] = None
-    # TODO: 컬럼 추가
+    store_table_seq: Optional[int] = None
+    store_seq: Optional[int] = None
+    store_table_name: Optional[int] = None  # 스키마상 INT 타입 (주의: 테이블 이름이 INT인 것은 비정상적일 수 있음)
+    store_table_capacity: Optional[int] = None
+    store_table_inuse: Optional[bool] = None  # 스키마상 BOOLEAN 타입
+    created_at: Optional[str] = None
 
 
 # ============================================
 # 전체 조회 (Read All)
 # ============================================
-# TODO: 전체 목록 조회 API 구현
-# - 이미지 BLOB 컬럼은 제외하고 조회
-# - ORDER BY id 정렬
-@app.get("/select_StoreTables")
+@router.get("/select_StoreTables")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
     
-    # TODO: SQL 작성
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
-        FROM StoreTables 
+        FROM store_table 
         ORDER BY store_table_seq
     """)
     
     rows = curs.fetchall()
     conn.close()
     
-    # TODO: 결과 매핑
     result = [{
-         'store_table_seq':row[0],
-         'store_seq':row[1],
-         'store_table_name':row[2],
-         'store_table_capacity':row[3], 
-         'store_table_inuse':row[4],
-         'created_at':row[5]
+        'store_table_seq': row[0],
+        'store_seq': row[1],
+        'store_table_name': row[2],
+        'store_table_capacity': row[3], 
+        'store_table_inuse': row[4],
+        'created_at': row[5]
     } for row in rows]
     
     return {"results": result}
@@ -76,17 +66,14 @@ async def select_all():
 # ============================================
 # 단일 조회 (Read One)
 # ============================================
-# TODO: ID로 단일 조회 API 구현
-# - 존재하지 않으면 에러 응답
-@app.get("/select_StoreTable/{store_table_seq}")
+@router.get("/select_StoreTable/{store_table_seq}")
 async def select_one(store_table_seq: int):
     conn = connect_db()
     curs = conn.cursor()
     
-    # TODO: SQL 작성
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
-        FROM StoreTable
+        FROM store_table
         WHERE store_table_seq = %s
     """, (store_table_seq,))
     
@@ -96,14 +83,13 @@ async def select_one(store_table_seq: int):
     if row is None:
         return {"result": "Error", "message": "StoreTable not found"}
     
-    # TODO: 결과 매핑
     result = {
-         'store_table_seq':row[0],
-         'store_seq':row[1],
-         'store_table_name':row[2],
-         'store_table_capacity':row[3], 
-         'store_table_inuse':row[4],
-         'created_at':row[5]
+        'store_table_seq': row[0],
+        'store_seq': row[1],
+        'store_table_name': row[2],
+        'store_table_capacity': row[3], 
+        'store_table_inuse': row[4],
+        'created_at': row[5]
     }
     return {"result": result}
 
@@ -111,28 +97,23 @@ async def select_one(store_table_seq: int):
 # ============================================
 # 추가 (Create)
 # ============================================
-# TODO: 새 레코드 추가 API 구현
-# - Form 데이터로 받기: 파라미터 = Form(...)
-# - 성공 시 생성된 ID 반환
-# - 에러 처리 필수
-@app.post("/insert_StoreTable")
+@router.post("/insert_StoreTable")
 async def insert_one(
-      store_seq: int = Form(...),
-        store_table_name: int = Form(...), 
-        store_table_capacity: int = Form(...), 
-        store_table_inuse: String = Form(...), 
-        created_at: String = Form(...), 
+    store_seq: int = Form(...),
+    store_table_name: int = Form(...),  # 스키마상 INT 타입
+    store_table_capacity: int = Form(...), 
+    store_table_inuse: bool = Form(...),  # 스키마상 BOOLEAN 타입
+    # created_at은 DB에서 NOW()로 자동 생성되므로 제거
 ):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        # TODO: SQL 작성
         sql = """
-            INSERT INTO StoreTable (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at) 
+            INSERT INTO store_table (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at) 
             VALUES (%s, %s, %s, %s, NOW())
         """
-        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at))
+        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse))
         
         conn.commit()
         inserted_id = curs.lastrowid
@@ -146,28 +127,25 @@ async def insert_one(
 # ============================================
 # 수정 (Update)
 # ============================================
-# TODO: 레코드 수정 API 구현
-# - 이미지 BLOB이 있는 경우: 이미지 제외/포함 두 가지 API 구현 권장
-@app.post("/update_StoreTable")
+@router.post("/update_StoreTable")
 async def update_one(
-    store_table_seq:int= Form(...),
-    store_seq:int= Form(...),
-    store_table_name:int= Form(...), 
-    store_table_capacity:int= Form(...),
-    store_table_inuse:Optional[str] = Form(None),
-    created_at:Optional[str] = Form(None),
+    store_table_seq: int = Form(...),
+    store_seq: int = Form(...),
+    store_table_name: int = Form(...),  # 스키마상 INT 타입
+    store_table_capacity: int = Form(...),
+    store_table_inuse: Optional[bool] = Form(None),  # 스키마상 BOOLEAN 타입
+    # created_at은 일반적으로 수정하지 않으므로 제거
 ):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        # TODO: SQL 작성
         sql = """
-            UPDATE StoreTable 
-            SET store_seq=%s, store_table_name=%s, store_table_capacity=%s, store_table_inuse=%s, created_at=%s
+            UPDATE store_table 
+            SET store_seq=%s, store_table_name=%s, store_table_capacity=%s, store_table_inuse=%s
             WHERE store_table_seq=%s 
         """
-        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at, store_table_seq))
+        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse, store_table_seq))
         
         conn.commit()
         conn.close()
@@ -180,15 +158,13 @@ async def update_one(
 # ============================================
 # 삭제 (Delete)
 # ============================================
-# TODO: 레코드 삭제 API 구현
-# - FK 참조 시 삭제 실패할 수 있음 (에러 처리)
-@app.delete("/delete_StoreTable/{store_table_seq}")
+@router.delete("/delete_StoreTable/{store_table_seq}")
 async def delete_one(store_table_seq: int):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        sql = "DELETE FROM S WHERE id=%s"
+        sql = "DELETE FROM store_table WHERE store_table_seq=%s"
         curs.execute(sql, (store_table_seq,))
         
         conn.commit()
@@ -205,7 +181,7 @@ async def delete_one(store_table_seq: int):
 # TODO: 이미지 바이너리 직접 반환
 # - Response 객체 사용
 # - media_type: "image/jpeg" 또는 "image/png"
-# @app.get("/view_[테이블명]_image/{item_id}")
+# @router.get("/view_[테이블명]_image/{item_id}")
 # async def view_image(item_id: int):
 #     try:
 #         conn = connect_db()
@@ -234,7 +210,7 @@ async def delete_one(store_table_seq: int):
 # ============================================
 # TODO: 이미지만 별도로 업데이트
 # - UploadFile = File(...) 사용
-# @app.post("/update_[테이블명]_image")
+# @router.post("/update_[테이블명]_image")
 # async def update_image(
 #     item_id: int = Form(...),
 #     file: UploadFile = File(...)
@@ -255,11 +231,17 @@ async def delete_one(store_table_seq: int):
 
 
 # ============================================
-# 개별 실행
+# 개별 실행 (테스트용)
 # ============================================
+# 주의: router는 main.py에서 등록되므로 개별 실행 시 FastAPI 앱 생성 필요
 if __name__ == "__main__":
+    from fastapi import FastAPI
     import uvicorn
-    print(f"🚀 [테이블명] API 서버 시작")
+    
+    app = FastAPI()
+    app.include_router(router, prefix="/api/store_table", tags=["store_table"])
+    
+    print(f"🚀 StoreTable API 서버 시작")
     print(f"   서버 주소: http://{ipAddress}:{port}")
     print(f"   Swagger UI: http://{ipAddress}:{port}/docs")
     uvicorn.run(app, host=ipAddress, port=port)
