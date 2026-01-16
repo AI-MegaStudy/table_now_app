@@ -72,8 +72,8 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
     state = await AsyncValue.guard(() async => await fetchMenus()); // null 데이터 체크
   }
 
-} // StudentNotifier
+} // MenuNotifier
 
-final studentNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
+final menuNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
   MenuNotifier.new
 );
