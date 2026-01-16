@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/view/Dev/dev_01.dart';
 import 'package:table_now_app/view/Dev/dev_02.dart';
 import 'package:table_now_app/view/Dev/dev_03.dart';
 import 'package:table_now_app/view/Dev/dev_04.dart';
@@ -21,7 +22,7 @@ class Home extends ConsumerStatefulWidget {
 
 class _HomeState extends ConsumerState<Home> {
   final List<Widget> _devPages = [
-    const Dev_03(),
+    const Dev_01(),
     const Dev_02(),
     const Dev_03(),
     const Dev_04(),

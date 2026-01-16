@@ -51,6 +51,9 @@ dependencies:
   google_maps_flutter: ^2.5.3
   geolocator: ^9.0.2
 
+  # 결제관련 Toss SDK
+  tosspayments_widget_sdk_flutter: ^2.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
