@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/view/map/region_list_screen.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -37,7 +39,9 @@ class _Dev_02State extends ConsumerState<Dev_02> {
           appBar: AppBar(
             title: Text(
               '이예은 페이지',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(
+                color: p.textPrimary,
+              ),
             ),
             centerTitle: mainAppBarCenterTitle,
             backgroundColor: p.background,
@@ -47,14 +51,29 @@ class _Dev_02State extends ConsumerState<Dev_02> {
             child: Padding(
               padding: mainDefaultPadding,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch,
                 spacing: mainLargeSpacing,
                 children: [
                   // 여기에 컨텐츠 추가
                   Center(
-                    child: Text(
-                      'Hello World!',
-                      style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToMap(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
+                        ),
+                        child: Text(
+                          'map',
+                          style: mainMediumTitleStyle
+                              .copyWith(
+                                color: p.textOnPrimary,
+                              ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -67,6 +86,12 @@ class _Dev_02State extends ConsumerState<Dev_02> {
   }
 
   //--------Functions ------------
+  void _navigateToMap() async {
+    await CustomNavigationUtil.to(
+      context,
+      RegionListScreen(),
+    );
+  }
 
   //------------------------------
 }
