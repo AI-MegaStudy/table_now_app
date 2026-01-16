@@ -14,9 +14,9 @@ reserve API - reserve CRUD
 from fastapi import APIRouter, FastAPI, Form, UploadFile, File, Response
 from pydantic import BaseModel
 from typing import Optional
-from database.connection import connect_db
+from ..database.connection import connect_db
 
-router = APIRouter(prefix="/api/options", tags=["options"])
+router = APIRouter()
 ipAddress = "127.0.0.1"
 port = 8000
 
