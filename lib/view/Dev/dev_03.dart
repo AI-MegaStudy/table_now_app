@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/custom.dart';
+import 'package:table_now_app/view/reserve_page01.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -54,9 +56,9 @@ class _Dev_03State extends ConsumerState<Dev_03> {
                   Center(
                     child: ElevatedButton(
                       onPressed: () {
-                        
+                        CustomNavigationUtil.to(context, ReservePage01());
                       }, 
-                      child: Text("1번 페이지")
+                      child: Text("예약 1번 페이지")
                     ),
                   ),
                 ],
