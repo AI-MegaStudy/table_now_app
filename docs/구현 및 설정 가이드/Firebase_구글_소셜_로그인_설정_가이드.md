@@ -10,14 +10,15 @@
 ## 목차
 
 1. [Firebase 프로젝트 생성/선택](#1-firebase-프로젝트-생성선택)
-2. [Authentication 활성화](#2-authentication-활성화)
-3. [Google Sign-In 제공업체 활성화](#3-google-sign-in-제공업체-활성화)
-4. [Android 앱 설정](#4-android-앱-설정)
-5. [iOS 앱 설정](#5-ios-앱-설정)
-6. [OAuth 동의 화면 설정](#6-oauth-동의-화면-설정)
-7. [설정 파일 다운로드 및 적용](#7-설정-파일-다운로드-및-적용)
-8. [SHA-1 인증서 지문 등록 (Android)](#8-sha-1-인증서-지문-등록-android)
-9. [iOS 빌드 오류 해결 (Module 'firebase_core' not found)](#9-ios-빌드-오류-해결-module-firebase_core-not-found)
+2. [팀원 추가 및 권한 설정](#2-팀원-추가-및-권한-설정)
+3. [Authentication 활성화](#3-authentication-활성화)
+4. [Google Sign-In 제공업체 활성화](#4-google-sign-in-제공업체-활성화)
+5. [Android 앱 설정](#5-android-앱-설정)
+6. [iOS 앱 설정](#6-ios-앱-설정)
+7. [OAuth 동의 화면 설정](#7-oauth-동의-화면-설정)
+8. [설정 파일 다운로드 및 적용](#8-설정-파일-다운로드-및-적용)
+9. [SHA-1 인증서 지문 등록 (Android)](#9-sha-1-인증서-지문-등록-android)
+10. [iOS 빌드 오류 해결 (Module 'firebase_core' not found)](#10-ios-빌드-오류-해결-module-firebase_core-not-found)
 
 ---
 
@@ -35,7 +36,97 @@
 
 ---
 
-## 2. Authentication 활성화
+## 2. 팀원 추가 및 권한 설정
+
+다른 팀원들이 Firebase 프로젝트에 접근하여 Google 로그인 설정을 확인하고 관리할 수 있도록 팀원을 추가하는 방법입니다.
+
+### 2.1 프로젝트 설정 메뉴 접속
+
+1. Firebase Console 좌측 상단의 **톱니바퀴 아이콘** (⚙️) 클릭
+2. 드롭다운 메뉴에서 **"프로젝트 설정"** 선택
+
+### 2.2 사용자 및 권한 탭으로 이동
+
+프로젝트 설정 페이지에서:
+- 상단 탭 메뉴에서 **"사용자 및 권한"** (Users and permissions) 탭 클릭
+- 또는 좌측 메뉴에서 **"사용자 및 권한"** 선택
+
+### 2.3 사용자 추가
+
+1. **"사용자 추가"** (Add user) 버튼 클릭
+2. 추가할 팀원의 **Google 계정 이메일 주소** 입력
+   - 예: `teammate@gmail.com`
+   - **중요**: 팀원이 사용하는 Google 계정 이메일을 정확히 입력해야 합니다
+
+### 2.4 역할 선택
+
+추가할 사용자에게 부여할 역할을 선택합니다:
+
+#### 권장 역할 설정
+
+**일반 개발자 (Developer) 권한:**
+- **역할**: `Editor` (편집자) 또는 `Viewer` (뷰어)
+  - **Editor**: 대부분의 Firebase 기능을 사용할 수 있음 (권장)
+    - Authentication 설정 변경 가능
+    - 앱 설정 확인 및 수정 가능
+    - 데이터베이스 읽기/쓰기 가능
+    - 프로젝트 삭제 불가 (안전)
+  - **Viewer**: 읽기 전용 권한
+    - 설정 확인만 가능
+    - 변경 불가
+
+**프로젝트 관리자:**
+- **역할**: `Owner` (소유자)
+  - 모든 권한 보유
+  - 프로젝트 삭제 가능
+  - 팀원 추가/제거 가능
+
+### 2.5 초대 전송
+
+1. 역할 선택 후 **"사용자 추가"** (Add user) 버튼 클릭
+2. 초대 이메일이 팀원의 Google 계정으로 자동 전송됩니다
+
+### 2.6 팀원이 초대 수락하기
+
+팀원이 해야 할 일:
+1. 초대 이메일 확인 (Gmail 등)
+2. 이메일 내 **"초대 수락"** (Accept invitation) 링크 클릭
+3. Google 계정으로 로그인
+4. Firebase Console에서 프로젝트 접근 가능
+
+### 2.7 권한 확인
+
+팀원이 추가된 후:
+- 사용자 목록에서 추가된 팀원 확인 가능
+- 이메일 주소, 역할, 추가 날짜 표시
+- 필요시 역할 변경 또는 사용자 제거 가능
+
+### 2.8 주의사항
+
+⚠️ **중요 사항:**
+- 팀원은 **Google 계정**으로 Firebase Console에 로그인해야 합니다
+- 팀원이 Firebase Console에 접근하려면 **반드시 초대를 수락**해야 합니다
+- 각 팀원은 자신의 Google 계정으로 `google-services.json` 및 `GoogleService-Info.plist` 파일을 다운로드할 수 있습니다
+- **Editor** 권한이면 Authentication 설정을 변경할 수 있으므로, 신뢰할 수 있는 팀원에게만 부여하세요
+
+### 2.9 팀원별 작업 가이드
+
+팀원이 추가된 후, 각 팀원은 다음 작업을 수행할 수 있습니다:
+
+1. **Firebase Console 접속**
+   - [Firebase Console](https://console.firebase.google.com/) 접속
+   - `tablenow-dcfc4` 프로젝트 선택
+
+2. **설정 파일 다운로드**
+   - 프로젝트 설정 → 내 앱 → Android/iOS 앱 선택
+   - `google-services.json` (Android) 또는 `GoogleService-Info.plist` (iOS) 다운로드
+
+3. **Authentication 설정 확인/변경**
+   - Authentication → 로그인 방법 → Google 설정 확인
+
+---
+
+## 3. Authentication 활성화
 
 ### 2.1 Authentication 메뉴 진입
 
@@ -57,7 +148,7 @@
 
 ---
 
-## 3. Google Sign-In 제공업체 활성화
+## 4. Google Sign-In 제공업체 활성화
 
 ### 3.1 "로그인 방법" 탭에서 Google 찾기
 
@@ -92,7 +183,7 @@
 
 ---
 
-## 4. Android 앱 설정
+## 5. Android 앱 설정
 
 ### 4.1 Android 앱 등록
 
@@ -129,7 +220,7 @@
 
 ---
 
-## 5. iOS 앱 설정
+## 6. iOS 앱 설정
 
 ### 5.1 iOS 앱 등록
 
@@ -162,7 +253,7 @@
 
 ---
 
-## 6. OAuth 동의 화면 설정
+## 7. OAuth 동의 화면 설정
 
 ### 6.1 Google Cloud Console 접속 (권장 방법)
 
@@ -274,7 +365,7 @@ Firebase Console에서 링크가 보이지 않거나, Google Cloud Console에서
 
 ---
 
-## 7. 설정 파일 다운로드 및 적용
+## 8. 설정 파일 다운로드 및 적용
 
 ### 7.1 Android: google-services.json
 
@@ -370,7 +461,7 @@ iOS는 Android와 달리 앱 서명 방식이 다르기 때문에 SHA-1 인증�
 
 ---
 
-## 9. iOS 빌드 오류 해결 (Module 'firebase_core' not found)
+## 10. iOS 빌드 오류 해결 (Module 'firebase_core' not found)
 
 ### 9.1 문제 현상
 
