@@ -10,7 +10,7 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
 
   @override
   FutureOr<List<Menu>> build() async{
-    return await fetchMenus(); // 만들어지자마자 fetch함
+    return await fetchMenu(1); // 만들어지자마자 fetch함
   }
 
   List<Menu> menus = [];
@@ -21,18 +21,33 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
   Future<List<Menu>> fetchMenus() async{ 
   //   isLoading = true;
   //   error = null; try - catch 방법에서 수정
-    final res = await http.get(Uri.parse("$baseUrl/select_menu/"));
+    final res = await http.get(Uri.parse("$baseUrl/select_menu"));
 
     if(res.statusCode != 200){
       throw Exception('불러오기 실패: ${res.statusCode}');
     }
 
     final data = json.decode(utf8.decode(res.bodyBytes));
+    print(data);
+    return (data['results'] as List).map((d) => Menu.fromJson(d)).toList(); // 차이점: list로 return
+  }
+
+  Future<List<Menu>> fetchMenu(int seq) async{ 
+  //   isLoading = true;
+  //   error = null; try - catch 방법에서 수정
+    final res = await http.get(Uri.parse("$baseUrl/select_menu/$seq")); // 일단 해보고 수정
+
+    if(res.statusCode != 200){
+      throw Exception('불러오기 실패: ${res.statusCode}');
+    }
+
+    final data = json.decode(utf8.decode(res.bodyBytes));
+    print(data);
     return (data['results'] as List).map((d) => Menu.fromJson(d)).toList(); // 차이점: list로 return
   }
 
   Future<String> insertMenus(Menu m)async{
-    final url = Uri.parse("$baseUrl/insert_option");
+    final url = Uri.parse("$baseUrl/insert_menu");
     final response = await http.post(
       url,
         headers: {'Content-Type': 'application/json'},
@@ -40,11 +55,11 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
       );
     final data = json.decode(utf8.decode(response.bodyBytes));
     await refreshMenus();
-    return data['result'];
+    return data['results'];
   }
 
   Future<String> updateMenus(Menu m) async {
-    final url = Uri.parse('$baseUrl/update_option');
+    final url = Uri.parse('$baseUrl/update_menu');
     final response = await http.post(
       url,
         headers: {'Content-Type': 'application/json'},
@@ -56,7 +71,7 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
   }
 
   Future<String> deleteMenus(int seq) async {
-    final url = Uri.parse('$baseUrl/delete');
+    final url = Uri.parse('$baseUrl/delete_menu/$seq');
     final response = await http.post(
       url,
         headers: {'Content-Type': 'application/json'},
@@ -72,8 +87,8 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
     state = await AsyncValue.guard(() async => await fetchMenus()); // null 데이터 체크
   }
 
-} // StudentNotifier
+} // MenuNotifier
 
-final studentNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
+final menuNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
   MenuNotifier.new
 );

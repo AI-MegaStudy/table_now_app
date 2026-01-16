@@ -37,7 +37,7 @@ async def select_all():
     # TODO: SQL 작성
     curs.execute("""
         SELECT option_seq, store_seq, menu_seq, option_name, option_price, option_cost, created_at 
-        FROM options 
+        FROM option 
         ORDER BY option_seq
     """)
     
@@ -71,9 +71,9 @@ async def select_one(store_seq: int, menu_seq: int):
     # TODO: SQL 작성
     curs.execute("""
         SELECT option_seq, store_seq, menu_seq, option_name, option_price, option_cost, created_at 
-        FROM options 
-        ORDER BY option_seq
+        FROM option 
         WHERE store_seq = %s and menu_seq = %s
+        ORDER BY option_seq
     """, (store_seq, menu_seq))
     
     row = curs.fetchone()

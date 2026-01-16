@@ -41,7 +41,7 @@ class YourModel(BaseModel):
 # TODO: 전체 목록 조회 API 구현
 # - 이미지 BLOB 컬럼은 제외하고 조회
 # - ORDER BY id 정렬
-@router.get("/select_menus")
+@router.get("/select_menu")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
@@ -85,18 +85,15 @@ async def select_one(store_seq: int):
     curs.execute("""
         SELECT menu_seq, store_seq, menu_name, menu_price, menu_description, menu_image, menu_cost, created_at 
         FROM menu 
-        ORDER BY menu_seq 
         WHERE store_seq = %s
+        ORDER BY menu_seq
     """, (store_seq,))
     
-    row = curs.fetchone()
+    rows = curs.fetchall()
     conn.close()
-    
-    if row is None:
-        return {"result": "Error", "message": "menu not found"}
-    
+
     # TODO: 결과 매핑
-    result = {
+    result = [{
         'menu_seq': row[0],
         'store_seq': row[1],
         'menu_name': row[2],
@@ -105,8 +102,9 @@ async def select_one(store_seq: int):
         'menu_image': row[5],
         'menu_cost': row[6],
         'created_at': row[7],
-    }
-    return {"result": result}
+    } for row in rows]
+
+    return {"results": result}
 
 
 # ============================================
