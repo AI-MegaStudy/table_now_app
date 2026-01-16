@@ -157,7 +157,6 @@ class WeatherService:
                     weather_type = forecast["weather_type"]
                     weather_low = forecast["weather_low"]
                     weather_high = forecast["weather_high"]
-                    icon_code = forecast.get("icon_code", "01d")  # 아이콘 코드 가져오기
                     
                     # 기존 데이터 확인
                     curs.execute("""
@@ -168,22 +167,22 @@ class WeatherService:
                     
                     if existing:
                         if overwrite:
-                            # 업데이트 (icon_code 포함)
+                            # 업데이트 (icon_code 제거)
                             curs.execute("""
                                 UPDATE weather 
-                                SET weather_type = %s, weather_low = %s, weather_high = %s, icon_code = %s
+                                SET weather_type = %s, weather_low = %s, weather_high = %s
                                 WHERE weather_datetime = %s
-                            """, (weather_type, weather_low, weather_high, icon_code, weather_datetime))
+                            """, (weather_type, weather_low, weather_high, weather_datetime))
                             updated_count += 1
                         else:
                             # 건너뛰기
                             continue
                     else:
-                        # 삽입 (icon_code 포함)
+                        # 삽입 (icon_code 제거)
                         curs.execute("""
-                            INSERT INTO weather (weather_datetime, weather_type, weather_low, weather_high, icon_code)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """, (weather_datetime, weather_type, weather_low, weather_high, icon_code))
+                            INSERT INTO weather (weather_datetime, weather_type, weather_low, weather_high)
+                            VALUES (%s, %s, %s, %s)
+                        """, (weather_datetime, weather_type, weather_low, weather_high))
                         inserted_count += 1
                         
                 except Exception as e:

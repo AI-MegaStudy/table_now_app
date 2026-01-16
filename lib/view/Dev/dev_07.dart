@@ -8,6 +8,7 @@ import '../../custom/util/navigation/custom_navigation_util.dart';
 import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
 import '../weather/weather_screen.dart';
+import '../home.dart';
 import '../../vm/auth_notifier.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
@@ -27,15 +28,15 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   void _handleLogout() {
     // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
     ref.read(authNotifierProvider.notifier).logout();
-    
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('로그아웃 되었습니다.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('로그아웃 되었습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -287,6 +288,30 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                       ),
                     ),
                   ),
+
+                  // 홈으로 이동
+                  Text(
+                    '네비게이션',
+                    style: mainTitleStyle.copyWith(color: p.textPrimary),
+                  ),
+                  Center(
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: OutlinedButton(
+                        onPressed: () => _navigateToHome(),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: p.divider),
+                        ),
+                        child: Text(
+                          '홈으로 이동',
+                          style: mainMediumTitleStyle.copyWith(
+                            color: p.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -306,6 +331,11 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   /// 날씨 화면으로 이동
   void _navigateToWeatherScreen() async {
     await CustomNavigationUtil.to(context, const WeatherScreen());
+  }
+
+  /// 홈 화면으로 이동
+  void _navigateToHome() async {
+    await CustomNavigationUtil.to(context, const Home());
   }
 
   /// 회원 정보 수정 화면으로 이동

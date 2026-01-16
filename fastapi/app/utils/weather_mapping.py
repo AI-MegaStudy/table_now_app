@@ -80,9 +80,12 @@ def get_default_icon_code(weather_main: str) -> str:
     (API 응답에 icon이 없을 경우 사용)
     
     Args:
-        weather_main: OpenWeatherMap API의 weather.main 값
+        weather_main: OpenWeatherMap API의 weather.main 값 또는 한글 날씨 상태
         
     Returns:
         str: 기본 아이콘 코드
     """
-    return WEATHER_ICON_MAPPING.get(weather_main, "01d")
+    # 한글 날씨 상태인 경우 영문으로 역매핑
+    korean_to_english = {v: k for k, v in WEATHER_TYPE_MAPPING.items()}
+    weather_main_en = korean_to_english.get(weather_main, weather_main)
+    return WEATHER_ICON_MAPPING.get(weather_main_en, "01d")
