@@ -45,22 +45,21 @@ class StoreTable(BaseModel):
 # TODO: 전체 목록 조회 API 구현
 # - 이미지 BLOB 컬럼은 제외하고 조회
 # - ORDER BY id 정렬
-@app.get("/select_StoreTables")
+@router.get("/select_StoreTables")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
     
-    # TODO: SQL 작성
+    # 테이블명을 StoreTable로 통일
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
-        FROM StoreTables 
+        FROM StoreTable 
         ORDER BY store_table_seq
     """)
     
     rows = curs.fetchall()
     conn.close()
     
-    # TODO: 결과 매핑
     result = [{
          'store_table_seq':row[0],
          'store_seq':row[1],
@@ -72,18 +71,16 @@ async def select_all():
     
     return {"results": result}
 
-
 # ============================================
 # 단일 조회 (Read One)
 # ============================================
 # TODO: ID로 단일 조회 API 구현
 # - 존재하지 않으면 에러 응답
-@app.get("/select_StoreTable/{store_table_seq}")
+@router.get("/select_StoreTable/{store_table_seq}")
 async def select_one(store_table_seq: int):
     conn = connect_db()
     curs = conn.cursor()
     
-    # TODO: SQL 작성
     curs.execute("""
         SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
         FROM StoreTable
@@ -96,7 +93,6 @@ async def select_one(store_table_seq: int):
     if row is None:
         return {"result": "Error", "message": "StoreTable not found"}
     
-    # TODO: 결과 매핑
     result = {
          'store_table_seq':row[0],
          'store_seq':row[1],
@@ -115,24 +111,23 @@ async def select_one(store_table_seq: int):
 # - Form 데이터로 받기: 파라미터 = Form(...)
 # - 성공 시 생성된 ID 반환
 # - 에러 처리 필수
-@app.post("/insert_StoreTable")
+@router.post("/insert_StoreTable")
 async def insert_one(
       store_seq: int = Form(...),
-        store_table_name: int = Form(...), 
-        store_table_capacity: int = Form(...), 
-        store_table_inuse: String = Form(...), 
-        created_at: String = Form(...), 
+      store_table_name: int = Form(...), 
+      store_table_capacity: int = Form(...), 
+      store_table_inuse: str = Form(...), # String -> str 수정
+      created_at: str = Form(...),        # String -> str 수정
 ):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        # TODO: SQL 작성
         sql = """
             INSERT INTO StoreTable (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at) 
             VALUES (%s, %s, %s, %s, NOW())
         """
-        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at))
+        curs.execute(sql, (store_seq, store_table_name, store_table_capacity, store_table_inuse))
         
         conn.commit()
         inserted_id = curs.lastrowid
@@ -142,26 +137,24 @@ async def insert_one(
     except Exception as e:
         return {"result": "Error", "errorMsg": str(e)}
 
-
 # ============================================
 # 수정 (Update)
 # ============================================
 # TODO: 레코드 수정 API 구현
 # - 이미지 BLOB이 있는 경우: 이미지 제외/포함 두 가지 API 구현 권장
-@app.post("/update_StoreTable")
+@router.post("/update_StoreTable")
 async def update_one(
-    store_table_seq:int= Form(...),
-    store_seq:int= Form(...),
-    store_table_name:int= Form(...), 
-    store_table_capacity:int= Form(...),
-    store_table_inuse:Optional[str] = Form(None),
-    created_at:Optional[str] = Form(None),
+    store_table_seq: int = Form(...),
+    store_seq: int = Form(...),
+    store_table_name: int = Form(...), 
+    store_table_capacity: int = Form(...),
+    store_table_inuse: Optional[str] = Form(None),
+    created_at: Optional[str] = Form(None),
 ):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        # TODO: SQL 작성
         sql = """
             UPDATE StoreTable 
             SET store_seq=%s, store_table_name=%s, store_table_capacity=%s, store_table_inuse=%s, created_at=%s
@@ -182,13 +175,14 @@ async def update_one(
 # ============================================
 # TODO: 레코드 삭제 API 구현
 # - FK 참조 시 삭제 실패할 수 있음 (에러 처리)
-@app.delete("/delete_StoreTable/{store_table_seq}")
+@router.delete("/delete_StoreTable/{store_table_seq}")
 async def delete_one(store_table_seq: int):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        sql = "DELETE FROM S WHERE id=%s"
+        # 테이블명과 ID 컬럼명 수정
+        sql = "DELETE FROM StoreTable WHERE store_table_seq=%s"
         curs.execute(sql, (store_table_seq,))
         
         conn.commit()
@@ -197,7 +191,6 @@ async def delete_one(store_table_seq: int):
         return {"result": "OK"}
     except Exception as e:
         return {"result": "Error", "errorMsg": str(e)}
-
 
 # ============================================
 # [선택] 이미지 조회 (이미지 BLOB 컬럼이 있는 경우)

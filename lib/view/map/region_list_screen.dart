@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/map_notifier.dart';
 
 class RegionListScreen extends ConsumerWidget {
+  const RegionListScreen({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final regions = ref.watch(
@@ -12,7 +13,10 @@ class RegionListScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text('카레하우스 - 지역 선택')),
+      appBar: AppBar(
+        title: Text('카레하우스 - 지역 선택'),
+        centerTitle: true,
+      ),
       body: ListView.builder(
         itemCount: regions.length,
         itemBuilder: (context, index) {
@@ -35,14 +39,21 @@ class RegionListScreen extends ConsumerWidget {
                 ),
               ),
               subtitle: Text('매장 ${region.stores.length}개'),
-              trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () async {
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+              ),
+              onTap: () {
+                // [중요] 사용자가 클릭한 바로 그 'region'을 선택 상태로 만듭니다.
                 ref
                     .read(appStateProvider.notifier)
-                    .selectStore(region.stores.first);
-                await CustomNavigationUtil.to(
+                    .selectRegion(region);
+
+                Navigator.push(
                   context,
-                  MapScreen(),
+                  MaterialPageRoute(
+                    builder: (_) => MapScreen(),
+                  ),
                 );
               },
             ),
