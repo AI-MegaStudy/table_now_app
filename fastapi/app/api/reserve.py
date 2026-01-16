@@ -11,12 +11,12 @@ reserve API - reserve CRUD
 |2026.01.15|유다원|생성|
 """
 
-from fastapi import FastAPI, Form, UploadFile, File, Response
+from fastapi import APIRouter, FastAPI, Form, UploadFile, File, Response
 from pydantic import BaseModel
 from typing import Optional
 from database.connection import connect_db
 
-app = FastAPI()
+router = APIRouter(prefix="/api/options", tags=["options"])
 ipAddress = "127.0.0.1"
 port = 8000
 
@@ -39,7 +39,7 @@ class YourModel(BaseModel):
 # TODO: 전체 목록 조회 API 구현
 # - 이미지 BLOB 컬럼은 제외하고 조회
 # - ORDER BY id 정렬
-@app.get("/select_reserves")
+@router.get("/select_reserves")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
@@ -77,7 +77,7 @@ async def select_all():
 # ============================================
 # TODO: ID로 단일 조회 API 구현
 # - 존재하지 않으면 에러 응답
-@app.get("/select_reserve/{item_id}")
+@router.get("/select_reserve/{item_id}")
 async def select_one(item_id: int):
     conn = connect_db()
     curs = conn.cursor()
@@ -118,7 +118,7 @@ async def select_one(item_id: int):
 # - Form 데이터로 받기: 파라미터 = Form(...)
 # - 성공 시 생성된 ID 반환
 # - 에러 처리 필수
-@app.post("/insert_reserve")
+@router.post("/insert_reserve")
 async def insert_one(
     # TODO: Form 파라미터 정의
     # 예: columnName: str = Form(...)
@@ -159,7 +159,7 @@ async def insert_one(
 # ============================================
 # TODO: 레코드 수정 API 구현
 # - 이미지 BLOB이 있는 경우: 이미지 제외/포함 두 가지 API 구현 권장
-@app.post("/update_reserve")
+@router.post("/update_reserve")
 async def update_one(
     reserve_seq: int = Form(...),
     store_seq: int = Form(...),
@@ -198,7 +198,7 @@ async def update_one(
 # ============================================
 # TODO: 레코드 삭제 API 구현
 # - FK 참조 시 삭제 실패할 수 있음 (에러 처리)
-@app.delete("/delete_reserve/{item_id}")
+@router.delete("/delete_reserve/{item_id}")
 async def delete_one(item_id: int):
     try:
         conn = connect_db()
@@ -278,4 +278,4 @@ if __name__ == "__main__":
     print(f"🚀 [테이블명] API 서버 시작")
     print(f"   서버 주소: http://{ipAddress}:{port}")
     print(f"   Swagger UI: http://{ipAddress}:{port}/docs")
-    uvicorn.run(app, host=ipAddress, port=port)
+    uvicorn.run(router, host=ipAddress, port=port)
