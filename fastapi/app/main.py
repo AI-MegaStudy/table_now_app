@@ -49,6 +49,20 @@ app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
 from app.api import weather
 app.include_router(weather.router, prefix="/api/weather", tags=["weather"])
 
+# Menu API 라우터 등록 : 임소연
+from app.api import menu
+app.include_router(menu.router, prefix="/api/menu", tags=["menu"])
+# Option API 라우터 등록 : 임소연
+from app.api import option
+app.include_router(option.router, prefix="/api/option", tags=["option"])
+
+# Store API 라우터 등록 : 유다원
+from app.api import store
+app.include_router(store.router, prefix="/api/store", tags=["store"])
+# Reserve API 라우터 등록 : 유다원
+from app.api import reserve
+app.include_router(reserve.router, prefix="/api/reserve", tags=["reserve"])
+
 
 @app.get("/")
 async def root():
@@ -107,3 +121,11 @@ if __name__ == "__main__":
 # 2026-01-15 김택권: Weather API 라우터 등록
 #   - Weather API 라우터 등록 (/api/weather)
 #   - 날씨 데이터 조회 및 OpenWeatherMap API 연동 기능 추가
+#
+# 2026-01-15 임소연: Menu 및 Option API 라우터 등록
+#   - Menu API 라우터 등록 (/api/menu)
+#   - Option API 라우터 등록 (/api/option)
+#
+# 2026-01-15 유다원: Store 및 Reserve API 라우터 등록
+#   - Store API 라우터 등록 (/api/store)
+#   - Reserve API 라우터 등록 (/api/reserve)
