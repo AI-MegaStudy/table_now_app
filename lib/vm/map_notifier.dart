@@ -1,100 +1,90 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:table_now_app/model/store.dart';
 
-// 1. 매장 모델
-class Store {
-  final String name;
-  final LatLng location;
+class StoreNotifier extends AsyncNotifier<List<Store>> {
+  final String baseUrl =
+      "http://172.16.251.221:8000/api/store";
 
-  Store({required this.name, required this.location});
-}
-
-// 2. 지역 모델
-class Region {
-  final String name;
-  final List<Store> stores;
-
-  Region({required this.name, required this.stores});
-}
-
-// 3. 앱 상태 모델 (불변성 유지)
-class AppState {
-  final List<Region> regions;
-  final Region? selectedRegion; // 추가: 현재 선택된 지역
-  final Store? selectedStore; // 현재 선택된 매장
-
-  AppState({
-    required this.regions,
-    this.selectedRegion,
-    this.selectedStore,
-  });
-
-  AppState copyWith({
-    List<Region>? regions,
-    Region? selectedRegion,
-    Store? selectedStore,
-  }) {
-    return AppState(
-      regions: regions ?? this.regions,
-      selectedRegion: selectedRegion ?? this.selectedRegion,
-      selectedStore: selectedStore ?? this.selectedStore,
-    );
-  }
-}
-
-// 4. Notifier (StateNotifier보다 현대적인 방식)
-class AppStateNotifier extends Notifier<AppState> {
   @override
-  AppState build() {
-    // 초기 데이터 설정
-    return AppState(
-      regions: [
-        Region(
-          name: '서울',
-          stores: [
-            Store(
-              name: '강남점',
-              location: const LatLng(37.498, 127.027),
-            ),
-            Store(
-              name: '홍대점',
-              location: const LatLng(37.556, 126.923),
-            ),
-          ],
-        ),
-        Region(
-          name: '부산',
-          stores: [
-            Store(
-              name: '해운대점',
-              location: const LatLng(35.159, 129.163),
-            ),
-            Store(
-              name: '서면점',
-              location: const LatLng(35.155, 129.059),
-            ),
-          ],
-        ),
-      ],
-    );
+  FutureOr<List<Store>> build() async {
+    return await fetchStores(); // 만들어지자마자 fetch함
   }
 
-  // 지역 선택 (데이터를 필터링하는 대신 선택된 포인터만 변경)
-  void selectRegion(Region region) {
-    state = state.copyWith(
-      selectedRegion: region,
-      selectedStore: null, // 지역이 바뀌면 선택된 매장 초기화
+  List<Store> Stores = [];
+  bool isLoading = false;
+  String? error;
+
+  Future<List<Store>> fetchStores() async {
+    //   isLoading = true;
+    //   error = null; try - catch 방법에서 수정
+    final res = await http.get(
+      Uri.parse("$baseUrl/select_stores/"),
     );
+
+    if (res.statusCode != 200) {
+      throw Exception('불러오기 실패: ${res.statusCode}');
+    }
+
+    final data = json.decode(utf8.decode(res.bodyBytes));
+    return (data['results'] as List)
+        .map((d) => Store.fromJson(d))
+        .toList(); // 차이점: list로 return
   }
 
-  // 매장 선택
-  void selectStore(Store store) {
-    state = state.copyWith(selectedStore: store);
+  Future<String> insertStores(Store s) async {
+    final url = Uri.parse("$baseUrl/insert_store");
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(s.toJson()),
+    );
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
+    await refreshStores();
+    return data['result'];
+  }
+
+  Future<String> updateStores(Store s) async {
+    final url = Uri.parse('$baseUrl/update_store');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(s.toJson()),
+    );
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
+    await refreshStores();
+    return data['result'];
+  }
+
+  Future<String> deleteStore(int seq) async {
+    final url = Uri.parse('$baseUrl/delete');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'option_seq': seq}),
+    );
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
+    await refreshStores();
+    return data['result'];
+  }
+
+  Future<void> refreshStores() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () async => await fetchStores(),
+    ); // null 데이터 체크
   }
 }
 
-// 5. Provider 설정
-final appStateProvider =
-    NotifierProvider<AppStateNotifier, AppState>(() {
-      return AppStateNotifier();
-    });
+final storeNotifierProvider =
+    AsyncNotifierProvider<StoreNotifier, List<Store>>(
+      StoreNotifier.new,
+    );
