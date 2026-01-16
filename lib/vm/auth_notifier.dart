@@ -126,22 +126,6 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> updateProfile({
-  String? name,
-  String? email,
-}) async {
-  final current = state.customer;
-  if (current == null) return;
-
-  final updatedCustomer = current.copyWith(
-    customerName: name,
-    customerEmail: email,
-  );
-
-  await updateCustomer(updatedCustomer);
-}
-
-
   /// 고객 정보 새로고침
   ///
   /// GetStorage에서 최신 정보를 다시 불러옵니다.
