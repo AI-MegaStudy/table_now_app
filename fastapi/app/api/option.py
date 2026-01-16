@@ -9,6 +9,7 @@ option API - 옵션 CRUD
 | 날짜 | 작성자 | 내용 |
 |------|--------|------|
 | 2026-01-15 | 임소연 | 최초 생성 |
+| 2026-01-16 | 임소연 | 상대경로 |
 """
 
 from fastapi import APIRouter, Form, UploadFile, File, Response
