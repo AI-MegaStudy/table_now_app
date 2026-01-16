@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/map_notifier.dart';
 
 class RegionListScreen extends ConsumerWidget {
@@ -34,12 +36,14 @@ class RegionListScreen extends ConsumerWidget {
               ),
               subtitle: Text('매장 ${region.stores.length}개'),
               trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                // 지역 선택 후 첫 번째 매장 선택
+              onTap: () async {
                 ref
                     .read(appStateProvider.notifier)
                     .selectStore(region.stores.first);
-                Navigator.pushNamed(context, '/map');
+                await CustomNavigationUtil.to(
+                  context,
+                  MapScreen(),
+                );
               },
             ),
           );
