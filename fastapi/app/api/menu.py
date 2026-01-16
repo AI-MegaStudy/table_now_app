@@ -15,9 +15,9 @@ from fastapi import APIRouter, Form, UploadFile, File, Response
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from database.connection import connect_db
+from ..database.connection import connect_db
 
-router = APIRouter(prefix="/api/menus", tags=["menus"])
+router = APIRouter()
 ipAddress = "127.0.0.1"
 port = 8000
 
@@ -154,22 +154,33 @@ async def insert_one(
 # ============================================
 # TODO: 레코드 수정 API 구현
 # - 이미지 BLOB이 있는 경우: 이미지 제외/포함 두 가지 API 구현 권장
-@router.post("/update_[테이블명]")
+@router.post("/update_menu")
 async def update_one(
-    item_id: int = Form(...),
-    # TODO: 수정할 Form 파라미터 정의
+    menu_seq: int = Form(...),
+    store_seq: int = Form(...),
+    menu_name: str = Form(...),
+    menu_price: int = Form(...),
+    menu_description: str = Form(...),
+    menu_image: str = Form(...),
+    menu_cost: int = Form(...),
+    created_at: str = Form(...),  # ISO format string
 ):
     try:
+        created_at_dt = None
+        if created_at:
+            created_at_dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+
         conn = connect_db()
         curs = conn.cursor()
         
+        
         # TODO: SQL 작성
         sql = """
-            UPDATE [테이블명] 
-            SET column1=%s, column2=%s, ... 
-            WHERE id=%s
+            UPDATE menu 
+            SET store_seq=%s, menu_name=%s, menu_price=%s, menu_description=%s, menu_image=%s, menu_cost=%s, created_at=%s 
+            WHERE menu_seq=%s
         """
-        curs.execute(sql, (value1, value2, ..., item_id))
+        curs.execute(sql, (store_seq, menu_name, menu_price, menu_description, menu_image, menu_cost, created_at_dt, menu_seq))
         
         conn.commit()
         conn.close()
@@ -184,13 +195,13 @@ async def update_one(
 # ============================================
 # TODO: 레코드 삭제 API 구현
 # - FK 참조 시 삭제 실패할 수 있음 (에러 처리)
-@router.delete("/delete_[테이블명]/{item_id}")
+@router.delete("/delete_menu/{item_id}")
 async def delete_one(item_id: int):
     try:
         conn = connect_db()
         curs = conn.cursor()
         
-        sql = "DELETE FROM [테이블명] WHERE id=%s"
+        sql = "DELETE FROM menu WHERE menu_seq=%s"
         curs.execute(sql, (item_id,))
         
         conn.commit()
