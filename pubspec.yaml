@@ -53,6 +53,9 @@ dependencies:
 
   table_calendar: ^3.2.0 # 달력 패키지
 
+  # 결제관련 Toss SDK
+  tosspayments_widget_sdk_flutter: ^2.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

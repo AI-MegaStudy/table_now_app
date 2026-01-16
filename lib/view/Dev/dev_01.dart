@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/custom.dart';
+import 'package:table_now_app/view/payment/list_view.dart';
+import 'package:table_now_app/view/payment/purchase/toss_home.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -52,9 +55,25 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                 children: [
                   // 여기에 컨텐츠 추가
                   Center(
-                    child: Text(
-                      'Hello World!',
-                      style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Hello World!',
+                          style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                        ),
+                        ElevatedButton(
+                          // CustomNavigationUtil.to(context, const AuthScreen());
+                          onPressed: ()=>CustomNavigationUtil.to(context,const PaymentListView() ), 
+                          child: Text('유저의 PAY 리스트')
+                        ),
+                        ElevatedButton(
+                          // CustomNavigationUtil.to(context, const AuthScreen());
+                          onPressed: ()=>CustomNavigationUtil.to(context,const TossHome() ), 
+                          child: Text('토스페이테스트')
+                        )
+
+
+                      ],
                     ),
                   ),
                 ],
