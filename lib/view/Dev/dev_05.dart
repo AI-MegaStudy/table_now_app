@@ -53,7 +53,7 @@ class _Dev_05State extends ConsumerState<Dev_05> {
                   // 여기에 컨텐츠 추가
                   Center(
                     child: Text(
-                      'Hello World!',
+                      'jjs!',
                       style: mainMediumTextStyle.copyWith(color: p.textPrimary),
                     ),
                   ),

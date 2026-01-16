@@ -15,9 +15,9 @@ from fastapi import APIRouter, Form, UploadFile, File, Response
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from database.connection import connect_db
+from ..database.connection import connect_db
 
-router = APIRouter(prefix="/api/options", tags=["options"])
+router = APIRouter()
 ipAddress = "127.0.0.1"
 port = 8000
 

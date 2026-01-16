@@ -11,12 +11,12 @@ reserve API - reserve CRUD
 |2026.01.15|유다원|생성|
 """
 
-from fastapi import FastAPI, Form, UploadFile, File, Response
+from fastapi import APIRouter, FastAPI, Form, UploadFile, File, Response
 from pydantic import BaseModel
 from typing import Optional
-from database.connection import connect_db
+from ..database.connection import connect_db
 
-app = FastAPI()
+router = APIRouter()
 ipAddress = "127.0.0.1"
 port = 8000
 
@@ -39,7 +39,7 @@ class YourModel(BaseModel):
 # TODO: 전체 목록 조회 API 구현
 # - 이미지 BLOB 컬럼은 제외하고 조회
 # - ORDER BY id 정렬
-@app.get("/select_reserves")
+@router.get("/select_reserves")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
@@ -77,7 +77,7 @@ async def select_all():
 # ============================================
 # TODO: ID로 단일 조회 API 구현
 # - 존재하지 않으면 에러 응답
-@app.get("/select_reserve/{item_id}")
+@router.get("/select_reserve/{item_id}")
 async def select_one(item_id: int):
     conn = connect_db()
     curs = conn.cursor()
@@ -118,21 +118,18 @@ async def select_one(item_id: int):
 # - Form 데이터로 받기: 파라미터 = Form(...)
 # - 성공 시 생성된 ID 반환
 # - 에러 처리 필수
-@app.post("/insert_reserve")
+@router.post("/insert_reserve")
 async def insert_one(
     # TODO: Form 파라미터 정의
     # 예: columnName: str = Form(...)
-    reserve_seq: int = Form(...),
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: str = Form(...),
+    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
-    created_at: str = Form(...),
     payment_key: Optional[str] = Form(None),
     payment_status: Optional[str] = Form(None)
-
 ):
     try:
         conn = connect_db()
@@ -141,9 +138,9 @@ async def insert_one(
         # TODO: SQL 작성
         sql = """
             INSERT INTO reserve (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status) 
-            VALUES (%s, %s, %s, %s, %s, %s, now(), %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s)
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status))
+        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status))
         
         conn.commit()
         inserted_id = curs.lastrowid
@@ -159,16 +156,15 @@ async def insert_one(
 # ============================================
 # TODO: 레코드 수정 API 구현
 # - 이미지 BLOB이 있는 경우: 이미지 제외/포함 두 가지 API 구현 권장
-@app.post("/update_reserve")
+@router.post("/update_reserve")
 async def update_one(
     reserve_seq: int = Form(...),
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: str = Form(...),
+    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
-    created_at: str = Form(...),
     payment_key: Optional[str] = Form(None),
     payment_status: Optional[str] = Form(None)
     # TODO: 수정할 Form 파라미터 정의
@@ -180,10 +176,10 @@ async def update_one(
         # TODO: SQL 작성
         sql = """
             UPDATE reserve 
-            SET store_seq=%s, customer_seq=%s, weather_datetime=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, created_at=%s, payment_key=%s, payment_status=%s     
+            SET store_seq=%s, customer_seq=%s, weather_datetime=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, payment_key=%s, payment_status=%s     
             WHERE reserve_seq=%s
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status, reserve_seq))
+        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status, reserve_seq))
         
         conn.commit()
         conn.close()
@@ -198,7 +194,7 @@ async def update_one(
 # ============================================
 # TODO: 레코드 삭제 API 구현
 # - FK 참조 시 삭제 실패할 수 있음 (에러 처리)
-@app.delete("/delete_reserve/{item_id}")
+@router.delete("/delete_reserve/{item_id}")
 async def delete_one(item_id: int):
     try:
         conn = connect_db()
@@ -278,4 +274,4 @@ if __name__ == "__main__":
     print(f"🚀 [테이블명] API 서버 시작")
     print(f"   서버 주소: http://{ipAddress}:{port}")
     print(f"   Swagger UI: http://{ipAddress}:{port}/docs")
-    uvicorn.run(app, host=ipAddress, port=port)
+    uvicorn.run(router, host=ipAddress, port=port)
