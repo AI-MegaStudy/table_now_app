@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/vm/auth_notifier.dart';
@@ -43,14 +42,15 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>>{
       }
       final jsonData = json.decode(utf8.decode(response.bodyBytes));
       final List results = jsonData["results"];
-   
-      return results.map((data)=>Payment(
-      pay_id: data['pay_id'],
-      reserve_seq: data['reserve_seq'], 
-      store_seq: data['store_seq'], 
-      menu_seq: data['menu_seq'], 
-      pay_quantity: data['pay_quantity'], 
-      pay_amount: data['pay_amount'])).toList();  
+
+      for(final i in results){
+         print('${i}');
+      }
+
+     
+
+
+      return results.map((data)=>Payment.fromJson(data)).toList();  
 
 
   }
@@ -62,6 +62,26 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>>{
       state = AsyncValue.error(Exception('401: no access'),StackTrace.empty);
     else
       state = AsyncValue.data(await _fetchData(id));
+  }
+
+
+  Future<void> purchase(List<Payment> payments) async{
+    final response = await http.post(
+      Uri.parse('$url/api/pay/insert'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode([
+          Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson(),
+                Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson()
+
+      ]),
+    
+
+    );
+      if(response.statusCode != 200){
+        throw Exception( "데이터 로딩 실패: ${response.statusCode}");
+      }
+
+
   }
 
 

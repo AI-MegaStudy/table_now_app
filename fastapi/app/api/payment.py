@@ -84,14 +84,33 @@ async def get_pay_by_id(id: int):
     }
 
 
-@router.post("/")
-async def create_pay(data: dict):
-    """예시 POST 엔드포인트"""
-    return {
-        "message": "Example item created",
-        "data": data,
-        "status": "success"
-    }
+@router.post("/insert")
+async def create_pay(items: list[dict]):
+    conn = connect_db()
+    try:
+       
+        # item['reserve_seq']
+        # create query
+        
+        curs = conn.cursor()
+        for item in items:
+            # print("insert into pay(reserve_seq,store_seq,menu_seq,option_seq,pay_quantity,pay_amount,created_at) values(?,?,?,?,?,?,current_timestamp)",[item['reserve_seq'],item['store_seq'],item['menu_seq'],1,item['pay_quantity'],item['pay_amount']])
+            curs.execute("insert into pay(reserve_seq,store_seq,menu_seq,option_seq,pay_quantity,pay_amount,created_at) values(%s,%s,%s,%s,%s,%s,current_timestamp)",(item['reserve_seq'],item['store_seq'],item['menu_seq'],1,item['pay_quantity'],item['pay_amount']))
+
+        conn.commit()                
+
+    
+
+
+        return {"result": "OK"}
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+    finally:
+        conn.close()
 
 
 @router.put("/{id}")

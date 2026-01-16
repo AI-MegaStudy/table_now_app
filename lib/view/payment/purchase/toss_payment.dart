@@ -23,6 +23,10 @@ class TossPayment extends StatelessWidget {
       clientKey: 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq',
       data: data,
       success: (Success success) {
+        // Insert into Payment
+        // Insert 예약
+        // Insert MenuID
+
         Navigator.of(context).pop(success);
       },
       fail: (Fail fail) {

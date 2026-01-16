@@ -1,4 +1,3 @@
-// select pay_id,reserve_seq,store_seq,menu_seq,option_seq,pay_quantitiy,pay_amount,created_at
 
 class Payment {
   final int? pay_id;
@@ -18,7 +17,7 @@ class Payment {
     this.option_seq,
     required this.pay_quantity,
     required this.pay_amount,
-    this.created_at,
+    this.created_at
   });
 
   factory Payment.fromJson(Map<String, dynamic> json) {
@@ -27,9 +26,10 @@ class Payment {
       reserve_seq: json['reserve_seq'],
       store_seq: json['store_seq'],
       menu_seq: json['menu_seq'],
-      pay_quantity: json['pay_quantitiy'],
+      option_seq: json['option_seq'],
+      pay_quantity: json['pay_quantity'],
       pay_amount: json['pay_amount'],
-      created_at: json['created_at'] ?? DateTime.now(),
+      created_at: DateTime.parse(json['created_at'])
     );
   }
 
@@ -41,7 +41,7 @@ class Payment {
     int? option_seq,
     int? pay_quantity,
     int? pay_amount,
-    DateTime? created_at,
+    DateTime? created_at
   ) {
     return Payment(
       pay_id: pay_id ?? this.pay_id,
@@ -50,7 +50,22 @@ class Payment {
       menu_seq: menu_seq ?? this.menu_seq,
       pay_quantity: pay_quantity ?? this.pay_quantity,
       pay_amount: pay_amount ?? this.pay_amount,
-      created_at: created_at ?? this.created_at,
+      created_at: created_at ?? this.created_at
     );
   }
+
+  Map<String,dynamic> toJson() {
+    return {
+       'pay_id':pay_id,
+      "reserve_seq": reserve_seq,
+      "store_seq": store_seq,
+      "menu_seq": menu_seq,
+      "option_seq": option_seq,
+      "pay_quantity": pay_quantity,
+      "pay_amount": pay_amount,
+      "created_at": created_at.toString()
+    };
+  }
+
+
 }

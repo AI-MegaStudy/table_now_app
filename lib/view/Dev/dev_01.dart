@@ -64,12 +64,12 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
                           onPressed: ()=>CustomNavigationUtil.to(context,const PaymentListView() ), 
-                          child: Text('Payment List By CustomerID')
+                          child: Text('유저의 PAY 리스트')
                         ),
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
                           onPressed: ()=>CustomNavigationUtil.to(context,const TossHome() ), 
-                          child: Text('TOSS PAY')
+                          child: Text('토스페이테스트')
                         )
 
 
