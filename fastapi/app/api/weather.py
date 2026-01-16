@@ -32,7 +32,7 @@ async def select_weathers(
         if start_date and end_date:
             # 기간별 조회
             curs.execute("""
-                SELECT weather_datetime, weather_type, weather_low, weather_high, icon_code
+                SELECT weather_datetime, weather_type, weather_low, weather_high
                 FROM weather
                 WHERE weather_datetime >= %s AND weather_datetime <= %s
                 ORDER BY weather_datetime
@@ -40,7 +40,7 @@ async def select_weathers(
         else:
             # 전체 조회
             curs.execute("""
-                SELECT weather_datetime, weather_type, weather_low, weather_high, icon_code
+                SELECT weather_datetime, weather_type, weather_low, weather_high
                 FROM weather
                 ORDER BY weather_datetime
             """)
@@ -58,16 +58,16 @@ async def select_weathers(
             else:
                 weather_datetime = str(weather_datetime)
             
-            # icon_code가 있으면 URL 생성
-            icon_code = row[4] if len(row) > 4 else None
-            icon_url = None
-            if icon_code:
-                from ..utils.weather_mapping import get_weather_icon_url
-                icon_url = get_weather_icon_url(icon_code)
+            # weather_type을 기반으로 아이콘 코드 결정
+            weather_type = row[1]
+            from ..utils.weather_mapping import get_default_icon_code
+            icon_code = get_default_icon_code(weather_type)
+            from ..utils.weather_mapping import get_weather_icon_url
+            icon_url = get_weather_icon_url(icon_code)
             
             result.append({
                 'weather_datetime': weather_datetime,
-                'weather_type': row[1],
+                'weather_type': weather_type,
                 'weather_low': float(row[2]),
                 'weather_high': float(row[3]),
                 'icon_url': icon_url
@@ -99,7 +99,7 @@ async def select_weather(weather_datetime: str):
             weather_datetime = f"{weather_datetime} 00:00:00"
         
         curs.execute("""
-            SELECT weather_datetime, weather_type, weather_low, weather_high, icon_code
+            SELECT weather_datetime, weather_type, weather_low, weather_high
             FROM weather
             WHERE weather_datetime = %s
         """, (weather_datetime,))
@@ -118,16 +118,15 @@ async def select_weather(weather_datetime: str):
         else:
             weather_datetime_val = str(weather_datetime_val)
         
-        # icon_code가 있으면 URL 생성
-        icon_code = row[4] if len(row) > 4 else None
-        icon_url = None
-        if icon_code:
-            from ..utils.weather_mapping import get_weather_icon_url
-            icon_url = get_weather_icon_url(icon_code)
+        # weather_type을 기반으로 아이콘 코드 결정
+        weather_type = row[1]
+        from ..utils.weather_mapping import get_default_icon_code, get_weather_icon_url
+        icon_code = get_default_icon_code(weather_type)
+        icon_url = get_weather_icon_url(icon_code)
         
         result = {
             'weather_datetime': weather_datetime_val,
-            'weather_type': row[1],
+            'weather_type': weather_type,
             'weather_low': float(row[2]),
             'weather_high': float(row[3]),
             'icon_url': icon_url

@@ -41,28 +41,29 @@ app.add_middleware(
 # from app.api import example_router
 # app.include_router(example_router.router, prefix="/api/example", tags=["example"])
 
+# API 라우터 import 및 등록
+from app.api import customer, weather, menu, option, store, reserve, store_table
+
 # Customer API 라우터 등록
-from app.api import customer
 app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
 
 # Weather API 라우터 등록
-from app.api import weather
 app.include_router(weather.router, prefix="/api/weather", tags=["weather"])
 
 # Menu API 라우터 등록 : 임소연
-from app.api import menu
 app.include_router(menu.router, prefix="/api/menu", tags=["menu"])
+
 # Option API 라우터 등록 : 임소연
-from app.api import option
 app.include_router(option.router, prefix="/api/option", tags=["option"])
 
 # Store API 라우터 등록 : 유다원
-from app.api import store
 app.include_router(store.router, prefix="/api/store", tags=["store"])
+
 # Reserve API 라우터 등록 : 유다원
-from app.api import reserve
 app.include_router(reserve.router, prefix="/api/reserve", tags=["reserve"])
 
+# StoreTable API 라우터 등록 : 이예은
+app.include_router(store_table.router, prefix="/api/store_table", tags=["store_table"])
 
 @app.get("/")
 async def root():
@@ -129,3 +130,6 @@ if __name__ == "__main__":
 # 2026-01-15 유다원: Store 및 Reserve API 라우터 등록
 #   - Store API 라우터 등록 (/api/store)
 #   - Reserve API 라우터 등록 (/api/reserve)
+#
+# 2026-01-16 이예은: StoreTable API 라우터 등록
+#   - StoreTable API 라우터 등록 (/api/store_table)

@@ -14,7 +14,15 @@ Future<void> main() async {
   await GetStorage.init();
 
   // GT ADDED: Firebase initialize
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Firebase initialization error: $e');
+    // 실기기 빌드에서 GoogleService-Info.plist를 찾지 못하는 경우를 대비
+    rethrow;
+  }
+  
   runApp(const ProviderScope(child: MyApp()));
 }
 
