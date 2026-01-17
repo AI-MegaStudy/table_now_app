@@ -345,18 +345,32 @@ async def delete_weather(store_seq: int, weather_datetime: str):
 @router.post("/fetch-from-api")
 async def fetch_weather_from_api(
     store_seq: int = Form(..., description="식당 번호 (필수)"),
+    target_date: Optional[str] = Form(None, description="저장할 날짜 (YYYY-MM-DD), 없으면 오늘 날짜"),
     overwrite: bool = Form(True, description="기존 데이터 덮어쓰기 여부 (기본값: True - 날씨 예보는 항상 최신으로 갱신)")
 ):
     """
-    OpenWeatherMap API에서 오늘 날씨 데이터를 가져와서 데이터베이스에 저장
+    OpenWeatherMap API에서 날씨 데이터를 가져와서 데이터베이스에 저장
     
     - store_seq를 받아서 해당 식당의 store_lat, store_lng를 사용
-    - 오늘 날씨 데이터만 저장 (당일 하루치)
+    - target_date가 없으면 오늘 날씨 데이터 저장
+    - target_date가 있으면 해당 날짜의 날씨 데이터 저장 (오늘부터 최대 8일까지만 가능)
     """
     try:
+        # 날짜 파싱
+        target_date_obj = None
+        if target_date:
+            try:
+                target_date_obj = datetime.strptime(target_date, "%Y-%m-%d")
+            except ValueError:
+                return {
+                    "result": "Error",
+                    "errorMsg": f"날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식 필요): {target_date}"
+                }
+        
         weather_service = WeatherService()
         result = weather_service.save_weather_to_db(
             store_seq=store_seq,
+            target_date=target_date_obj,
             overwrite=overwrite
         )
         
@@ -370,6 +384,154 @@ async def fetch_weather_from_api(
         else:
             raise HTTPException(status_code=500, detail=result["message"])
             
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "traceback": traceback.format_exc()
+        }
+
+
+# ============================================
+# OpenWeatherMap API에서 직접 날씨 데이터 가져오기 (DB 저장 없이)
+# ============================================
+@router.get("/direct")
+async def fetch_weather_direct(
+    lat: float = Query(..., description="위도 (필수)"),
+    lon: float = Query(..., description="경도 (필수)"),
+    start_date: Optional[str] = Query(None, description="시작 날짜 (YYYY-MM-DD), 없으면 오늘 포함 8일치 모두 반환")
+):
+    """
+    OpenWeatherMap API에서 직접 날씨 데이터 가져오기 (DB 저장 없이)
+    
+    - lat, lon을 직접 받아서 OpenWeatherMap API 호출 (store 테이블 조회 없음)
+    - start_date가 없으면: 오늘 포함 8일치 모두 반환
+    - start_date가 있으면: 해당 날짜부터 남은 날짜만 반환 (최대 8일)
+    - 날짜 검증: 과거 날짜 불가, 최대 8일까지만 가능
+    
+    예시:
+        - start_date 없음: 오늘부터 8일치 모두 반환
+        - start_date=오늘+3일: 오늘+3일부터 5일치만 반환 (총 8일 중 남은 5일)
+    """
+    try:
+        # 날짜 파싱
+        start_date_obj = None
+        if start_date:
+            try:
+                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+            except ValueError:
+                return {
+                    "result": "Error",
+                    "errorMsg": f"날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식 필요): {start_date}"
+                }
+        
+        # WeatherService를 사용하여 OpenWeatherMap API에서 직접 데이터 가져오기
+        weather_service = WeatherService()
+        forecast_list = weather_service.fetch_daily_forecast(
+            lat=str(lat),
+            lon=str(lon),
+            start_date=start_date_obj
+        )
+        
+        # 결과 포맷팅
+        results = []
+        for forecast in forecast_list:
+            weather_datetime = forecast["weather_datetime"]
+            if isinstance(weather_datetime, datetime):
+                weather_datetime_str = weather_datetime.isoformat()
+            else:
+                weather_datetime_str = str(weather_datetime)
+            
+            results.append({
+                'weather_datetime': weather_datetime_str,
+                'weather_type': forecast["weather_type"],
+                'weather_low': forecast["weather_low"],
+                'weather_high': forecast["weather_high"],
+                'icon_url': forecast["icon_url"]
+            })
+        
+        return {"results": results}
+        
+    except ValueError as e:
+        # 날짜 검증 오류
+        return {
+            "result": "Error",
+            "errorMsg": str(e)
+        }
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "traceback": traceback.format_exc()
+        }
+
+
+# ============================================
+# OpenWeatherMap API에서 특정 날짜의 날씨 데이터만 가져오기 (DB 저장 없이, 하루치만)
+# ============================================
+@router.get("/direct/single")
+async def fetch_weather_direct_single(
+    lat: float = Query(..., description="위도 (필수)"),
+    lon: float = Query(..., description="경도 (필수)"),
+    target_date: Optional[str] = Query(None, description="조회할 날짜 (YYYY-MM-DD), 없으면 오늘 날짜")
+):
+    """
+    OpenWeatherMap API에서 특정 날짜의 날씨 데이터만 가져오기 (DB 저장 없이, 하루치만)
+    
+    - lat, lon을 직접 받아서 OpenWeatherMap API 호출 (store 테이블 조회 없음)
+    - target_date가 없으면 오늘 날씨만 반환
+    - target_date가 있으면 해당 날짜의 날씨만 반환 (오늘부터 최대 8일까지만 가능)
+    - 날짜 검증: 과거 날짜 불가, 최대 8일까지만 가능
+    """
+    try:
+        # 날짜 파싱
+        target_date_obj = None
+        if target_date:
+            try:
+                target_date_obj = datetime.strptime(target_date, "%Y-%m-%d")
+            except ValueError:
+                return {
+                    "result": "Error",
+                    "errorMsg": f"날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식 필요): {target_date}"
+                }
+        
+        # WeatherService를 사용하여 OpenWeatherMap API에서 특정 날짜의 날씨만 가져오기
+        weather_service = WeatherService()
+        forecast = weather_service.fetch_single_day_weather(
+            lat=str(lat),
+            lon=str(lon),
+            target_date=target_date_obj
+        )
+        
+        # 결과 포맷팅
+        weather_datetime = forecast["weather_datetime"]
+        if isinstance(weather_datetime, datetime):
+            weather_datetime_str = weather_datetime.isoformat()
+        else:
+            weather_datetime_str = str(weather_datetime)
+        
+        result = {
+            'weather_datetime': weather_datetime_str,
+            'weather_type': forecast["weather_type"],
+            'weather_low': forecast["weather_low"],
+            'weather_high': forecast["weather_high"],
+            'icon_url': forecast["icon_url"]
+        }
+        
+        return {"result": result}
+        
+    except ValueError as e:
+        # 날짜 검증 오류
+        return {
+            "result": "Error",
+            "errorMsg": str(e)
+        }
     except Exception as e:
         import traceback
         error_msg = str(e)
@@ -395,8 +557,18 @@ async def fetch_weather_from_api(
 #   - 날씨 데이터 CRUD 엔드포인트 구현 (select_weathers, select_weather, insert_weather, update_weather, delete_weather)
 #   - OpenWeatherMap API 연동 엔드포인트 구현 (fetch_weather_from_api)
 #   - 날짜 형식 정규화 처리 (YYYY-MM-DD → YYYY-MM-DD 00:00:00)
-#   - 기간별 조회 기능 추가 (start_date, end_date)
+#
+# 2026-01-18: OpenWeatherMap API 직접 조회 엔드포인트 추가
+#   - GET /api/weather/direct 엔드포인트 추가 (DB 저장 없이 직접 조회)
+#   - 날짜 검증 로직 추가 (백엔드 이중 검증)
+#   - 8일치 예보 또는 특정 날짜 조회 지원
+#   - store 테이블 조회와 OpenWeatherMap API 조회 완전 분리
+#   - store_seq 대신 lat, lon 파라미터로 직접 받도록 변경
 #
 # 2026-01-15 김택권: OpenWeatherMap API 호출 버그 수정
 #   - lat, lon이 None일 때 기본값(서울 좌표)을 사용하도록 수정
 #   - None 값이 API URL에 포함되어 400 에러가 발생하던 문제 해결
+#
+# 2026-01-18: POST /api/weather/fetch-from-api 엔드포인트 확장
+#   - target_date 파라미터 추가 (특정 날짜 저장 가능)
+#   - 예약 날짜의 날씨를 저장할 수 있도록 기능 확장

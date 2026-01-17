@@ -120,10 +120,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         padding: mainDefaultPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: mainDefaultSpacing,
           children: [
             // 지점 선택 드롭다운
             Text('지점 선택', style: mainTitleStyle.copyWith(color: p.textPrimary)),
-            mainDefaultVerticalSpacing,
             Container(
               padding: EdgeInsets.symmetric(horizontal: mainDefaultSpacing),
               decoration: BoxDecoration(
@@ -160,18 +160,11 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                         onChanged: (Store? newValue) {
                           setState(() {
                             _selectedStore = newValue;
-                            // 지점 선택 시 기존 날씨 데이터 초기화
-                            if (newValue == null) {
-                              ref
-                                  .read(weatherNotifierProvider.notifier)
-                                  .reset();
-                            }
                           });
                         },
                       ),
                     ),
             ),
-            mainLargeVerticalSpacing,
 
             // 받기! 버튼
             CustomButton(
@@ -181,7 +174,6 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                   : _fetchFromApi,
               buttonType: ButtonType.elevated,
             ),
-            mainLargeVerticalSpacing,
 
             // 로딩 중
             if (weatherState.isLoading)
@@ -202,9 +194,9 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                   border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
+                  spacing: mainSmallSpacing,
                   children: [
                     Icon(Icons.error_outline, color: Colors.red.shade700),
-                    SizedBox(width: mainSmallSpacing),
                     Expanded(
                       child: Text(
                         weatherState.errorMessage!,
@@ -231,9 +223,9 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                 child: Padding(
                   padding: EdgeInsets.all(mainLargeSpacing * 1.33), // 32.0
                   child: Column(
+                    spacing: mainDefaultSpacing,
                     children: [
                       Icon(Icons.cloud_off, size: 64, color: p.textSecondary),
-                      mainDefaultVerticalSpacing,
                       Text(
                         '날씨 데이터가 없습니다.\n지점을 선택하고 "받기!" 버튼을 눌러주세요.',
                         textAlign: TextAlign.center,
@@ -318,6 +310,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         padding: mainDefaultPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: mainDefaultSpacing,
           children: [
             // 날짜 라벨
             Row(
@@ -352,19 +345,19 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                   ),
               ],
             ),
-            mainDefaultVerticalSpacing,
 
             // 날씨 아이콘 및 상태
             Row(
+              spacing: mainDefaultSpacing,
               children: [
                 // 날씨 타입에 따른 아이콘 표시
                 _getWeatherIcon(weather.weatherType, p.primary),
-                SizedBox(width: mainDefaultSpacing),
 
                 // 날씨 상태
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: mainTinyPadding.vertical,
                     children: [
                       Text(
                         weather.weatherType,
@@ -374,7 +367,6 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: mainTinyPadding.vertical),
                       Text(
                         '${weather.weatherLow.toStringAsFixed(1)}° / ${weather.weatherHigh.toStringAsFixed(1)}°',
                         style: mainBodyTextStyle.copyWith(

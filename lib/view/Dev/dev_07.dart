@@ -8,6 +8,7 @@ import '../../custom/util/navigation/custom_navigation_util.dart';
 import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
 import '../weather/weather_screen.dart';
+import '../weather/weather_forecast_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
 
@@ -64,7 +65,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
               padding: mainDefaultPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: mainLargeSpacing,
+                spacing: mainDefaultSpacing,
                 children: [
                   // 회원 정보 섹션
                   Text(
@@ -85,16 +86,15 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                         spacing: mainSmallSpacing,
                         children: [
                           Row(
+                            spacing: 8,
                             children: [
                               Icon(Icons.person, color: p.primary),
-                              const SizedBox(width: 8),
                               Text(
                                 '이름',
                                 style: mainSmallTextStyle.copyWith(
                                   color: p.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   customer.customerName,
@@ -106,16 +106,15 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                             ],
                           ),
                           Row(
+                            spacing: 8,
                             children: [
                               Icon(Icons.email, color: p.primary),
-                              const SizedBox(width: 8),
                               Text(
                                 '이메일',
                                 style: mainSmallTextStyle.copyWith(
                                   color: p.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   customer.customerEmail,
@@ -129,16 +128,15 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                           if (customer.customerPhone != null &&
                               customer.customerPhone!.isNotEmpty)
                             Row(
+                              spacing: 8,
                               children: [
                                 Icon(Icons.phone, color: p.primary),
-                                const SizedBox(width: 8),
                                 Text(
                                   '전화번호',
                                   style: mainSmallTextStyle.copyWith(
                                     color: p.textSecondary,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     customer.customerPhone!,
@@ -150,6 +148,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               ],
                             ),
                           Row(
+                            spacing: 8,
                             children: [
                               Icon(
                                 customer.isGoogleAccount
@@ -157,14 +156,12 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                                     : Icons.lock,
                                 color: p.primary,
                               ),
-                              const SizedBox(width: 8),
                               Text(
                                 '계정 타입',
                                 style: mainSmallTextStyle.copyWith(
                                   color: p.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   customer.isGoogleAccount
@@ -270,24 +267,47 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     '날씨 관련',
                     style: mainTitleStyle.copyWith(color: p.textPrimary),
                   ),
-                  Center(
-                    child: SizedBox(
-                      width: mainButtonMaxWidth,
-                      height: mainButtonHeight,
-                      child: ElevatedButton(
-                        onPressed: () => _navigateToWeatherScreen(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: p.primary,
-                          foregroundColor: p.textOnPrimary,
-                        ),
-                        child: Text(
-                          '날씨 화면',
-                          style: mainMediumTitleStyle.copyWith(
-                            color: p.textOnPrimary,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: mainDefaultSpacing,
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: mainButtonHeight,
+                          child: ElevatedButton(
+                            onPressed: () => _navigateToWeatherScreen(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: p.primary,
+                              foregroundColor: p.textOnPrimary,
+                            ),
+                            child: Text(
+                              '지점 날씨',
+                              style: mainMediumTitleStyle.copyWith(
+                                color: p.textOnPrimary,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      Expanded(
+                        child: SizedBox(
+                          height: mainButtonHeight,
+                          child: ElevatedButton(
+                            onPressed: () => _navigateToWeatherForecastScreen(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: p.primary,
+                              foregroundColor: p.textOnPrimary,
+                            ),
+                            child: Text(
+                              '날씨 예보',
+                              style: mainMediumTitleStyle.copyWith(
+                                color: p.textOnPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   // 홈으로 이동
@@ -299,10 +319,11 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     child: SizedBox(
                       width: mainButtonMaxWidth,
                       height: mainButtonHeight,
-                      child: OutlinedButton(
+                      child: ElevatedButton(
                         onPressed: () => _navigateToHome(),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: p.divider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.accent,
+                          foregroundColor: p.textPrimary,
                         ),
                         child: Text(
                           '홈으로 이동',
@@ -332,6 +353,11 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   /// 날씨 화면으로 이동
   void _navigateToWeatherScreen() async {
     await CustomNavigationUtil.to(context, const WeatherScreen());
+  }
+
+  /// 날씨 예보 화면으로 이동
+  void _navigateToWeatherForecastScreen() async {
+    await CustomNavigationUtil.to(context, const WeatherForecastScreen());
   }
 
   /// 홈 화면으로 이동

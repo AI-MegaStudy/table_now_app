@@ -350,9 +350,9 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                spacing: mainSmallSpacing,
                 children: [
                   Icon(Icons.info_outline, color: Colors.blue.shade700),
-                  SizedBox(width: mainSmallSpacing),
                   Text(
                     '이메일 인증',
                     style: mainMediumTextStyle.copyWith(
@@ -437,9 +437,9 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
               border: Border.all(color: Colors.green.shade200),
             ),
             child: Row(
+              spacing: mainSmallSpacing,
               children: [
                 Icon(Icons.check_circle, color: Colors.green.shade700),
-                SizedBox(width: mainSmallSpacing),
                 Expanded(
                   child: Text(
                     '인증이 완료되었습니다. 새 비밀번호를 입력해주세요.',

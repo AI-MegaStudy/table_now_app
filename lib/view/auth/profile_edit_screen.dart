@@ -329,12 +329,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             border: Border.all(color: Colors.blue.shade200),
                           ),
                           child: Row(
+                            spacing: mainSmallSpacing,
                             children: [
                               Icon(
                                 Icons.account_circle,
                                 color: Colors.blue.shade700,
                               ),
-                              SizedBox(width: mainSmallSpacing),
                               Text(
                                 '구글 로그인 계정',
                                 style: mainSmallTextStyle.copyWith(
