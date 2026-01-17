@@ -118,13 +118,13 @@ VALUES
   (2, 2, 2, '2026-01-15 00:00:00', '6', 1, '2026-01-15 18:30:00', '2026-01-15 18:25:00', 'paykey_demo_002', 'DONE')
 ON DUPLICATE KEY UPDATE `store_seq` = VALUES(`store_seq`),`customer_seq` = VALUES(`customer_seq`),`weather_datetime` = VALUES(`weather_datetime`),`reserve_tables` = VALUES(`reserve_tables`),`reserve_capacity` = VALUES(`reserve_capacity`),`reserve_date` = VALUES(`reserve_date`),`created_at` = VALUES(`created_at`),`payment_key` = VALUES(`payment_key`),`payment_status` = VALUES(`payment_status`);
 
-INSERT INTO `pay` (`pay_id`, `reserve_seq`, `store_seq`, `menu_seq`, `option_seq`, `pay_quantity`, `pay_amount`, `created_at`)
+INSERT INTO `pay` (`reserve_seq`, `store_seq`, `menu_seq`, `option_seq`, `pay_quantity`, `pay_amount`, `created_at`)
 VALUES
-  (1, 1, 1, 1, NULL, 1, 11900, '2026-01-15 12:20:10'),
-  (2, 1, 1, 1, 1, 1, 2200, '2026-01-15 12:20:10'),
-  (3, 1, 1, 1, 2, 1, 2000, '2026-01-15 12:20:10'),
-  (4, 2, 2, 5, NULL, 1, 7500, '2026-01-15 18:25:10'),
-  (5, 2, 2, 5, 4, 1, 1500, '2026-01-15 18:25:10')
+  (1, 1, 1, NULL, 1, 11900, '2026-01-15 12:20:10'),
+  (1, 1, 1, 1, 1, 2200, '2026-01-15 12:20:10'),
+  (1, 1, 1, 2, 1, 2000, '2026-01-15 12:20:10'),
+  (2, 2, 5, NULL, 1, 7500, '2026-01-15 18:25:10'),
+  (2, 2, 5, 4, 1, 1500, '2026-01-15 18:25:10')
 ON DUPLICATE KEY UPDATE `reserve_seq` = VALUES(`reserve_seq`),`store_seq` = VALUES(`store_seq`),`menu_seq` = VALUES(`menu_seq`),`option_seq` = VALUES(`option_seq`),`pay_quantity` = VALUES(`pay_quantity`),`pay_amount` = VALUES(`pay_amount`),`created_at` = VALUES(`created_at`);
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -156,3 +156,5 @@ COMMIT;
 --   - weather 테이블 시드 데이터에 store_seq 추가 (각 식당별 오늘 날씨)
 --   - weather_datetime을 00:00:00으로 통일 (오늘 날짜만 저장)
 --   - reserve 테이블 시드 데이터의 weather_datetime을 00:00:00으로 변경
+-- 2026-01-16 김택권: pay 테이블 PK 변경 반영
+--   - pay 테이블 시드 데이터에서 pay_id 컬럼 제거 (AUTO_INCREMENT로 자동 할당)

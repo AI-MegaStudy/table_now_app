@@ -201,7 +201,7 @@ CREATE TABLE `option` (
 -- 9) pay
 -- ---------------------------------------------------------
 CREATE TABLE `pay` (
-    `pay_id` INT NOT NULL COMMENT '결제 번호',
+    `pay_id` INT NOT NULL AUTO_INCREMENT COMMENT '결제 번호',
     `reserve_seq` INT NOT NULL COMMENT '예약 번호',
     `store_seq` INT NOT NULL COMMENT '식당 번호',
     `menu_seq` INT NOT NULL COMMENT '메뉴 번호',
@@ -241,3 +241,5 @@ CREATE TABLE `pay` (
 --   - weather 테이블에 store_seq 컬럼 추가 (FK)
 --   - weather 테이블 PK를 (store_seq, weather_datetime) 복합키로 변경
 --   - reserve 테이블의 weather_datetime FK 제약조건 제거 (인덱스만 유지)
+-- 2026-01-16 김택권: pay 테이블 PK 변경
+--   - pay 테이블의 pay_id 컬럼에 AUTO_INCREMENT 추가

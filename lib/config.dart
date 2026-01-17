@@ -19,18 +19,65 @@ const int dormantAccountDays = 180;
 /// null이면 플랫폼에 따라 자동 선택 (Android: 10.0.2.2, iOS: 127.0.0.1)
 const String? customApiBaseUrl = null;
 //윈도우 사용자는 윗줄 주석 처리 하고 아래 줄 주석 해제하여 자신의 호스트 IP를 설정하세요.
-// const String? customApiBaseUrl = 'http://192.168.1.50:8000';
+// const String customApiBaseUrl = 'http://192.168.186.7:8000';
 // const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';
 
+/// API 기본 URL 캐시 (앱 시작 시 한 번만 초기화)
+String? _cachedApiBaseUrl;
+
+/// API 기본 URL 초기화 (앱 시작 시 한 번만 호출)
+///
+/// 실기기 여부를 체크하여 적절한 URL을 결정하고 캐시에 저장합니다.
+Future<void> initializeApiBaseUrl() async {
+  if (_cachedApiBaseUrl != null) {
+    return; // 이미 초기화됨
+  }
+
+  // customApiBaseUrl이 설정되어 있으면 사용
+  if (customApiBaseUrl != null && customApiBaseUrl!.isNotEmpty) {
+    _cachedApiBaseUrl = customApiBaseUrl!;
+    return;
+  }
+
+  // null이면 실기기 여부를 체크하여 적절한 URL 결정
+  _cachedApiBaseUrl = await CustomCommonUtil.getApiBaseUrl(customApiBaseUrl);
+}
+
 /// FastAPI 서버 기본 URL
-/// customApiBaseUrl이 설정되어 있으면 사용하고, 없으면 플랫폼에 따라 자동 선택
+///
+/// 앱 시작 시 [initializeApiBaseUrl()]을 호출한 후 사용하세요.
+/// 캐시된 값을 반환하므로 동기 함수입니다.
 String getApiBaseUrl() {
-  return CustomCommonUtil.getApiBaseUrl(customApiBaseUrl);
+  if (_cachedApiBaseUrl == null) {
+    // 초기화되지 않은 경우 기본값 반환 (초기화 실패 대비)
+    if (customApiBaseUrl != null && customApiBaseUrl!.isNotEmpty) {
+      return customApiBaseUrl!;
+    }
+    // 기본값 반환 (플랫폼별)
+    return CustomCommonUtil.getApiBaseUrlSync();
+  }
+  return _cachedApiBaseUrl!;
 }
 
 // GetStorage 키 상수
 /// 고객 정보 저장 키 (GetStorage)
 const String storageKeyCustomer = 'customer';
+
+/// FCM 토큰 저장 키 (GetStorage)
+const String storageKeyFCMToken = 'fcm_token';
+
+/// 마지막 서버에 전송한 FCM 토큰 저장 키 (GetStorage)
+const String storageKeyFCMLastSentToken = 'fcm_last_sent_token';
+
+/// 서버 동기화 성공 여부 저장 키 (GetStorage)
+const String storageKeyFCMServerSynced = 'fcm_server_synced';
+
+/// 마지막 서버 전송 시도 시간 저장 키 (GetStorage)
+const String storageKeyFCMLastSyncAttempt = 'fcm_last_sync_attempt';
+
+/// 알림 권한 상태 저장 키 (GetStorage)
+const String storageKeyFCMNotificationPermission =
+    'fcm_notification_permission';
 
 // 회원 상태 (현재 미사용)
 // Map loginStatus = {0: '활동 회원', 1: '휴면 회원', 2: '탈퇴 회원'};

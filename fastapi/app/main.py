@@ -42,7 +42,7 @@ app.add_middleware(
 # app.include_router(example_router.router, prefix="/api/example", tags=["example"])
 
 # API 라우터 import 및 등록
-from app.api import customer, weather, menu, option, store, reserve, store_table
+from app.api import customer, weather, menu, option, store, reserve, store_table, push_debug
 
 # Customer API 라우터 등록
 app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
@@ -64,6 +64,9 @@ app.include_router(reserve.router, prefix="/api/reserve", tags=["reserve"])
 
 # StoreTable API 라우터 등록 : 이예은
 app.include_router(store_table.router, prefix="/api/store_table", tags=["store_table"])
+
+# Push Debug API 라우터 등록 (테스트용) : 김택권
+app.include_router(push_debug.router, prefix="/api", tags=["push_debug"])
 
 @app.get("/")
 async def root():
@@ -133,3 +136,7 @@ if __name__ == "__main__":
 #
 # 2026-01-16 이예은: StoreTable API 라우터 등록
 #   - StoreTable API 라우터 등록 (/api/store_table)
+#
+# 2026-01-17 김택권: Push Debug API 라우터 등록
+#   - Push Debug API 라우터 등록 (/api/debug/push)
+#   - FCM 단발 푸시 테스트용 엔드포인트 추가

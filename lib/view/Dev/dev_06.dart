@@ -233,8 +233,8 @@ class _Dev_06State extends ConsumerState<Dev_06> {
                 child: const Text('로그인'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  ref.read(loginNotifierProvider.notifier).logout();
+                onPressed: () async {
+                  await ref.read(loginNotifierProvider.notifier).logout();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,

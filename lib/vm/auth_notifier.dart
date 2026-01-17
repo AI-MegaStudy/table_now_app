@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/customer.dart';
+import 'package:table_now_app/utils/fcm_storage.dart';
 
 /// 인증 상태 모델
 class AuthState {
@@ -103,9 +104,14 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 로그아웃 처리
   ///
   /// 전역 상태와 GetStorage에서 로그인 정보를 제거합니다.
-  void logout() {
+  /// FCM 서버 동기화 상태만 초기화합니다 (토큰과 알림 권한은 기기별이므로 유지).
+  Future<void> logout() async {
     // GetStorage에서 삭제
     _storage.remove(storageKeyCustomer);
+
+    // FCM 서버 동기화 상태만 초기화
+    // (토큰과 알림 권한은 기기별이므로 유지, 다음 로그인 시 재사용 가능)
+    await FCMStorage.clearSyncStatus();
 
     // 상태 업데이트
     state = state.copyWith(removeCustomer: true, removeErrorMessage: true);

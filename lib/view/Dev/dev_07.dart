@@ -25,9 +25,10 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   }
 
   /// 로그아웃 처리
-  void _handleLogout() {
+  Future<void> _handleLogout() async {
     // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
-    ref.read(authNotifierProvider.notifier).logout();
+    // FCM 로컬 저장소도 함께 초기화됨
+    await ref.read(authNotifierProvider.notifier).logout();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

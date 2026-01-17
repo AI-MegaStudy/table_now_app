@@ -142,6 +142,10 @@ analysis_benchmark.json
 **/.env
 **/.env.*
 
+# Firebase 서비스 계정 키 (절대 커밋하지 않음!)
+**/serviceAccountKey.json
+**/*serviceAccountKey*.json
+
 ############################################################
 # Database / Local data (optional but safe)
 ############################################################

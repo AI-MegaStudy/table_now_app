@@ -56,6 +56,10 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open and in the background.</string>
 
+	<!-- 알림 권한 설명 -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>알림을 위해 필요합니다.</string>
+
 	<!-- Google Sign-In URL Scheme -->
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -68,5 +72,46 @@
 			</array>
 		</dict>
 	</array>
+
+	<!-- App Transport Security: 로컬 개발 서버 HTTP 연결 허용 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>192.168.1.104</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- Background Modes: FCM 푸시 알림을 위한 백그라운드 모드 설정 -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Firebase AppDelegate Proxy: false로 설정하여 수동으로 APNs 토큰 처리 -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

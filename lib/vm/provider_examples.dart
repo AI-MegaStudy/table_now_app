@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
+import 'package:table_now_app/utils/fcm_storage.dart';
 
 // ============================================
 // 1. Provider - 단순한 값 제공 (변경 불가)
@@ -86,9 +87,14 @@ class LoginNotifier extends Notifier<bool> {
     state = true;
   }
 
-  void logout() {
+  Future<void> logout() async {
     // GetStorage에서도 로그인 정보 제거
     _storage.remove(storageKeyCustomer);
+    
+    // FCM 서버 동기화 상태만 초기화
+    // (토큰과 알림 권한은 기기별이므로 유지)
+    await FCMStorage.clearSyncStatus();
+    
     state = false;
   }
 

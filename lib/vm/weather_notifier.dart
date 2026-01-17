@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -58,8 +59,8 @@ class WeatherState {
 ///
 /// 날씨 데이터를 관리하고 API를 호출하는 Notifier입니다.
 class WeatherNotifier extends Notifier<WeatherState> {
-  // API 기본 URL (한 번만 계산하여 재사용)
-  late final String _apiBaseUrl = getApiBaseUrl();
+  // API 기본 URL (캐시된 값 사용)
+  String get _apiBaseUrl => getApiBaseUrl();
 
   @override
   WeatherState build() {
