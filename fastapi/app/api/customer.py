@@ -43,6 +43,11 @@ class LoginRequest(BaseModel):
     customer_pw: str
 
 
+class FCMTokenRequest(BaseModel):
+    fcm_token: str
+    device_type: str  # "ios" or "android"
+
+
 # ============================================
 # 전체 고객 조회
 # ============================================
@@ -951,6 +956,94 @@ async def verify_password_change_code(
             pass
 
 
+# ============================================
+# FCM 토큰 등록/업데이트
+# ============================================
+@router.post("/{customer_seq}/fcm-token")
+async def register_fcm_token(
+    customer_seq: int,
+    request: FCMTokenRequest
+):
+    """
+    FCM 토큰 등록/업데이트
+    - 고객의 FCM 토큰을 등록하거나 업데이트합니다
+    - 같은 고객의 같은 토큰이 이미 있으면 업데이트 (updated_at 갱신)
+    - 새로운 토큰이면 등록
+    """
+    conn = connect_db()
+    curs = conn.cursor()
+    
+    try:
+        # 1. 고객 존재 확인
+        curs.execute("""
+            SELECT customer_seq FROM customer WHERE customer_seq = %s
+        """, (customer_seq,))
+        customer = curs.fetchone()
+        
+        if customer is None:
+            return {
+                "result": "Error",
+                "errorMsg": "고객을 찾을 수 없습니다."
+            }
+        
+        # 2. device_type 검증
+        device_type = request.device_type.lower()
+        if device_type not in ['ios', 'android']:
+            return {
+                "result": "Error",
+                "errorMsg": "device_type은 'ios' 또는 'android'여야 합니다."
+            }
+        
+        # 3. 기존 토큰 확인
+        curs.execute("""
+            SELECT device_token_seq FROM device_token 
+            WHERE customer_seq = %s AND fcm_token = %s
+        """, (customer_seq, request.fcm_token))
+        existing_token = curs.fetchone()
+        
+        if existing_token:
+            # 기존 토큰 업데이트 (updated_at 자동 갱신)
+            curs.execute("""
+                UPDATE device_token 
+                SET device_type = %s, updated_at = NOW()
+                WHERE customer_seq = %s AND fcm_token = %s
+            """, (device_type, customer_seq, request.fcm_token))
+        else:
+            # 새 토큰 등록
+            curs.execute("""
+                INSERT INTO device_token 
+                (customer_seq, fcm_token, device_type, created_at, updated_at)
+                VALUES (%s, %s, %s, NOW(), NOW())
+            """, (customer_seq, request.fcm_token, device_type))
+        
+        conn.commit()
+        
+        return {
+            "result": "OK",
+            "message": "FCM 토큰이 등록되었습니다."
+        }
+        
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "traceback": traceback.format_exc()
+        }
+    finally:
+        try:
+            curs.close()
+        except:
+            pass
+        try:
+            conn.close()
+        except:
+            pass
+
+
 # ============================================================
 # 생성 이력
 # ============================================================
@@ -979,3 +1072,9 @@ async def verify_password_change_code(
 #   - customer_phone 필드를 선택사항(Optional)으로 변경
 #   - Form(None)으로 설정하여 전화번호 없이도 회원가입 가능하도록 수정
 #   - 빈 문자열을 None으로 변환하여 DB에 NULL 저장 처리
+#
+# 2026-01-16: FCM 토큰 등록 API 추가
+#   - POST /{customer_seq}/fcm-token 엔드포인트 구현
+#   - FCMTokenRequest 모델 추가
+#   - 기존 토큰이 있으면 업데이트, 없으면 등록
+#   - device_type 검증 (ios/android)

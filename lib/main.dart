@@ -16,6 +16,22 @@ Future<void> main() async {
   // GetStorage 초기화 (get_storage는 GetX와 독립적으로 사용 가능)
   await GetStorage.init();
 
+  // 자동 로그인 체크 (GetStorage 초기화 후)
+  final storage = GetStorage();
+  final autoLoginEnabled = storage.read<bool>(storageKeyAutoLogin) ?? false;
+
+  if (!autoLoginEnabled) {
+    // 자동 로그인이 비활성화되어 있으면 로그인 정보 삭제
+    storage.remove(storageKeyCustomer);
+    if (kDebugMode) {
+      print('🔓 자동 로그인 비활성화: 로그인 정보 삭제');
+    }
+  } else {
+    if (kDebugMode) {
+      print('🔐 자동 로그인 활성화: 로그인 정보 유지');
+    }
+  }
+
   // Firebase 초기화
   try {
     await Firebase.initializeApp(

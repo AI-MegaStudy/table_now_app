@@ -218,6 +218,29 @@
 
 ---
 
+## 10. device_token (FCM 기기 토큰)
+
+- 구분: 릴레이션쉽(Relationship)
+- 설명: 사용자 기기의 FCM 토큰을 관리한다. 한 사용자가 여러 기기를 사용할 수 있도록 설계되었다.
+
+| 컬럼명            | 타입         | 키  | NULL | 비고                    | 설명                        |
+| ----------------- | ------------ | --- | ---- | ----------------------- | --------------------------- |
+| device_token_seq  | INT          | PK  | N    | Auto_Increment          | 기기 토큰 번호              |
+| customer_seq      | INT          | FK  | N    | customer.customer_seq   | 고객 번호                   |
+| fcm_token         | VARCHAR(255) |     | N    | 인덱스 있음, UNIQUE     | FCM 토큰                    |
+| device_type       | VARCHAR(10)  |     | N    |                         | 기기 타입 ('ios' 또는 'android') |
+| created_at        | DATETIME     |     | N    | 기본값: CURRENT_TIMESTAMP | 생성 일시                   |
+| updated_at        | DATETIME     |     | N    | ON UPDATE CURRENT_TIMESTAMP | 수정 일시                   |
+
+**비고:**
+
+- 한 사용자가 여러 기기를 사용할 수 있으므로 `(customer_seq, fcm_token)` 복합 UNIQUE 키 사용
+- `customer_seq`에 대한 외래키 제약조건: `ON DELETE CASCADE` (사용자 삭제 시 관련 토큰도 자동 삭제)
+- `fcm_token`에 인덱스 설정 (토큰으로 빠른 조회 가능)
+- FCM 토큰은 기기별로 고유하며, 앱 재설치 시 변경될 수 있음
+
+---
+
 ## 변경 이력
 
 - **2026-01-15**: customer 테이블 소셜 로그인 컬럼 추가 (작성자: 김택권)
@@ -235,3 +258,7 @@
   - `weather` 테이블 PK를 `(store_seq, weather_datetime)` 복합키로 변경
   - `reserve` 테이블의 `weather_datetime` FK를 복합키 FK `(store_seq, weather_datetime)`로 변경
   - 각 식당별로 날씨를 저장할 수 있도록 복합키 구조 적용
+- **2026-01-16**: device_token 테이블 추가
+  - FCM 푸시 알림을 위한 기기 토큰 관리 테이블 추가
+  - 한 사용자가 여러 기기를 사용할 수 있도록 설계
+  - `customer_seq`에 대한 외래키 제약조건: `ON DELETE CASCADE`

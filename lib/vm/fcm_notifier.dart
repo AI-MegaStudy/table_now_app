@@ -1,7 +1,11 @@
 import 'dart:io' show Platform;
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:table_now_app/config.dart';
+import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
 
 /// FCM 토큰 상태 모델
@@ -227,8 +231,23 @@ class FCMNotifier extends Notifier<FCMState> {
         print('⚠️  서버에 새 토큰 전송이 필요합니다.');
       }
 
-      // TODO: 서버에 새 토큰 업데이트 API 호출
-      // await _updateTokenOnServer(newToken);
+      // 로그인 상태 확인 후 서버에 새 토큰 전송
+      // CustomerStorage를 사용하여 로그인 상태 확인
+      try {
+        final customerSeq = CustomerStorage.getCustomerSeq();
+        if (customerSeq != null) {
+          if (kDebugMode) {
+            print('🔄 토큰 갱신 감지: 서버에 새 토큰 전송 중...');
+          }
+          await sendTokenToServer(customerSeq);
+        } else if (kDebugMode) {
+          print('⚠️  로그인 상태가 아니어서 서버 전송을 건너뜁니다.');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️  토큰 갱신 후 서버 전송 실패: $e');
+        }
+      }
     });
   }
 
@@ -266,6 +285,68 @@ class FCMNotifier extends Notifier<FCMState> {
 
   /// 초기화 여부 확인
   bool get isInitialized => state.isInitialized;
+
+  /// 서버에 FCM 토큰 전송
+  ///
+  /// [customerSeq] 고객 번호
+  /// 반환값: 성공 여부 (bool)
+  Future<bool> sendTokenToServer(int customerSeq) async {
+    final token = state.token;
+    if (token == null) {
+      if (kDebugMode) {
+        print('⚠️  FCM 토큰이 없어 서버에 전송할 수 없습니다.');
+      }
+      return false;
+    }
+
+    try {
+      await FCMStorage.saveLastSyncAttempt(DateTime.now());
+
+      // getApiBaseUrl()은 동기 함수 (앱 시작 시 초기화됨)
+      final apiBaseUrl = getApiBaseUrl();
+      final url = Uri.parse('$apiBaseUrl/api/customer/$customerSeq/fcm-token');
+
+      if (kDebugMode) {
+        print('📤 서버에 FCM 토큰 전송 중...');
+        print('   URL: $url');
+        print('   Token: ${token.substring(0, 20)}...');
+      }
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fcm_token': token,
+          'device_type': Platform.isIOS ? 'ios' : 'android',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        await FCMStorage.saveLastSentToken(token);
+        await FCMStorage.setServerSyncStatus(true);
+
+        if (kDebugMode) {
+          print('✅ FCM 토큰 서버 전송 성공');
+        }
+        return true;
+      } else {
+        await FCMStorage.setServerSyncStatus(false);
+
+        if (kDebugMode) {
+          print('❌ FCM 토큰 서버 전송 실패: ${response.statusCode}');
+          print('   Response: ${response.body}');
+        }
+        return false;
+      }
+    } catch (e) {
+      await FCMStorage.setServerSyncStatus(false);
+
+      if (kDebugMode) {
+        print('❌ FCM 토큰 서버 전송 중 오류 발생: $e');
+      }
+      return false;
+    }
+  }
 }
 
 /// FCMNotifier Provider

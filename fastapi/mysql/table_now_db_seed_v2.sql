@@ -158,3 +158,5 @@ COMMIT;
 --   - reserve 테이블 시드 데이터의 weather_datetime을 00:00:00으로 변경
 -- 2026-01-16 김택권: pay 테이블 PK 변경 반영
 --   - pay 테이블 시드 데이터에서 pay_id 컬럼 제거 (AUTO_INCREMENT로 자동 할당)
+-- 2026-01-16: device_token 테이블 추가 반영
+--   - device_token 테이블은 FCM 토큰이 동적으로 생성되므로 시드 데이터 없음

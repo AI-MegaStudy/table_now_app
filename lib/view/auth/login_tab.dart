@@ -30,6 +30,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _autoLoginEnabled = false; // 자동 로그인 체크박스 상태
 
   @override
   void dispose() {
@@ -100,7 +101,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customer = Customer.fromJson(customerData);
 
           // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer);
+          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -284,7 +285,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customer = Customer.fromJson(customerData);
 
           // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer);
+          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -397,7 +398,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customer = Customer.fromJson(customerData);
 
           // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer);
+          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
 
           if (mounted) {
             // 환영 메시지 스낵바 표시
@@ -509,6 +510,33 @@ class _LoginTabState extends ConsumerState<LoginTab> {
                   }
                   return null;
                 },
+              ),
+
+              // 자동 로그인 체크박스
+              Row(
+                children: [
+                  Checkbox(
+                    value: _autoLoginEnabled,
+                    onChanged: (value) {
+                      setState(() {
+                        _autoLoginEnabled = value ?? false;
+                      });
+                    },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _autoLoginEnabled = !_autoLoginEnabled;
+                      });
+                    },
+                    child: Text(
+                      '자동 로그인',
+                      style: mainBodyTextStyle.copyWith(
+                        color: p.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               // 로그인 버튼

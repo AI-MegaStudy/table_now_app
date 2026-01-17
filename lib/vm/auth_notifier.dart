@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
+import 'package:table_now_app/vm/fcm_notifier.dart';
 
 /// 인증 상태 모델
 class AuthState {
@@ -89,13 +91,39 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 로그인 처리
   ///
   /// [customer]를 전역 상태에 저장하고 GetStorage에도 저장합니다.
-  Future<void> login(Customer customer) async {
+  /// [autoLoginEnabled]가 true이면 자동 로그인을 활성화합니다.
+  /// 로그인 성공 시 FCM 토큰을 서버에 자동으로 전송합니다.
+  Future<void> login(Customer customer, bool autoLoginEnabled) async {
     try {
       // GetStorage에 저장
       await _storage.write(storageKeyCustomer, customer.toJson());
+      
+      // 자동 로그인 상태 저장
+      await _storage.write(storageKeyAutoLogin, autoLoginEnabled);
 
       // 상태 업데이트
       state = state.copyWith(customer: customer, errorMessage: null);
+
+      // FCM 토큰을 서버에 전송
+      try {
+        final fcmNotifier = ref.read(fcmNotifierProvider.notifier);
+        final token = fcmNotifier.currentToken;
+        
+        if (token != null) {
+          if (kDebugMode) {
+            print('📤 로그인 후 FCM 토큰 서버 전송 시작...');
+          }
+          
+          await fcmNotifier.sendTokenToServer(customer.customerSeq);
+        } else if (kDebugMode) {
+          print('⚠️  FCM 토큰이 없어 서버 전송을 건너뜁니다.');
+        }
+      } catch (e) {
+        // FCM 토큰 전송 실패는 로그인 실패로 처리하지 않음
+        if (kDebugMode) {
+          print('⚠️  FCM 토큰 서버 전송 실패 (로그인은 성공): $e');
+        }
+      }
     } catch (e) {
       state = state.copyWith(errorMessage: '로그인 정보 저장 중 오류가 발생했습니다.');
     }
@@ -104,10 +132,14 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 로그아웃 처리
   ///
   /// 전역 상태와 GetStorage에서 로그인 정보를 제거합니다.
+  /// 자동 로그인 상태도 함께 초기화합니다 (명시적 로그아웃이므로).
   /// FCM 서버 동기화 상태만 초기화합니다 (토큰과 알림 권한은 기기별이므로 유지).
   Future<void> logout() async {
     // GetStorage에서 삭제
     _storage.remove(storageKeyCustomer);
+    
+    // 자동 로그인 상태도 초기화 (명시적 로그아웃이므로)
+    _storage.remove(storageKeyAutoLogin);
 
     // FCM 서버 동기화 상태만 초기화
     // (토큰과 알림 권한은 기기별이므로 유지, 다음 로그인 시 재사용 가능)

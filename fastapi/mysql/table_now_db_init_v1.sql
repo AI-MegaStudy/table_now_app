@@ -35,6 +35,8 @@ DROP TABLE IF EXISTS `reserve`;
 
 DROP TABLE IF EXISTS `password_reset_auth`;
 
+DROP TABLE IF EXISTS `device_token`;
+
 DROP TABLE IF EXISTS `weather`;
 
 DROP TABLE IF EXISTS `store_table`;
@@ -117,7 +119,23 @@ CREATE TABLE `password_reset_auth` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
--- 5) weather
+-- 5) device_token (FCM 토큰)
+-- ---------------------------------------------------------
+CREATE TABLE `device_token` (
+    `device_token_seq` INT NOT NULL AUTO_INCREMENT COMMENT '기기 토큰 번호',
+    `customer_seq` INT NOT NULL COMMENT '고객 번호',
+    `fcm_token` VARCHAR(255) NOT NULL COMMENT 'FCM 토큰',
+    `device_type` VARCHAR(10) NOT NULL COMMENT '기기 타입 (ios/android)',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성 일시',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 일시',
+    PRIMARY KEY (`device_token_seq`),
+    KEY `idx_fcm_token` (`fcm_token`),
+    CONSTRAINT `fk_device_token_customer_seq` FOREIGN KEY (`customer_seq`) REFERENCES `customer` (`customer_seq`) ON UPDATE RESTRICT ON DELETE CASCADE,
+    UNIQUE KEY `uk_customer_token` (`customer_seq`, `fcm_token`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- ---------------------------------------------------------
+-- 6) weather
 -- ---------------------------------------------------------
 CREATE TABLE `weather` (
     `store_seq` INT NOT NULL COMMENT '식당 번호',
@@ -134,7 +152,7 @@ CREATE TABLE `weather` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
--- 6) reserve (갱신됨)
+-- 7) reserve (갱신됨)
 -- ---------------------------------------------------------
 CREATE TABLE `reserve` (
     `reserve_seq` INT NOT NULL AUTO_INCREMENT COMMENT '예약 번호',
@@ -163,7 +181,7 @@ CREATE TABLE `reserve` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
--- 7) menu
+-- 8) menu
 -- ---------------------------------------------------------
 CREATE TABLE `menu` (
     `menu_seq` INT NOT NULL AUTO_INCREMENT COMMENT '메뉴 번호',
@@ -180,7 +198,7 @@ CREATE TABLE `menu` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
--- 8) option
+-- 9) option
 -- ---------------------------------------------------------
 CREATE TABLE `option` (
     `option_seq` INT NOT NULL AUTO_INCREMENT COMMENT '추가 메뉴 번호',
@@ -198,7 +216,7 @@ CREATE TABLE `option` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- ---------------------------------------------------------
--- 9) pay
+-- 10) pay
 -- ---------------------------------------------------------
 CREATE TABLE `pay` (
     `pay_id` INT NOT NULL AUTO_INCREMENT COMMENT '결제 번호',
@@ -243,3 +261,7 @@ CREATE TABLE `pay` (
 --   - reserve 테이블의 weather_datetime FK 제약조건 제거 (인덱스만 유지)
 -- 2026-01-16 김택권: pay 테이블 PK 변경
 --   - pay 테이블의 pay_id 컬럼에 AUTO_INCREMENT 추가
+-- 2026-01-16: device_token 테이블 추가
+--   - FCM 토큰 관리를 위한 device_token 테이블 추가
+--   - customer 테이블과의 외래키 관계 설정 (ON DELETE CASCADE)
+--   - 한 사용자가 여러 기기 사용 가능하도록 설계

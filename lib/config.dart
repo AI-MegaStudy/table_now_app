@@ -79,6 +79,9 @@ const String storageKeyFCMLastSyncAttempt = 'fcm_last_sync_attempt';
 const String storageKeyFCMNotificationPermission =
     'fcm_notification_permission';
 
+/// 자동 로그인 활성화 여부 저장 키 (GetStorage)
+const String storageKeyAutoLogin = 'auto_login_enabled';
+
 // 회원 상태 (현재 미사용)
 // Map loginStatus = {0: '활동 회원', 1: '휴면 회원', 2: '탈퇴 회원'};
 

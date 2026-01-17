@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:table_now_app/config.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_tab_bar.dart';
 import 'package:table_now_app/theme/app_colors.dart';
@@ -20,14 +18,9 @@ class AuthScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // 로그인 화면 진입 시 기존 사용자 정보 삭제 (새로운 로그인을 위함)
-    // GetStorage만 직접 삭제 (provider 상태 변경 없이, 빌드 중에도 안전)
-    final storage = GetStorage();
-    storage.remove(storageKeyCustomer);
-  }
+  // initState에서 자동 삭제 로직 제거
+  // 로그인 상태는 명시적 로그아웃 버튼을 통해서만 삭제됩니다.
+  // 이렇게 하면 자동 로그인 기능이 정상적으로 작동합니다.
 
   @override
   Widget build(BuildContext context) {
@@ -89,3 +82,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 //   - initState에서 authNotifierProvider.logout() 호출 제거
 //   - GetStorage에서 직접 customer 키 삭제하도록 변경
 //   - 빌드 중 provider 상태 변경으로 인한 오류 방지
+//
+// 2026-01-16: 자동 삭제 로직 제거
+//   - initState에서 GetStorage customer 키 자동 삭제 로직 제거
+//   - 로그인 페이지 진입 시에도 로그인 상태 유지 (자동 로그인 기능 활성화)
+//   - 명시적 로그아웃 버튼을 통해서만 로그인 상태 삭제
+//   - 사용하지 않는 import 제거 (get_storage, config)
