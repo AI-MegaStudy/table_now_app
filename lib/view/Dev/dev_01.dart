@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/custom.dart';
+import 'package:table_now_app/view/payment/list_group_view.dart';
 import 'package:table_now_app/view/payment/list_view.dart';
 import 'package:table_now_app/view/payment/purchase/toss_home.dart';
 import '../../config/ui_config.dart';
@@ -38,10 +39,7 @@ class _Dev_01State extends ConsumerState<Dev_01> {
         return Scaffold(
           backgroundColor: p.background,
           appBar: AppBar(
-            title: Text(
-              '이광태 페이지',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
-            ),
+            title: Text('이광태 페이지', style: mainAppBarTitleStyle.copyWith(color: p.textPrimary)),
             centerTitle: mainAppBarCenterTitle,
             backgroundColor: p.background,
             foregroundColor: p.textPrimary,
@@ -57,22 +55,22 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                   Center(
                     child: Column(
                       children: [
-                        Text(
-                          'Hello World!',
-                          style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                        Text('Hello World!', style: mainMediumTextStyle.copyWith(color: p.textPrimary)),
+                        ElevatedButton(
+                          // CustomNavigationUtil.to(context, const AuthScreen());
+                          onPressed: () => CustomNavigationUtil.to(context, const PaymentListView()),
+                          child: Text('유저의 PAY 리스트'),
                         ),
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
-                          onPressed: ()=>CustomNavigationUtil.to(context,const PaymentListView() ), 
-                          child: Text('유저의 PAY 리스트')
+                          onPressed: () => CustomNavigationUtil.to(context, const PaymentListGroupView()),
+                          child: Text('유저의 PAY GROUP 리스트'),
                         ),
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
-                          onPressed: ()=>CustomNavigationUtil.to(context,const TossHome() ), 
-                          child: Text('토스페이테스트')
-                        )
-
-
+                          onPressed: () => CustomNavigationUtil.to(context, const TossHome()),
+                          child: Text('토스페이테스트'),
+                        ),
                       ],
                     ),
                   ),
