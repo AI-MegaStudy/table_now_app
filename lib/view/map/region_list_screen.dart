@@ -82,7 +82,10 @@ class RegionListScreen extends ConsumerWidget {
                     size: 16,
                     color: Colors.grey,
                   ),
-                  onTap: () => _navigateToMap(context),
+                  onTap: () {
+                    final storesInRegion = groupedStores[regionName]!;
+                    _navigateToMap(context, storesInRegion);
+                  },
                 ),
               );
             },
@@ -95,10 +98,10 @@ class RegionListScreen extends ConsumerWidget {
     );
   } //
 
-  void _navigateToMap(BuildContext context) {
+  void _navigateToMap(BuildContext context, List<Store> storeList) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => MapScreen()),
+      MaterialPageRoute(builder: (context) => MapScreen(storeList: storeList)),
     );
   }
 }

@@ -6,7 +6,7 @@ import 'package:table_now_app/model/storetable.dart';
 
 class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
   // 서버 주소 (실제 서버 IP로 수정 필요)
-  final String baseUrl = "http://172.16.251.221:8000";
+  final String baseUrl = "http://192.168.219.103:8000";
 
   @override
   FutureOr<List<StoreTable>> build() async {

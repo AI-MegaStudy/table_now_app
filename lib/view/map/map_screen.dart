@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:table_now_app/model/store.dart';
-import 'package:table_now_app/vm/store_notifire.dart';
+import 'package:table_now_app/utils/location_util.dart';
+import 'package:table_now_app/view/map/store_detail_sheet.dart';
+import '../../../model/store.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
-  const MapScreen({super.key});
+  final List<Store> storeList;
+
+  const MapScreen({required this.storeList, super.key});
 
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
@@ -13,85 +17,125 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   GoogleMapController? _mapController;
-  bool _boundsSet = false;
+  LatLng? _userLocation;
+  bool _boundsApplied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      final pos = await LocationUtil.getCurrentLocation();
+      setState(() {
+        _userLocation = LatLng(pos.latitude, pos.longitude);
+      });
+    } catch (e) {
+      debugPrint("위치 권한/위치 정보 접근 실패: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final asyncStore = ref.watch(storeNotifierProvider);
+    final storeList = widget.storeList;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('매장 지도'), elevation: 0),
-      body: asyncStore.when(
-        data: (storeList) {
-          final markers = storeList.map((store) {
-            return Marker(
-              markerId: MarkerId(store.store_seq.toString()),
-              position: LatLng(store.store_lat, store.store_lng),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueOrange,
-              ),
-              onTap: () => _showStoreDetail(context, store),
-            );
-          }).toSet();
-
-          return GoogleMap(
-            onMapCreated: (controller) {
-              _mapController = controller;
-
-              // layout 이후에 bounds 적용
-              if (!_boundsSet) {
-                _boundsSet = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _fitBounds(storeList);
-                });
-              }
-            },
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(37.5665, 126.9780),
-              zoom: 12,
-            ),
-            markers: markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: true,
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.orange),
+      appBar: AppBar(title: const Text("지역 매장 지도")),
+      body: GoogleMap(
+        initialCameraPosition: const CameraPosition(
+          target: LatLng(37.5665, 126.9780), // 기본은 서울
+          zoom: 12,
         ),
-        error: (err, stack) => Center(child: Text("데이터 로드 실패: $err")),
+        markers: _buildMarkers(storeList),
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+        zoomControlsEnabled: true,
+        onMapCreated: (controller) {
+          _mapController = controller;
+
+          // 지도 렌더 후 bounds 적용
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            await Future.delayed(const Duration(milliseconds: 300));
+            _applyBounds(storeList);
+          });
+        },
       ),
     );
   }
 
-  void _fitBounds(List<Store> stores) async {
-    if (_mapController == null || stores.isEmpty) return;
+  Set<Marker> _buildMarkers(List<Store> storeList) {
+    final markers = <Marker>{};
 
-    final positions = stores
-        .map((s) => LatLng(s.store_lat, s.store_lng))
-        .toList();
-
-    // 만약 한 개만 있을 때
-    if (positions.length == 1) {
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: positions.first, zoom: 15),
+    // 내 위치 마커
+    if (_userLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId("user_loc"),
+          position: _userLocation!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
         ),
       );
+    }
+
+    // 매장 마커
+    for (var s in storeList) {
+      // 유효한 좌표만 표시
+      if (s.store_lat != 0 && s.store_lng != 0) {
+        markers.add(
+          Marker(
+            markerId: MarkerId(s.store_seq.toString()),
+            position: LatLng(s.store_lat, s.store_lng),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueOrange,
+            ),
+            onTap: () => showModalBottomSheet(
+              context: context,
+              builder: (_) => StoreDetailSheet(s),
+            ),
+          ),
+        );
+      }
+    }
+
+    return markers;
+  }
+
+  void _applyBounds(List<Store> storeList) async {
+    if (_mapController == null || _boundsApplied) return;
+
+    final points = <LatLng>[];
+
+    if (_userLocation != null) {
+      points.add(_userLocation!);
+    }
+
+    for (var s in storeList) {
+      if (s.store_lat != 0 && s.store_lng != 0) {
+        points.add(LatLng(s.store_lat, s.store_lng));
+      }
+    }
+
+    if (points.isEmpty) return;
+
+    if (points.length == 1) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(points.first, 15),
+      );
+      _boundsApplied = true;
       return;
     }
 
-    double minLat = positions.first.latitude;
-    double maxLat = positions.first.latitude;
-    double minLng = positions.first.longitude;
-    double maxLng = positions.first.longitude;
+    final latitudes = points.map((e) => e.latitude).toList();
+    final longitudes = points.map((e) => e.longitude).toList();
 
-    for (var pos in positions) {
-      if (pos.latitude < minLat) minLat = pos.latitude;
-      if (pos.latitude > maxLat) maxLat = pos.latitude;
-      if (pos.longitude < minLng) minLng = pos.longitude;
-      if (pos.longitude > maxLng) maxLng = pos.longitude;
-    }
+    double minLat = latitudes.reduce((a, b) => a < b ? a : b);
+    double maxLat = latitudes.reduce((a, b) => a > b ? a : b);
+    double minLng = longitudes.reduce((a, b) => a < b ? a : b);
+    double maxLng = longitudes.reduce((a, b) => a > b ? a : b);
 
     final bounds = LatLngBounds(
       southwest: LatLng(minLat, minLng),
@@ -99,82 +143,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
 
     _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
-  }
 
-  void _showStoreDetail(BuildContext context, Store store) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    store.store_description ?? "식당 이름 없음",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.restaurant, color: Colors.orange),
-              ],
-            ),
-            const SizedBox(height: 15),
-            _buildInfoRow(
-              Icons.location_on_outlined,
-              store.store_address ?? '주소 없음',
-            ),
-            _buildInfoRow(Icons.phone_outlined, store.store_phone ?? '전화 없음'),
-            _buildInfoRow(
-              Icons.access_time_outlined,
-              "${store.store_open_time ?? ''} - ${store.store_close_time ?? ''}",
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "예약하기",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
-        ],
-      ),
-    );
+    _boundsApplied = true;
   }
 }
