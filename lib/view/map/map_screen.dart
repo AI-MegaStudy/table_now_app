@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_now_app/utils/location_util.dart';
 import 'package:table_now_app/view/map/store_detail_sheet.dart';
+import 'package:table_now_app/view/map/storebooking.dart';
 import '../../../model/store.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -42,7 +43,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final storeList = widget.storeList;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("지역 매장 지도")),
+      appBar: AppBar(
+        title: const Text("지역 매장 지도"),
+        backgroundColor: Colors.amberAccent,
+      ),
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
           target: LatLng(37.5665, 126.9780), // 기본은 서울
@@ -94,7 +98,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             onTap: () => showModalBottomSheet(
               context: context,
-              builder: (_) => StoreBookingInfoScreen(s),
+              builder: (_) => StoreDetailSheet(s),
             ),
           ),
         );
