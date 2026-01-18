@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_now_app/utils/location_util.dart';
 import 'package:table_now_app/view/map/store_detail_sheet.dart';
-import 'package:table_now_app/view/map/storebooking.dart';
 import '../../../model/store.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -44,13 +43,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("지역 매장 지도"),
+        title: Text("지역 매장 지도"),
         backgroundColor: Colors.amberAccent,
       ),
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
-          target: LatLng(37.5665, 126.9780), // 기본은 서울
-          zoom: 12,
+          target: LatLng(37.5665, 126.9780),
+          zoom: 12, //<<<<<<<<<<<<<
         ),
         markers: _buildMarkers(storeList),
         myLocationEnabled: true,
@@ -58,8 +57,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         zoomControlsEnabled: true,
         onMapCreated: (controller) {
           _mapController = controller;
-
-          // 지도 렌더 후 bounds 적용
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             await Future.delayed(const Duration(milliseconds: 300));
             _applyBounds(storeList);

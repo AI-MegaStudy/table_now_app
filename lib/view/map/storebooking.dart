@@ -4,8 +4,6 @@ import '../../model/store.dart'; // 경로 상황에 맞게 수정
 
 class StoreBookingInfoScreen extends ConsumerWidget {
   final Store store;
-
-  // ✅ 생성자 수정
   const StoreBookingInfoScreen(this.store, {super.key});
 
   @override
@@ -16,7 +14,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
         backgroundColor: Colors.orange,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -24,23 +22,19 @@ class StoreBookingInfoScreen extends ConsumerWidget {
           children: [
             Text(
               store.store_description ?? '매장 상세',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Text(
-              '예약 정보',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
+            Text('예약 정보', style: TextStyle(color: Colors.white, fontSize: 12)),
           ],
         ),
       ),
 
       body: Column(
         children: [
-          // 1. Step Indicator
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
             child: Row(
@@ -57,7 +51,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
             ),
           ),
 
-          // 2. 매장 카드 정보
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -66,7 +59,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 elevation: 4,
-                shadowColor: Colors.black26,
+                shadowColor: Colors.black,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -82,8 +75,8 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           height: 220,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image_not_supported),
+                          color: Colors.grey,
+                          child: Icon(Icons.image_not_supported),
                         ),
                       ),
                     ),
@@ -94,48 +87,47 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.restaurant,
                                 color: Colors.orange,
                                 size: 22,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 store.store_description ?? "",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.location_on,
                                 color: Colors.grey,
                                 size: 18,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   store.store_address ?? "",
-                                  style: const TextStyle(fontSize: 15),
+                                  style: TextStyle(fontSize: 15),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: 10),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.access_time,
                                 color: Colors.grey,
                                 size: 18,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 '영업시간: ${store.store_open_time ?? ""} - ${store.store_close_time ?? ""}',
                                 style: TextStyle(
@@ -154,7 +146,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
             ),
           ),
 
-          // 3. 하단 다음 버튼
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: SizedBox(
@@ -174,7 +165,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '다음 단계로',
+                      '다음',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -197,23 +188,21 @@ class StoreBookingInfoScreen extends ConsumerWidget {
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: isActive
-              ? Colors.green.shade600
-              : Colors.grey.shade200,
+          backgroundColor: isActive ? Colors.green : Colors.grey,
           child: Text(
             '$number',
             style: TextStyle(
-              color: isActive ? Colors.white : Colors.grey.shade600,
+              color: isActive ? Colors.white : Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         Text(
           title,
           style: TextStyle(
             fontSize: 12,
-            color: isActive ? Colors.green.shade700 : Colors.grey.shade500,
+            color: isActive ? Colors.green : Colors.grey,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -225,7 +214,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       height: 1,
-      color: Colors.grey.shade300,
+      color: Colors.grey,
     ),
   );
 }

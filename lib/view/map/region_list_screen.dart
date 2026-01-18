@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/store_notifire.dart';
-// import 'store_booking_info_screen.dart'; // 다음 화면
 
 class RegionListScreen extends ConsumerWidget {
   const RegionListScreen({super.key});
@@ -29,7 +28,6 @@ class RegionListScreen extends ConsumerWidget {
       ),
       body: asyncStore.when(
         data: (storeList) {
-          // 1. 주소 기반 지역 그룹화 로직 (예: "서울 강남구..." -> "서울")
           final Map<String, List<Store>> groupedStores = {};
           for (var store in storeList) {
             final region = store.store_address.split(' ')[0]; // 첫 단어 추출

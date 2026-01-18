@@ -21,10 +21,10 @@ class StoreDetailSheet extends StatelessWidget {
           // 제목/매장 이름
           Text(
             store.store_description ?? "매장 이름 없음",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // 매장 주소
           _buildInfoRow(
@@ -41,7 +41,7 @@ class StoreDetailSheet extends StatelessWidget {
             "${store.store_open_time ?? "-"} ~ ${store.store_close_time ?? "-"}",
           ),
 
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // 예약 버튼
           SizedBox(
@@ -49,12 +49,10 @@ class StoreDetailSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                // Navigator를 사용해 다음 화면으로 이동
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        StoreBookingInfoScreen(store), // 이동할 화면
+                    builder: (context) => StoreBookingInfoScreen(store),
                   ),
                 );
               },
@@ -64,14 +62,14 @@ class StoreDetailSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                "이 매장 예약하기",
+              child: Text(
+                "매장 예약",
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
       ),
     );
@@ -85,8 +83,8 @@ class StoreDetailSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: Colors.grey[700]),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
+          SizedBox(width: 10),
+          Expanded(child: Text(text, style: TextStyle(fontSize: 15))),
         ],
       ),
     );
