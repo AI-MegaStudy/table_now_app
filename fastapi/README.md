@@ -22,6 +22,7 @@ fastapi/
 │   │   └── connection.py
 │   ├── utils/            # 유틸리티 함수
 │   │   ├── email_service.py      # 이메일 서비스 (비밀번호 변경 인증)
+│   │   ├── fcm_service.py        # FCM 푸시 알림 발송 서비스
 │   │   ├── weather_mapping.py    # 날씨 타입 매핑
 │   │   └── weather_service.py    # 날씨 데이터 처리 서비스
 │   ├── main.py           # FastAPI 애플리케이션 진입점

@@ -48,6 +48,7 @@ dependencies:
   firebase_core: ^4.3.0 # Firebase 초기화 (firebase_options.dart 사용 시 필요)
   cloud_firestore: ^6.1.1 # Firestore 연동
   firebase_messaging: ^16.1.0 # 푸시 알림 패키지
+  flutter_local_notifications: ^19.5.0 # 로컬 알림 패키지 (포그라운드 알림 표시용)
 
   flutter_riverpod: ^3.1.0 # 상태 관리 패키지
   google_maps_flutter: ^2.5.3 # 구글 맵 패키지

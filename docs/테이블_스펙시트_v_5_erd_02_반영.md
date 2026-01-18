@@ -96,8 +96,8 @@
 
 ## 4. weather (날씨)
 
-- 구분: 릴레이션쉽(Relationship)
-- 설명: 식당별 특정 시점의 날씨 정보
+- 구분: 연관 엔티티(Associative Entity)
+- 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, reserve가 참조함
 
 | 컬럼명           | 타입         | 키  | NULL | 비고            | 설명           |
 | ---------------- | ------------ | --- | ---- | --------------- | -------------- |
@@ -111,7 +111,9 @@
 
 - PK는 `(store_seq, weather_datetime)` 복합키
 - 각 식당별로 날씨 정보를 저장
-- OpenWeatherMap API 호출 시 해당 식당의 `store_lat`, `store_lng`를 사용하여 오늘 날씨만 저장
+- OpenWeatherMap API 호출 시 해당 식당의 `store_lat`, `store_lng`를 사용하여 날씨 정보 저장
+- `reserve` 테이블이 `weather` 테이블을 참조하여 예약 시점의 날씨 정보를 연결
+- 독립적인 속성(`weather_type`, `weather_low`, `weather_high`)을 보유한 연관 엔티티
 
 ---
 
@@ -262,3 +264,7 @@
   - FCM 푸시 알림을 위한 기기 토큰 관리 테이블 추가
   - 한 사용자가 여러 기기를 사용할 수 있도록 설계
   - `customer_seq`에 대한 외래키 제약조건: `ON DELETE CASCADE`
+- **2026-01-16**: weather 테이블 구분 변경
+  - `weather` 테이블의 구분을 "릴레이션쉽(Relationship)"에서 "연관 엔티티(Associative Entity)"로 변경
+  - `reserve` 테이블이 `weather`를 참조하는 구조를 명확히 함
+  - 독립적인 속성을 보유하고 여러 엔티티를 연결하는 연관 엔티티의 특성 반영

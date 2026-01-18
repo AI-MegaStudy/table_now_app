@@ -99,7 +99,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final Color seedColor = Colors.deepPurple;
 
     return MaterialApp(
-      title: 'Table Now',
+      title: 'TableNow',
       themeMode: themeMode,
       theme: ThemeData(
         brightness: Brightness.light,

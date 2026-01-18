@@ -365,7 +365,10 @@ class FCMNotifier extends Notifier<FCMState> {
       if (kDebugMode) {
         print('📨 Foreground message received: ${message.notification?.title}');
       }
-      // 포그라운드 메시지 처리 로직
+      // TODO: 포그라운드 알림 표시 로직 구현
+      // 포그라운드 상태에서는 FCM이 자동으로 알림을 표시하지 않으므로
+      // flutter_local_notifications 패키지를 사용하여 로컬 노티피케이션을 표시해야 함
+      // 예: LocalNotificationService.showNotification(message);
     });
   }
 }

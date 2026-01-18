@@ -10,7 +10,7 @@
 
 
     <application
-        android:label="Table Now"
+        android:label="TableNow"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data

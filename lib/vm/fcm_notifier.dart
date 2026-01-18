@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
+import 'package:table_now_app/utils/local_notification_service.dart';
 
 /// FCM 토큰 상태 모델
 class FCMState {
@@ -111,6 +112,9 @@ class FCMNotifier extends Notifier<FCMState> {
 
       // 초기 토큰 가져오기
       await _refreshToken();
+
+      // 로컬 노티피케이션 서비스 초기화 (포그라운드 알림 표시용)
+      await LocalNotificationService.initialize();
 
       // 토큰 갱신 리스너 설정
       _setupTokenRefreshListener();
@@ -270,8 +274,8 @@ class FCMNotifier extends Notifier<FCMState> {
         );
       }
 
-      // TODO: 포그라운드 알림 표시 로직 구현
-      // 예: LocalNotificationService.showNotification(message);
+      // 포그라운드 알림 표시 (로컬 노티피케이션 사용)
+      LocalNotificationService.showNotification(message);
     });
   }
 
