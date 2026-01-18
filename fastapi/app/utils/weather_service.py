@@ -13,12 +13,26 @@ from dotenv import load_dotenv
 from ..database.connection import connect_db  # noqa: E402
 from .weather_mapping import get_weather_type_korean, get_weather_icon_url  # noqa: E402
 
-# .env 파일에서 환경변수 로드
-env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
-load_dotenv(dotenv_path=env_path)
-
+# ============================================
 # OpenWeatherMap API 설정
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+# ============================================
+# ⚠️ 주의: 이 API 키는 하드코딩되어 있습니다.
+# - 다른 팀원들도 이 서비스를 바로 사용할 수 있도록 API 키를 코드에 포함했습니다.
+# - 이 API 키는 수정하지 마세요. 모든 팀원이 공유해서 사용합니다.
+# - 별도의 환경변수 설정 없이 WeatherService()를 바로 사용할 수 있습니다.
+# - 하드코딩된 값이 없거나 빈 문자열이면 .env 파일에서 OPENWEATHER_API_KEY를 찾습니다.
+# API 키: dbdd55a14dae1235d2dcb5d3499c03c2
+HARDCODED_API_KEY = "dbdd55a14dae1235d2dcb5d3499c03c2"
+
+# 하드코딩된 키가 없거나 빈 문자열이면 .env 파일에서 찾기
+if not HARDCODED_API_KEY or HARDCODED_API_KEY.strip() == "":
+    # .env 파일에서 환경변수 로드
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
+    load_dotenv(dotenv_path=env_path)
+    OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+else:
+    OPENWEATHER_API_KEY = HARDCODED_API_KEY
+
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/3.0/onecall"
 
 # 기본 위치 설정 (서울)
@@ -34,11 +48,19 @@ class WeatherService:
         WeatherService 초기화
         
         Args:
-            api_key: OpenWeatherMap API 키 (None이면 환경변수에서 가져옴)
+            api_key: OpenWeatherMap API 키 (None이면 기본 하드코딩된 키 사용)
+                     다른 API 키를 사용하고 싶을 때만 지정하세요.
+                     
+        사용 예시:
+            # 기본 API 키 사용 (가장 일반적인 사용법)
+            weather_service = WeatherService()
+            
+            # 다른 API 키 사용 (필요한 경우만)
+            weather_service = WeatherService(api_key="your_api_key")
         """
         self.api_key = api_key or OPENWEATHER_API_KEY
         if not self.api_key:
-            raise ValueError("OpenWeatherMap API 키가 설정되지 않았습니다. 환경변수 OPENWEATHER_API_KEY를 설정하거나 api_key 파라미터를 제공하세요.")
+            raise ValueError("OpenWeatherMap API 키가 설정되지 않았습니다. api_key 파라미터를 제공하세요.")
     
     def fetch_daily_forecast(
         self, 
@@ -133,16 +155,40 @@ class WeatherService:
                 
                 # 온도 정보 추출
                 temp = daily_item.get("temp", {})
-                weather_low = temp.get("min", 0.0)
-                weather_high = temp.get("max", 0.0)
+                
+                # OpenWeatherMap OneCall API 3.0 구조 확인
+                # temp 객체에는 min, max, day, night, eve, morn 필드가 있음
+                weather_low = temp.get("min", None)
+                weather_high = temp.get("max", None)
+                
+                # 값이 없거나 None인 경우 처리
+                if weather_low is None:
+                    print(f"⚠️  Warning: temp.min not found in API response. temp keys: {list(temp.keys())}")
+                    weather_low = 0.0
+                if weather_high is None:
+                    print(f"⚠️  Warning: temp.max not found in API response. temp keys: {list(temp.keys())}")
+                    weather_high = 0.0
+                
+                # 온도 값 검증 (한국 기준: -30~50도 범위)
+                weather_low = float(weather_low)
+                weather_high = float(weather_high)
+                
+                if weather_low < -30 or weather_low > 50:
+                    print(f"⚠️  Warning: weather_low ({weather_low}°C) is out of normal range for Korea")
+                if weather_high < -30 or weather_high > 50:
+                    print(f"⚠️  Warning: weather_high ({weather_high}°C) is out of normal range for Korea")
+                if weather_low > weather_high:
+                    print(f"⚠️  Warning: weather_low ({weather_low}°C) is greater than weather_high ({weather_high}°C)")
+                    # 최저/최고 온도 교정
+                    weather_low, weather_high = weather_high, weather_low
                 
                 result.append({
                     "dt": daily_item["dt"],
                     "weather_datetime": weather_datetime,
                     "weather_type": get_weather_type_korean(weather_main),
                     "weather_type_en": weather_main,
-                    "weather_low": float(weather_low),
-                    "weather_high": float(weather_high),
+                    "weather_low": weather_low,
+                    "weather_high": weather_high,
                     "icon_code": icon_code,
                     "icon_url": get_weather_icon_url(icon_code)
                 })
@@ -372,6 +418,10 @@ class WeatherService:
 # 2026-01-15 김택권: OpenWeatherMap API 키 환경변수 사용
 #   - .env 파일에서 OPENWEATHER_API_KEY 환경변수 로드
 #   - 보안을 위해 코드에 하드코딩하지 않고 환경변수만 사용
+#
+# 2026-01-19: OpenWeatherMap API 키 하드코딩으로 변경
+#   - .env 파일 의존성 제거
+#   - API 키를 코드에 직접 하드코딩 (다른 사람 사용 금지 주석 추가)
 #
 # 2026-01-18: OpenWeatherMap API 직접 조회 기능 추가
 #   - fetch_daily_forecast 메서드 추가 (8일치 예보)
