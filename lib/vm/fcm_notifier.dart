@@ -64,22 +64,50 @@ class FCMNotifier extends Notifier<FCMState> {
 
       // iOS 알림 권한 요청 (필수)
       if (Platform.isIOS) {
-        final permission = await _messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        // 현재 알림 권한 상태 확인
+        final currentStatus = await _messaging.getNotificationSettings();
+        print('📱 현재 알림 권한 상태: ${currentStatus.authorizationStatus}');
+        
+        // 권한이 없으면 요청
+        if (currentStatus.authorizationStatus == AuthorizationStatus.notDetermined) {
+          print('📱 알림 권한 요청 중...');
+          final permission = await _messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
 
-        // 알림 권한 상태 로컬 저장
-        final isGranted =
-            permission.authorizationStatus == AuthorizationStatus.authorized ||
-            permission.authorizationStatus == AuthorizationStatus.provisional;
-        await FCMStorage.saveNotificationPermissionStatus(isGranted);
+          // 알림 권한 상태 로컬 저장
+          final isGranted =
+              permission.authorizationStatus == AuthorizationStatus.authorized ||
+              permission.authorizationStatus == AuthorizationStatus.provisional;
+          await FCMStorage.saveNotificationPermissionStatus(isGranted);
 
-        // 프로필/릴리스 모드에서도 권한 상태 확인 가능하도록 항상 출력
-        print('📱 iOS 알림 권한 상태: ${permission.authorizationStatus}');
+          // 프로필/릴리스 모드에서도 권한 상태 확인 가능하도록 항상 출력
+          print('📱 iOS 알림 권한 요청 결과: ${permission.authorizationStatus}');
+          
+          if (permission.authorizationStatus == AuthorizationStatus.denied) {
+            print('⚠️  알림 권한이 거부되었습니다.');
+            print('💡 설정 > TableNow > 알림에서 권한을 활성화하세요.');
+            state = state.copyWith(
+              errorMessage: '알림 권한이 거부되었습니다. 설정에서 활성화하세요.',
+              isInitialized: true, // 초기화는 완료했지만 토큰은 받지 못함
+            );
+            return; // 권한이 거부되면 APNs 토큰을 받을 수 없음
+          }
+        } else if (currentStatus.authorizationStatus == AuthorizationStatus.denied) {
+          print('⚠️  알림 권한이 거부되어 있습니다.');
+          print('💡 설정 > TableNow > 알림에서 권한을 활성화하세요.');
+          state = state.copyWith(
+            errorMessage: '알림 권한이 거부되어 있습니다. 설정에서 활성화하세요.',
+            isInitialized: true, // 초기화는 완료했지만 토큰은 받지 못함
+          );
+          return; // 권한이 거부되면 APNs 토큰을 받을 수 없음
+        } else {
+          print('📱 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
+        }
 
-        // iOS: APNs 토큰이 등록될 때까지 대기
+        // iOS: APNs 토큰이 등록될 때까지 대기 (권한이 허용된 경우에만)
         await _waitForAPNSToken();
       } else if (Platform.isAndroid) {
         // Android 13 (API 33) 이상에서 알림 권한 요청
@@ -147,29 +175,30 @@ class FCMNotifier extends Notifier<FCMState> {
   /// iOS: APNs 토큰이 등록될 때까지 대기
   ///
   /// APNs 토큰이 등록되어야 FCM 토큰을 받을 수 있습니다.
-  /// 최대 10초까지 대기하며, 0.5초마다 확인합니다.
+  /// 최대 30초까지 대기하며, 1초마다 확인합니다.
+  /// IPA로 설치한 앱은 초기화가 더 느릴 수 있으므로 대기 시간을 늘렸습니다.
   Future<void> _waitForAPNSToken() async {
     if (!Platform.isIOS) return;
 
-    const maxAttempts = 20; // 10초 (0.5초 * 20)
-    const delayDuration = Duration(milliseconds: 500);
+    const maxAttempts = 30; // 30초 (1초 * 30)
+    const delayDuration = Duration(seconds: 1);
+
+    print('⏳ APNs 토큰 대기 시작... (최대 ${maxAttempts}초)');
 
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         final apnsToken = await _messaging.getAPNSToken();
         if (apnsToken != null) {
-          print('✅ APNs token received');
+          print('✅ APNs token received (${attempt + 1}초 후)');
           return;
         }
       } catch (e) {
         // APNs 토큰이 아직 없음, 계속 대기
-        if (attempt == 0) {
-          print('⏳ Waiting for APNs token... (attempt ${attempt + 1}/$maxAttempts)');
-        }
       }
 
-      if (attempt == 0) {
-        print('⏳ Waiting for APNs token...');
+      // 5초마다 진행 상황 출력
+      if ((attempt + 1) % 5 == 0) {
+        print('⏳ APNs 토큰 대기 중... (${attempt + 1}/${maxAttempts}초)');
       }
 
       await Future.delayed(delayDuration);
@@ -177,8 +206,9 @@ class FCMNotifier extends Notifier<FCMState> {
 
     // 프로필/릴리스 모드에서도 경고 확인 가능하도록 항상 출력
     print(
-      '⚠️  APNs token not received after 10 seconds. FCM token may not be available.',
+      '⚠️  APNs token not received after ${maxAttempts} seconds. FCM token may not be available.',
     );
+    print('💡 IPA로 설치한 앱은 초기화가 더 느릴 수 있습니다. 앱을 재시작하거나 잠시 후 다시 시도하세요.');
   }
 
   /// 토큰 새로고침
@@ -337,6 +367,14 @@ class FCMNotifier extends Notifier<FCMState> {
   /// 토큰 수동 새로고침
   Future<void> refreshToken() async {
     await _refreshToken();
+  }
+
+  /// FCM 초기화 재시도
+  /// 
+  /// 알림 권한이 거부된 경우 설정에서 활성화한 후 이 메서드를 호출하세요.
+  Future<void> retryInitialization() async {
+    print('🔄 FCM 초기화 재시도 중...');
+    await initialize();
   }
 
   /// 현재 토큰 가져오기

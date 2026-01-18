@@ -323,6 +323,8 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     builder: (context, ref, child) {
                       final fcmState = ref.watch(fcmNotifierProvider);
                       final fcmToken = fcmState.token;
+                      final isInitialized = fcmState.isInitialized;
+                      final errorMessage = fcmState.errorMessage;
 
                       return Container(
                         padding: mainDefaultPadding,
@@ -335,6 +337,55 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: mainSmallSpacing,
                           children: [
+                            // 초기화 상태
+                            Row(
+                              spacing: 8,
+                              children: [
+                                Icon(
+                                  isInitialized
+                                      ? Icons.check_circle
+                                      : Icons.error_outline,
+                                  color: isInitialized ? Colors.green : Colors.orange,
+                                ),
+                                Text(
+                                  'FCM 초기화 상태: ${isInitialized ? "완료" : "미완료"}',
+                                  style: mainSmallTextStyle.copyWith(
+                                    color: isInitialized
+                                        ? Colors.green
+                                        : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            // 에러 메시지 표시
+                            if (errorMessage != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.red),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.red, size: 16),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        errorMessage,
+                                        style: mainSmallTextStyle.copyWith(
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            
+                            // FCM 토큰
                             Row(
                               spacing: 8,
                               children: [
@@ -377,9 +428,73 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                               ),
                             ] else ...[
                               Text(
-                                'FCM 토큰이 없습니다.\n앱을 재시작하거나 FCM 초기화를 확인하세요.',
+                                'FCM 토큰이 없습니다.',
                                 style: mainSmallTextStyle.copyWith(
                                   color: p.textSecondary,
+                                ),
+                              ),
+                              SizedBox(height: mainDefaultSpacing),
+                              // 에러 메시지가 있으면 설정 안내
+                              if (errorMessage != null &&
+                                  errorMessage.contains('설정')) ...[
+                                Text(
+                                  '알림 권한이 필요합니다.\n설정 > TableNow > 알림에서 권한을 활성화하세요.',
+                                  style: mainSmallTextStyle.copyWith(
+                                    color: Colors.orange,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: mainSmallSpacing),
+                              ],
+                              Center(
+                                child: Column(
+                                  children: [
+                                    SizedBox(
+                                      width: mainButtonMaxWidth,
+                                      height: mainButtonHeight,
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          // FCM 초기화 재시도 (권한 확인 포함)
+                                          await ref
+                                              .read(fcmNotifierProvider.notifier)
+                                              .retryInitialization();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: p.primary,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: Text(
+                                          'FCM 초기화 재시도',
+                                          style: mainMediumTitleStyle.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: mainSmallSpacing),
+                                    SizedBox(
+                                      width: mainButtonMaxWidth,
+                                      height: mainButtonHeight,
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          // FCM 토큰 수동 새로고침
+                                          await ref
+                                              .read(fcmNotifierProvider.notifier)
+                                              .refreshToken();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.grey,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: Text(
+                                          'FCM 토큰 새로고침',
+                                          style: mainMediumTitleStyle.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

@@ -69,14 +69,40 @@ class MyApp extends ConsumerStatefulWidget {
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends ConsumerState<MyApp> {
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // 앱 생명주기 관찰자 등록 (포그라운드/백그라운드 감지용)
+    WidgetsBinding.instance.addObserver(this);
+    
     // FCM 초기화 (Firebase 초기화 후 실행)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFCM();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // 앱이 포그라운드로 돌아올 때 APNs 토큰 재확인
+    if (state == AppLifecycleState.resumed) {
+      print('📱 앱이 포그라운드로 돌아왔습니다. APNs 토큰 재확인 중...');
+      // FCM 토큰이 없으면 재시도
+      final fcmState = ref.read(fcmNotifierProvider);
+      if (fcmState.token == null && fcmState.isInitialized) {
+        Future.delayed(const Duration(seconds: 2), () {
+          ref.read(fcmNotifierProvider.notifier).refreshToken();
+        });
+      }
+    }
   }
 
   Future<void> _initializeFCM() async {
