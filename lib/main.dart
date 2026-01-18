@@ -45,13 +45,11 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    if (kDebugMode) {
-      print('✅ Firebase initialized successfully');
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      print('❌ Firebase initialization error: $e');
-    }
+    print('✅ Firebase initialized successfully');
+  } catch (e, stackTrace) {
+    // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+    print('❌ Firebase initialization error: $e');
+    print('Stack trace: $stackTrace');
     // 실기기 빌드에서 GoogleService-Info.plist를 찾지 못하는 경우를 대비
     // 앱은 계속 실행되지만 Firebase 기능은 사용할 수 없음
   }
@@ -117,10 +115,10 @@ class _MyAppState extends ConsumerState<MyApp> {
         // TODO: 여기에 화면 이동 로직 추가
         // 예: data['screen']에 따라 적절한 화면으로 이동
       });
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ FCM initialization error: $e');
-      }
+    } catch (e, stackTrace) {
+      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+      print('❌ FCM initialization error: $e');
+      print('Stack trace: $stackTrace');
       // FCM 초기화 실패해도 앱은 계속 실행
     }
   }

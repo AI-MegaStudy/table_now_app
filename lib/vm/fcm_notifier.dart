@@ -52,16 +52,15 @@ class FCMNotifier extends Notifier<FCMState> {
   /// 알림 권한 요청, 토큰 가져오기, 토큰 갱신 리스너 설정을 수행합니다.
   Future<void> initialize() async {
     try {
-      if (kDebugMode) {
-        print('🚀 FCM 초기화 시작...');
-        print(
-          '📱 Platform: ${Platform.isIOS
-              ? 'iOS'
-              : Platform.isAndroid
-              ? 'Android'
-              : 'Unknown'}',
-        );
-      }
+      // 프로필/릴리스 모드에서도 초기화 시작 확인 가능하도록 항상 출력
+      print('🚀 FCM 초기화 시작...');
+      print(
+        '📱 Platform: ${Platform.isIOS
+            ? 'iOS'
+            : Platform.isAndroid
+            ? 'Android'
+            : 'Unknown'}',
+      );
 
       // iOS 알림 권한 요청 (필수)
       if (Platform.isIOS) {
@@ -77,9 +76,8 @@ class FCMNotifier extends Notifier<FCMState> {
             permission.authorizationStatus == AuthorizationStatus.provisional;
         await FCMStorage.saveNotificationPermissionStatus(isGranted);
 
-        if (kDebugMode) {
-          print('📱 알림 권한 상태: ${permission.authorizationStatus}');
-        }
+        // 프로필/릴리스 모드에서도 권한 상태 확인 가능하도록 항상 출력
+        print('📱 iOS 알림 권한 상태: ${permission.authorizationStatus}');
 
         // iOS: APNs 토큰이 등록될 때까지 대기
         await _waitForAPNSToken();
@@ -128,22 +126,21 @@ class FCMNotifier extends Notifier<FCMState> {
 
       state = state.copyWith(isInitialized: true, removeErrorMessage: true);
 
-      if (kDebugMode) {
-        print('✅ FCM initialized successfully');
-        print('🔥 FCM_TOKEN = ${state.token ?? "null"}');
+      // 프로필/릴리스 모드에서도 초기화 상태 확인 가능하도록 항상 출력
+      print('✅ FCM initialized successfully');
+      print('🔥 FCM_TOKEN = ${state.token ?? "null"}');
 
-        if (state.token == null) {
-          print('⚠️  FCM 토큰을 받지 못했습니다.');
-          print('📝 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-        }
+      if (state.token == null) {
+        print('⚠️  FCM 토큰을 받지 못했습니다.');
+        print('📝 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       final errorMsg = 'FCM 초기화 중 오류가 발생했습니다: $e';
       state = state.copyWith(isInitialized: false, errorMessage: errorMsg);
 
-      if (kDebugMode) {
-        print('❌ FCM initialization error: $errorMsg');
-      }
+      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+      print('❌ FCM initialization error: $errorMsg');
+      print('Stack trace: $stackTrace');
     }
   }
 
@@ -161,27 +158,27 @@ class FCMNotifier extends Notifier<FCMState> {
       try {
         final apnsToken = await _messaging.getAPNSToken();
         if (apnsToken != null) {
-          if (kDebugMode) {
-            print('✅ APNs token received');
-          }
+          print('✅ APNs token received');
           return;
         }
       } catch (e) {
         // APNs 토큰이 아직 없음, 계속 대기
+        if (attempt == 0) {
+          print('⏳ Waiting for APNs token... (attempt ${attempt + 1}/$maxAttempts)');
+        }
       }
 
-      if (kDebugMode && attempt == 0) {
+      if (attempt == 0) {
         print('⏳ Waiting for APNs token...');
       }
 
       await Future.delayed(delayDuration);
     }
 
-    if (kDebugMode) {
-      print(
-        '⚠️  APNs token not received after 10 seconds. FCM token may not be available.',
-      );
-    }
+    // 프로필/릴리스 모드에서도 경고 확인 가능하도록 항상 출력
+    print(
+      '⚠️  APNs token not received after 10 seconds. FCM token may not be available.',
+    );
   }
 
   /// 토큰 새로고침
@@ -196,7 +193,8 @@ class FCMNotifier extends Notifier<FCMState> {
 
       state = state.copyWith(token: token, removeErrorMessage: true);
 
-      if (kDebugMode && token != null) {
+      // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
+      if (token != null) {
         print('🔥 FCM_TOKEN updated: $token');
         print('💾 FCM 토큰 로컬 저장 완료');
 
@@ -207,15 +205,15 @@ class FCMNotifier extends Notifier<FCMState> {
         } else {
           print('✅ 토큰이 서버와 동기화되어 있습니다.');
         }
-      } else if (kDebugMode && token == null) {
+      } else {
         print('⚠️  FCM token is null.');
         print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Failed to get FCM token: $e');
-        print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-      }
+    } catch (e, stackTrace) {
+      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+      print('❌ Failed to get FCM token: $e');
+      print('Stack trace: $stackTrace');
+      print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다.');
     }
   }
