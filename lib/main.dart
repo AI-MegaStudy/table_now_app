@@ -8,6 +8,7 @@ import 'package:table_now_app/firebase_options.dart';
 import 'package:table_now_app/view/home.dart';
 import 'package:table_now_app/vm/fcm_notifier.dart';
 import 'package:table_now_app/vm/theme_notifier.dart';
+import 'package:table_now_app/vm/auth_notifier.dart';
 import 'package:table_now_app/utils/local_notification_service.dart';
 import 'package:table_now_app/utils/current_screen_tracker.dart';
 import 'package:table_now_app/utils/route_observer_helper.dart';
@@ -141,6 +142,36 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         // TODO: 여기에 화면 이동 로직 추가
         // 예: data['screen']에 따라 적절한 화면으로 이동
       });
+
+      // FCM 초기화 후, 로그인 상태 확인하여 토큰 서버 전송
+      // 자동 로그인 시에도 토큰이 서버에 등록되도록 함
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isLoggedIn && authState.customer != null) {
+        final fcmNotifier = ref.read(fcmNotifierProvider.notifier);
+        final token = fcmNotifier.currentToken;
+        
+        if (token != null) {
+          if (kDebugMode) {
+            print('📤 자동 로그인 감지: FCM 토큰 서버 전송 시작...');
+            print('   Customer Seq: ${authState.customer!.customerSeq}');
+          }
+          
+          // 약간의 지연 후 전송 (FCM 초기화가 완전히 완료되도록)
+          Future.delayed(const Duration(seconds: 1), () async {
+            try {
+              await fcmNotifier.sendTokenToServer(authState.customer!.customerSeq);
+            } catch (e) {
+              if (kDebugMode) {
+                print('⚠️  자동 로그인 시 FCM 토큰 서버 전송 실패: $e');
+              }
+            }
+          });
+        } else if (kDebugMode) {
+          print('⚠️  FCM 토큰이 없어 서버 전송을 건너뜁니다.');
+        }
+      } else if (kDebugMode) {
+        print('ℹ️  로그인 상태가 아니어서 FCM 토큰 서버 전송을 건너뜁니다.');
+      }
     } catch (e, stackTrace) {
       // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
       print('❌ FCM initialization error: $e');

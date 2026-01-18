@@ -112,11 +112,13 @@ Table device_token {
   customer_seq int [not null, ref: > customer.customer_seq, note: '고객 번호']
   fcm_token varchar(255) [not null, note: 'FCM 토큰']
   device_type varchar(10) [not null, note: '기기 타입 (ios/android)']
+  device_id varchar(255) [note: '기기 고유 식별자 (Android: androidId, iOS: identifierForVendor)']
   created_at datetime [default: `CURRENT_TIMESTAMP`, note: '생성 일시']
   updated_at datetime [default: `CURRENT_TIMESTAMP`, note: '수정 일시']
   
   Indexes {
     fcm_token [name: 'idx_fcm_token']
+    device_id [name: 'idx_device_id']
     (customer_seq, fcm_token) [unique, name: 'uk_customer_token']
   }
   
@@ -124,7 +126,11 @@ Table device_token {
     - 한 사용자가 여러 기기를 사용할 수 있으므로 (customer_seq, fcm_token) 복합 UNIQUE 키 사용
     - ON DELETE CASCADE: 사용자 삭제 시 관련 토큰도 자동 삭제
     - fcm_token에 인덱스 설정 (토큰으로 빠른 조회 가능)
+    - device_id에 인덱스 설정 (동일 기기 확인용)
     - FCM 토큰은 기기별로 고유하며, 앱 재설치 시 변경될 수 있음
+    - device_id: 동일 기기에서 여러 사용자가 로그인할 수 있으므로 UNIQUE 키는 설정하지 않음
+    - Android: Settings.Secure.ANDROID_ID 사용
+    - iOS: identifierForVendor (IDFV) 사용
   '''
 }
 
@@ -132,7 +138,7 @@ Table device_token {
 // 6. weather (날씨)
 // ============================================================
 // 구분: 연관 엔티티(Associative Entity)
-// 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, reserve가 참조함
+// 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, 독립적인 속성을 보유. reserve(릴레이션쉽)가 직접 참조함
 Table weather {
   store_seq int [pk, ref: > store.store_seq, note: '식당 번호']
   weather_datetime datetime [pk, note: '날씨 기준 일시']
@@ -146,8 +152,10 @@ Table weather {
   
   Note: '''
     - PK는 (store_seq, weather_datetime) 복합키
-    - 각 식당별로 날씨 정보를 저장
+    - 각 식당별로 날씨 정보를 저장 (store : weather = 1:N)
     - OpenWeatherMap API 호출 시 해당 식당의 store_lat, store_lng를 사용하여 날씨 정보 저장
+    - 독립적인 속성(weather_type, weather_low, weather_high)을 보유한 연관 엔티티
+    - 연관 엔티티로 분류하는 이유: N:M 관계를 해소하는 것이 아니라, 독립적인 속성을 가진 관계를 표현하며, 다른 릴레이션쉽(reserve)이 직접 참조하는 구조이기 때문
   '''
 }
 
@@ -190,8 +198,8 @@ Ref: reserve.weather_datetime > weather.weather_datetime
 // ============================================================
 // 8. menu (메뉴)
 // ============================================================
-// 구분: 연관 엔티티(Associative Entity)
-// 설명: 식당에 속한 메뉴 마스터
+// 구분: 릴레이션쉽(Relationship)
+// 설명: 식당에 속한 메뉴 마스터 (store : menu = 1:N)
 Table menu {
   menu_seq int [pk, increment, note: '메뉴 번호']
   store_seq int [not null, ref: > store.store_seq, note: '식당 번호']

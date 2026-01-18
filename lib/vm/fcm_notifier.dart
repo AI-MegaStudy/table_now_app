@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
@@ -385,6 +386,29 @@ class FCMNotifier extends Notifier<FCMState> {
 
   /// 서버에 FCM 토큰 전송
   ///
+  /// 기기 식별자 가져오기
+  /// Android: androidId, iOS: identifierForVendor
+  Future<String?> _getDeviceId() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return androidInfo.id; // Settings.Secure.ANDROID_ID
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.identifierForVendor; // IDFV
+      }
+      
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  기기 식별자 가져오기 실패: $e');
+      }
+      return null;
+    }
+  }
+
   /// [customerSeq] 고객 번호
   /// 반환값: 성공 여부 (bool)
   Future<bool> sendTokenToServer(int customerSeq) async {
@@ -399,6 +423,12 @@ class FCMNotifier extends Notifier<FCMState> {
     try {
       await FCMStorage.saveLastSyncAttempt(DateTime.now());
 
+      // 기기 식별자 가져오기
+      final deviceId = await _getDeviceId();
+      if (deviceId == null && kDebugMode) {
+        print('⚠️  기기 식별자를 가져올 수 없습니다. 기기 식별 없이 진행합니다.');
+      }
+
       // getApiBaseUrl()은 동기 함수 (앱 시작 시 초기화됨)
       final apiBaseUrl = getApiBaseUrl();
       final url = Uri.parse('$apiBaseUrl/api/customer/$customerSeq/fcm-token');
@@ -407,6 +437,9 @@ class FCMNotifier extends Notifier<FCMState> {
         print('📤 서버에 FCM 토큰 전송 중...');
         print('   URL: $url');
         print('   Token: ${token.substring(0, 20)}...');
+        if (deviceId != null) {
+          print('   Device ID: $deviceId');
+        }
       }
 
       final response = await http.post(
@@ -415,6 +448,7 @@ class FCMNotifier extends Notifier<FCMState> {
         body: jsonEncode({
           'fcm_token': token,
           'device_type': Platform.isIOS ? 'ios' : 'android',
+          if (deviceId != null) 'device_id': deviceId,
         }),
       );
 

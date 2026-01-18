@@ -17,17 +17,17 @@ const int dormantAccountDays = 180;
 /// Windows + Android 에뮬레이터 사용자는 자신의 호스트 IP를 설정하세요
 /// 예: 'http://192.168.1.50:8000'
 /// null이면 플랫폼에 따라 자동 선택 (Android: 10.0.2.2, iOS: 127.0.0.1)
-// const String? customApiBaseUrl = null;
+const String? customApiBaseUrl = null;
 //윈도우 사용자는 윗줄 주석 처리 하고 아래 줄 주석 해제하여 자신의 호스트 IP를 설정하세요.
-const String customApiBaseUrl = 'http://192.168.83.7:8000';
+// const String customApiBaseUrl = 'http://192.168.83.7:8000';
 // const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';
 
 /// FastAPI 서버 기본 URL
 ///
 /// customApiBaseUrl이 설정되어 있으면 사용하고, 없으면 플랫폼에 따라 기본값 반환
 String getApiBaseUrl() {
-  if (customApiBaseUrl.isNotEmpty) {
-    return customApiBaseUrl;
+  if (customApiBaseUrl != null && customApiBaseUrl!.isNotEmpty) {
+    return customApiBaseUrl!;
   }
   // 기본값 반환 (플랫폼별)
   return CustomCommonUtil.getApiBaseUrlSync();
@@ -105,3 +105,5 @@ const String storageKeyAutoLogin = 'auto_login_enabled';
 //   - 커스텀 API URL 설정 옵션 추가 (customApiBaseUrl)
 //   - 회원 상태 맵 추가 (loginStatus)
 //   - GetStorage 키 상수 추가 (storageKeyCustomer)
+// 2026-01-20 김택권: null 체크 수정
+//   - getApiBaseUrl() 함수에서 customApiBaseUrl null 체크 추가

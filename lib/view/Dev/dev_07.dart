@@ -9,10 +9,9 @@ import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
 import '../weather/weather_screen.dart';
 import '../weather/weather_forecast_screen.dart';
+import '../fcm/fcm_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
-import '../../vm/fcm_notifier.dart';
-import '../../utils/push_notification_service.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
   const Dev_07({super.key});
@@ -22,11 +21,6 @@ class Dev_07 extends ConsumerStatefulWidget {
 }
 
 class _Dev_07State extends ConsumerState<Dev_07> {
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   /// 로그아웃 처리
   Future<void> _handleLogout() async {
     // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
@@ -312,194 +306,29 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     ],
                   ),
 
-                  // FCM 테스트 섹션
+                  // FCM 테스트 페이지
                   Text(
                     'FCM 테스트',
                     style: mainTitleStyle.copyWith(color: p.textPrimary),
                   ),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final fcmState = ref.watch(fcmNotifierProvider);
-                      final fcmToken = fcmState.token;
-                      final isInitialized = fcmState.isInitialized;
-                      final errorMessage = fcmState.errorMessage;
-
-                      return Container(
-                        padding: mainDefaultPadding,
-                        decoration: BoxDecoration(
-                          color: p.cardBackground,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: p.divider),
+                  Center(
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToFcmScreen(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: mainSmallSpacing,
-                          children: [
-                            // 초기화 상태
-                            Row(
-                              spacing: 8,
-                              children: [
-                                Icon(
-                                  isInitialized
-                                      ? Icons.check_circle
-                                      : Icons.error_outline,
-                                  color: isInitialized ? Colors.green : Colors.orange,
-                                ),
-                                Text(
-                                  'FCM 초기화 상태: ${isInitialized ? "완료" : "미완료"}',
-                                  style: mainSmallTextStyle.copyWith(
-                                    color: isInitialized
-                                        ? Colors.green
-                                        : Colors.orange,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            
-                            // 에러 메시지 표시
-                            if (errorMessage != null) ...[
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.red),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.error, color: Colors.red, size: 16),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        errorMessage,
-                                        style: mainSmallTextStyle.copyWith(
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            
-                            // FCM 토큰
-                            Row(
-                              spacing: 8,
-                              children: [
-                                Icon(Icons.notifications, color: p.primary),
-                                Text(
-                                  'FCM 토큰',
-                                  style: mainSmallTextStyle.copyWith(
-                                    color: p.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (fcmToken != null) ...[
-                              SelectableText(
-                                fcmToken,
-                                style: mainSmallTextStyle.copyWith(
-                                  color: p.textPrimary,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                              SizedBox(height: mainDefaultSpacing),
-                              Center(
-                                child: SizedBox(
-                                  width: mainButtonMaxWidth,
-                                  height: mainButtonHeight,
-                                  child: ElevatedButton(
-                                    onPressed: () => _sendTestPush(fcmToken),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.orange,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: Text(
-                                      '포그라운드 테스트 푸시 발송',
-                                      style: mainMediumTitleStyle.copyWith(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ] else ...[
-                              Text(
-                                'FCM 토큰이 없습니다.',
-                                style: mainSmallTextStyle.copyWith(
-                                  color: p.textSecondary,
-                                ),
-                              ),
-                              SizedBox(height: mainDefaultSpacing),
-                              // 에러 메시지가 있으면 설정 안내
-                              if (errorMessage != null &&
-                                  errorMessage.contains('설정')) ...[
-                                Text(
-                                  '알림 권한이 필요합니다.\n설정 > TableNow > 알림에서 권한을 활성화하세요.',
-                                  style: mainSmallTextStyle.copyWith(
-                                    color: Colors.orange,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: mainSmallSpacing),
-                              ],
-                              Center(
-                                child: Column(
-                                  children: [
-                                    SizedBox(
-                                      width: mainButtonMaxWidth,
-                                      height: mainButtonHeight,
-                                      child: ElevatedButton(
-                                        onPressed: () async {
-                                          // FCM 초기화 재시도 (권한 확인 포함)
-                                          await ref
-                                              .read(fcmNotifierProvider.notifier)
-                                              .retryInitialization();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: p.primary,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: Text(
-                                          'FCM 초기화 재시도',
-                                          style: mainMediumTitleStyle.copyWith(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: mainSmallSpacing),
-                                    SizedBox(
-                                      width: mainButtonMaxWidth,
-                                      height: mainButtonHeight,
-                                      child: ElevatedButton(
-                                        onPressed: () async {
-                                          // FCM 토큰 수동 새로고침
-                                          await ref
-                                              .read(fcmNotifierProvider.notifier)
-                                              .refreshToken();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: Text(
-                                          'FCM 토큰 새로고침',
-                                          style: mainMediumTitleStyle.copyWith(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
+                        child: Text(
+                          'FCM 테스트 화면',
+                          style: mainMediumTitleStyle.copyWith(
+                            color: p.textOnPrimary,
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
 
                   // 홈으로 이동
@@ -552,55 +381,14 @@ class _Dev_07State extends ConsumerState<Dev_07> {
     await CustomNavigationUtil.to(context, const WeatherForecastScreen());
   }
 
+  /// FCM 테스트 화면으로 이동
+  void _navigateToFcmScreen() async {
+    await CustomNavigationUtil.to(context, const FcmScreen());
+  }
+
   /// 홈 화면으로 이동
   void _navigateToHome() async {
     await CustomNavigationUtil.to(context, const Home());
-  }
-
-  /// 테스트 푸시 발송
-  Future<void> _sendTestPush(String token) async {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('푸시 발송 중...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-    }
-
-    // PushNotificationService를 사용하여 푸시 알림 발송
-    final messageId = await PushNotificationService.sendToToken(
-      token: token,
-      title: '포그라운드 테스트 알림',
-      body: '앱이 포그라운드에 있을 때 로컬 알림이 표시됩니다.',
-      data: {
-        'type': 'test',
-        'timestamp': DateTime.now().toIso8601String(),
-        'message': '이것은 포그라운드 테스트 메시지입니다.',
-      },
-    );
-
-    if (mounted) {
-      if (messageId != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '푸시 발송 성공!\nmessage_id: $messageId',
-            ),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('푸시 발송 실패'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   /// 회원 정보 수정 화면으로 이동
