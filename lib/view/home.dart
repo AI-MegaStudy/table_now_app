@@ -240,7 +240,7 @@ class _HomeState extends ConsumerState<Home> {
               foregroundColor: p.textOnPrimary,
             ),
             child: Text(
-              '🔥 Firebase 연결 테스트',
+              'Firebase 연결 테스트',
               style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
             ),
           ),

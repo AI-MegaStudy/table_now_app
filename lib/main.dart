@@ -32,13 +32,6 @@ Future<void> main() async {
   if (!autoLoginEnabled) {
     // 자동 로그인이 비활성화되어 있으면 로그인 정보 삭제
     storage.remove(storageKeyCustomer);
-    if (kDebugMode) {
-      print('🔓 자동 로그인 비활성화: 로그인 정보 삭제');
-    }
-  } else {
-    if (kDebugMode) {
-      print('🔐 자동 로그인 활성화: 로그인 정보 유지');
-    }
   }
 
   // Firebase 초기화
@@ -46,7 +39,9 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('✅ Firebase initialized successfully');
+    if (kDebugMode) {
+      print('Firebase initialized successfully');
+    }
   } catch (e, stackTrace) {
     // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
     print('❌ Firebase initialization error: $e');
@@ -57,7 +52,7 @@ Future<void> main() async {
 
   // API 기본 URL 확인
   if (kDebugMode) {
-    print('✅ API Base URL: ${getApiBaseUrl()}');
+    print('API Base URL: ${getApiBaseUrl()}');
   }
 
   runApp(const ProviderScope(child: MyApp()));
@@ -76,7 +71,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     super.initState();
     // 앱 생명주기 관찰자 등록 (포그라운드/백그라운드 감지용)
     WidgetsBinding.instance.addObserver(this);
-    
+
     // FCM 초기화 (Firebase 초기화 후 실행)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFCM();
@@ -92,11 +87,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
-    // 앱이 포그라운드로 돌아올 때 APNs 토큰 재확인
+
+    // 앱이 포그라운드로 돌아올 때 FCM 토큰 재확인
     if (state == AppLifecycleState.resumed) {
-      print('📱 앱이 포그라운드로 돌아왔습니다. APNs 토큰 재확인 중...');
-      // FCM 토큰이 없으면 재시도
       final fcmState = ref.read(fcmNotifierProvider);
       if (fcmState.token == null && fcmState.isInitialized) {
         Future.delayed(const Duration(seconds: 2), () {
@@ -118,23 +111,15 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         final currentScreen = CurrentScreenTracker.getCurrentScreen();
 
         if (kDebugMode) {
-          print('🔔 알림 클릭:');
-          print('   Payload: ${response.payload}');
-
-          // 현재 화면 정보 출력
           if (currentScreen != null) {
-            print('   현재 화면: $currentScreen');
-          } else {
-            print('   현재 화면: 알 수 없음');
+            print('알림 클릭: 현재 화면=$currentScreen');
           }
-
-          // payload 파싱
           if (response.payload != null && response.payload!.isNotEmpty) {
             try {
               final data = jsonDecode(response.payload!);
-              print('   데이터: $data');
+              print('Payload: $data');
             } catch (e) {
-              print('   데이터 파싱 실패: $e');
+              // 파싱 실패는 무시
             }
           }
         }
@@ -146,143 +131,37 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       // FCM 초기화 후, 로그인 상태 확인하여 토큰 서버 전송
       // 자동 로그인 시에도 토큰이 서버에 등록되도록 함
       final authState = ref.read(authNotifierProvider);
+
       if (authState.isLoggedIn && authState.customer != null) {
         final fcmNotifier = ref.read(fcmNotifierProvider.notifier);
         final token = fcmNotifier.currentToken;
-        
+
         if (token != null) {
           if (kDebugMode) {
-            print('📤 자동 로그인 감지: FCM 토큰 서버 전송 시작...');
-            print('   Customer Seq: ${authState.customer!.customerSeq}');
+            print(
+              '자동 로그인: FCM 토큰 서버 전송 (Customer: ${authState.customer!.customerSeq})',
+            );
           }
-          
+
           // 약간의 지연 후 전송 (FCM 초기화가 완전히 완료되도록)
           Future.delayed(const Duration(seconds: 1), () async {
             try {
-              await fcmNotifier.sendTokenToServer(authState.customer!.customerSeq);
+              await fcmNotifier.sendTokenToServer(
+                authState.customer!.customerSeq,
+              );
             } catch (e) {
               if (kDebugMode) {
                 print('⚠️  자동 로그인 시 FCM 토큰 서버 전송 실패: $e');
               }
             }
           });
-        } else if (kDebugMode) {
-          print('⚠️  FCM 토큰이 없어 서버 전송을 건너뜁니다.');
         }
-      } else if (kDebugMode) {
-        print('ℹ️  로그인 상태가 아니어서 FCM 토큰 서버 전송을 건너뜁니다.');
       }
     } catch (e, stackTrace) {
       // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
       print('❌ FCM initialization error: $e');
       print('Stack trace: $stackTrace');
       // FCM 초기화 실패해도 앱은 계속 실행
-    }
-  }
-
-  /// 가장 깊은 Scaffold 찾기 (Navigator의 현재 활성 라우트에서 확인)
-  Scaffold? _findDeepestScaffold(BuildContext context) {
-    // Navigator의 현재 활성 라우트 확인
-    final navigator = navigatorKey.currentState;
-    if (navigator != null) {
-      // Navigator의 현재 라우트 확인
-      final currentRoute = ModalRoute.of(context);
-      if (currentRoute != null && currentRoute.isActive) {
-        // 현재 라우트의 Scaffold 찾기
-        Scaffold? candidateScaffold;
-        Scaffold? fallbackScaffold;
-
-        // 위젯 트리를 위로 올라가면서 모든 Scaffold 찾기
-        BuildContext currentCtx = context;
-
-        // 최대 반복 횟수 제한 (무한 루프 방지)
-        int maxIterations = 10;
-        int iteration = 0;
-
-        while (iteration < maxIterations) {
-          iteration++;
-          final scaffold = currentCtx.findAncestorWidgetOfExactType<Scaffold>();
-          if (scaffold != null) {
-            // Scaffold의 key 확인 (화면 식별용)
-            final scaffoldKey = scaffold.key;
-            if (scaffoldKey is ValueKey) {
-              final keyValue = scaffoldKey.value;
-              if (keyValue is String && keyValue.startsWith('Dev_')) {
-                // Dev 화면인 경우 (가장 우선순위)
-                candidateScaffold = scaffold;
-                break;
-              }
-            }
-
-            // Scaffold의 body가 실제 화면 위젯인지 확인
-            final body = scaffold.body;
-            if (body != null) {
-              final bodyType = body.runtimeType.toString();
-              // 탭 구조나 홈 화면이 아닌 실제 화면인 경우
-              if (!bodyType.contains('IndexedStack') &&
-                  !bodyType.contains('PageView') &&
-                  !bodyType.contains('TabBarView')) {
-                // 가장 깊은 Scaffold로 설정
-                fallbackScaffold ??= scaffold;
-              }
-            }
-          }
-
-          // 부모 context로 이동 시도
-          try {
-            // RenderObjectWidget을 통해 부모로 이동할 수 없으므로 중단
-            break;
-          } catch (e) {
-            break;
-          }
-        }
-
-        // key가 있는 Scaffold를 우선적으로 반환
-        if (candidateScaffold != null) {
-          return candidateScaffold;
-        }
-
-        // key가 없으면 fallback Scaffold 반환
-        if (fallbackScaffold != null) {
-          return fallbackScaffold;
-        }
-
-        // 위 방법이 실패하면 현재 context에서 가장 가까운 Scaffold 반환
-        return context.findAncestorWidgetOfExactType<Scaffold>();
-      }
-    }
-
-    // 위 방법이 실패하면 현재 context에서 가장 가까운 Scaffold 반환
-    return context.findAncestorWidgetOfExactType<Scaffold>();
-  }
-
-  /// 위젯 타입 이름 추출 헬퍼 함수
-  String _extractWidgetTypeName(Widget widget) {
-    final typeString = widget.runtimeType.toString();
-
-    // 위젯 타입 정제
-    if (typeString.contains('_')) {
-      // "_Dev_07State" 같은 경우 "Dev_07" 추출
-      final parts = typeString.split('_');
-      if (parts.length >= 2) {
-        // "Dev"와 "07"을 합쳐서 "Dev_07"로 만들기
-        return parts.sublist(0, 2).join('_');
-      } else {
-        return typeString
-            .replaceAll('_', '')
-            .replaceAll('State', '')
-            .replaceAll('Element', '');
-      }
-    } else if (!typeString.contains('Element') &&
-        !typeString.contains('State') &&
-        !typeString.contains('Widget')) {
-      return typeString;
-    } else {
-      // "StatefulElement", "StatelessElement" 같은 내부 타입 제거
-      return typeString
-          .replaceAll('Element', '')
-          .replaceAll('State', '')
-          .replaceAll('Widget', '');
     }
   }
 

@@ -2,6 +2,7 @@
 // FCM 테스트 및 푸시 알림 발송 화면
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
@@ -44,26 +45,37 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+
         if (responseData['result'] == 'OK') {
+          final results = responseData['results'] ?? [];
+
           setState(() {
-            _customersWithFcmToken = List<Map<String, dynamic>>.from(
-              responseData['results'] ?? [],
-            );
+            _customersWithFcmToken = List<Map<String, dynamic>>.from(results);
             _isLoadingCustomers = false;
           });
         } else {
+          final errorMsg = responseData['errorMsg'] ?? '알 수 없는 오류';
+          if (kDebugMode) {
+            print('FCM 고객 목록 조회 실패: $errorMsg');
+          }
           setState(() {
             _customersWithFcmToken = [];
             _isLoadingCustomers = false;
           });
         }
       } else {
+        if (kDebugMode) {
+          print('FCM 고객 목록 조회 HTTP 오류: ${response.statusCode}');
+        }
         setState(() {
           _customersWithFcmToken = [];
           _isLoadingCustomers = false;
         });
       }
     } catch (e) {
+      if (kDebugMode) {
+        print('FCM 고객 목록 조회 예외: $e');
+      }
       setState(() {
         _customersWithFcmToken = [];
         _isLoadingCustomers = false;
