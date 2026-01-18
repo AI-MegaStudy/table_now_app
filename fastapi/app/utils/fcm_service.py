@@ -8,6 +8,7 @@ FCM 푸시 알림 발송 서비스
 import firebase_admin
 from firebase_admin import credentials, messaging
 import os
+import time
 from typing import Optional, Dict, List
 
 
@@ -72,6 +73,10 @@ class FCMService:
             return None
         
         try:
+            # Android에서 동일 알림이 카운트만 올라가는 문제 방지
+            # 각 알림마다 고유한 tag 생성 (밀리초 기반)
+            android_tag = f"notification_{int(time.time() * 1000)}"
+            
             message = messaging.Message(
                 token=token,
                 notification=messaging.Notification(
@@ -79,6 +84,11 @@ class FCMService:
                     body=body,
                 ),
                 data={k: str(v) for k, v in (data or {}).items()},
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        tag=android_tag,  # 고유 태그로 각 알림을 별도로 표시
+                    ),
+                ),
             )
             
             message_id = messaging.send(message)
@@ -89,7 +99,11 @@ class FCMService:
             print("⚠️  FCM token is invalid or expired")
             return None
         except Exception as e:
+            import traceback
             print(f"❌ Failed to send push notification: {e}")
+            print(f"❌ Error type: {type(e).__name__}")
+            print(f"❌ Traceback:")
+            traceback.print_exc()
             return None
     
     @classmethod
@@ -191,6 +205,10 @@ class FCMService:
             tokens = tokens[:500]
         
         try:
+            # Android에서 동일 알림이 카운트만 올라가는 문제 방지
+            # 각 알림마다 고유한 tag 생성 (밀리초 기반)
+            android_tag = f"notification_{int(time.time() * 1000)}"
+            
             message = messaging.MulticastMessage(
                 tokens=tokens,
                 notification=messaging.Notification(
@@ -198,6 +216,11 @@ class FCMService:
                     body=body,
                 ),
                 data={k: str(v) for k, v in (data or {}).items()},
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        tag=android_tag,  # 고유 태그로 각 알림을 별도로 표시
+                    ),
+                ),
             )
             
             response = messaging.send_multicast(message)

@@ -12,6 +12,7 @@ import 'package:table_now_app/view/Dev/dev_06.dart';
 import 'package:table_now_app/view/Dev/dev_07.dart';
 import 'package:table_now_app/view/Dev/dev_firebase_test.dart';
 import 'package:table_now_app/vm/theme_notifier.dart';
+import 'package:table_now_app/utils/current_screen_tracker.dart';
 
 class Home extends ConsumerStatefulWidget {
   const Home({super.key});
@@ -34,10 +35,14 @@ class _HomeState extends ConsumerState<Home> {
   @override
   void initState() {
     super.initState();
+    // 현재 화면 추적
+    CurrentScreenTracker.setCurrentScreen('Home');
   }
 
   @override
   void dispose() {
+    // 화면이 사라질 때 추적 해제
+    CurrentScreenTracker.clearCurrentScreen();
     super.dispose();
   }
 

@@ -111,8 +111,9 @@ class LocalNotificationService {
         return;
       }
 
-      // 알림 ID 생성 (타임스탬프 기반)
-      final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      // 알림 ID 생성 (밀리초 단위로 고유 ID 보장)
+      // 안드로이드에서 동일한 알림 ID는 카운트만 증가하므로, 매번 고유한 ID 생성 필요
+      final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(2147483647);
 
       // Android 알림 세부 설정
       const androidDetails = AndroidNotificationDetails(

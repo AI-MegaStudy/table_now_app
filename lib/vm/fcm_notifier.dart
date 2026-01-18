@@ -8,6 +8,7 @@ import 'package:table_now_app/config.dart';
 import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
 import 'package:table_now_app/utils/local_notification_service.dart';
+import 'package:table_now_app/utils/current_screen_tracker.dart';
 
 /// FCM 토큰 상태 모델
 class FCMState {
@@ -121,6 +122,9 @@ class FCMNotifier extends Notifier<FCMState> {
 
       // 포그라운드 메시지 핸들러 설정
       _setupForegroundMessageHandler();
+
+      // 백그라운드/종료 상태 알림 클릭 핸들러 설정
+      _setupBackgroundMessageHandlers();
 
       state = state.copyWith(isInitialized: true, removeErrorMessage: true);
 
@@ -277,6 +281,59 @@ class FCMNotifier extends Notifier<FCMState> {
       // 포그라운드 알림 표시 (로컬 노티피케이션 사용)
       LocalNotificationService.showNotification(message);
     });
+  }
+
+  /// 백그라운드/종료 상태 알림 클릭 핸들러 설정
+  ///
+  /// 앱이 백그라운드나 종료 상태에서 알림을 클릭했을 때 처리합니다.
+  void _setupBackgroundMessageHandlers() {
+    // 백그라운드 상태에서 알림 클릭
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationTap(message, '백그라운드');
+    });
+
+    // 앱 종료 상태에서 알림 클릭으로 앱 실행
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        _handleNotificationTap(message, '종료 상태');
+      }
+    });
+  }
+
+  /// 알림 클릭 처리 (공통 핸들러)
+  ///
+  /// 포그라운드, 백그라운드, 종료 상태 모두에서 사용됩니다.
+  void _handleNotificationTap(RemoteMessage message, String state) {
+    if (kDebugMode) {
+      print('🔔 알림 클릭 ($state):');
+      print('   Title: ${message.notification?.title}');
+      print('   Body: ${message.notification?.body}');
+      print('   Data: ${message.data}');
+    }
+
+    // 현재 화면 정보 가져오기 (백그라운드/종료 상태에서는 null일 수 있음)
+    final currentScreen = CurrentScreenTracker.getCurrentScreen();
+
+    if (kDebugMode) {
+      if (currentScreen != null) {
+        print('   현재 화면: $currentScreen');
+      } else {
+        print('   현재 화면: 알 수 없음 (앱이 백그라운드/종료 상태였을 수 있음)');
+      }
+
+      // 데이터 파싱
+      if (message.data.isNotEmpty) {
+        try {
+          print('   데이터: ${message.data}');
+        } catch (e) {
+          print('   데이터 파싱 실패: $e');
+        }
+      }
+    }
+
+    // TODO: 여기에 화면 이동 로직 추가
+    // 예: message.data['screen']에 따라 적절한 화면으로 이동
+    // navigatorKey를 사용하여 화면 이동
   }
 
   /// 토큰 수동 새로고침

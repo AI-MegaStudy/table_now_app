@@ -28,7 +28,22 @@
 - [x] `FCMNotifier`에 `LocalNotificationService` 통합
   - [x] `FCMNotifier.initialize()`에서 `LocalNotificationService` 초기화
   - [x] 포그라운드 핸들러에서 `LocalNotificationService.showNotification()` 호출
-- [x] FCM 메시지 `data` 필드를 JSON으로 변환하여 payload에 저장
+  - [x] FCM 메시지 `data` 필드를 JSON으로 변환하여 payload에 저장
+
+### 알림 클릭 핸들러 구현
+- [x] 포그라운드 알림 클릭 핸들러 구현 (`main.dart`)
+  - [x] `LocalNotificationService.setOnNotificationTap()` 설정
+  - [x] 알림 payload 파싱 및 로그 출력
+  - [x] 현재 화면 정보 추적 및 출력
+- [x] 백그라운드/종료 상태 알림 클릭 핸들러 구현 (`FCMNotifier`)
+  - [x] `FirebaseMessaging.onMessageOpenedApp` 핸들러 구현
+  - [x] `FirebaseMessaging.instance.getInitialMessage()` 처리
+  - [x] 알림 데이터 파싱 및 로그 출력
+  - [x] 현재 화면 정보 추적 및 출력
+- [x] 현재 화면 추적 기능 구현
+  - [x] `RouteObserver` 구현 (`ScreenTrackingRouteObserver`)
+  - [x] `CurrentScreenTracker` 유틸리티 클래스 구현
+  - [x] 전역 NavigatorKey 설정 (`main.dart`)
 
 ### 백엔드 FCM 서비스
 - [x] `app/utils/fcm_service.py` 공통 서비스 모듈 생성
@@ -46,18 +61,19 @@
 
 #### 1.1 포그라운드 알림 클릭 처리
 **현재 상태**: 
-- ✅ 알림 클릭 핸들러는 구현됨 (`LocalNotificationService.setOnNotificationTap()`)
-- ❌ 실제 라우팅 로직은 미구현 (핸들러만 있고 화면 이동 코드 없음)
+- ✅ 알림 클릭 핸들러 구현 완료 (`main.dart`의 `LocalNotificationService.setOnNotificationTap()`)
+- ✅ 알림 payload 파싱 및 현재 화면 추적 구현 완료
+- ❌ 실제 라우팅 로직은 미구현 (로그 출력만 하고 화면 이동 코드 없음)
 
 **구현 필요**:
-- [ ] `main.dart` 또는 적절한 위치에서 알림 클릭 핸들러 설정
-- [ ] 알림 payload에서 화면 정보 파싱 (`screen`, `reserve_seq` 등)
-- [ ] 화면 라우팅 로직 구현
+- [x] `main.dart`에서 알림 클릭 핸들러 설정 ✅
+- [x] 알림 payload에서 화면 정보 파싱 (`screen`, `reserve_seq` 등) ✅
+- [ ] 화면 라우팅 로직 구현 (TODO 주석만 있음)
   - 예약 상세 화면 (`/reservation/{reserve_seq}`)
   - 홈 화면 (`/home`)
   - 메뉴 화면 등
 
-**구현 위치**: `lib/main.dart` 또는 별도 서비스 클래스
+**구현 위치**: `lib/main.dart` (이미 핸들러는 구현됨, 라우팅 로직만 추가 필요)
 
 **예시 코드**:
 ```dart
@@ -97,15 +113,19 @@ void _setupNotificationTapHandler() {
 ```
 
 #### 1.2 백그라운드/종료 상태 알림 클릭 처리
-**현재 상태**: 미구현
+**현재 상태**: 
+- ✅ 백그라운드/종료 상태 알림 클릭 핸들러 구현 완료 (`FCMNotifier._setupBackgroundMessageHandlers()`)
+- ✅ 알림 데이터 파싱 및 현재 화면 추적 구현 완료
+- ❌ 실제 라우팅 로직은 미구현 (로그 출력만 하고 화면 이동 코드 없음)
 
 **구현 필요**:
-- [ ] `FirebaseMessaging.onMessageOpenedApp` 핸들러 구현
+- [x] `FirebaseMessaging.onMessageOpenedApp` 핸들러 구현 ✅
   - 백그라운드 상태에서 알림 클릭 시 처리
-- [ ] `FirebaseMessaging.instance.getInitialMessage()` 처리
+- [x] `FirebaseMessaging.instance.getInitialMessage()` 처리 ✅
   - 앱이 종료 상태에서 알림 클릭으로 앱 실행 시 처리
+- [ ] 화면 라우팅 로직 구현 (TODO 주석만 있음)
 
-**구현 위치**: `lib/vm/fcm_notifier.dart` 또는 `lib/main.dart`
+**구현 위치**: `lib/vm/fcm_notifier.dart` (이미 핸들러는 구현됨, 라우팅 로직만 추가 필요)
 
 **예시 코드**:
 ```dart
@@ -289,29 +309,33 @@ async def create_reservation(...):
 
 #### 4.1 포그라운드 알림 테스트
 **테스트 항목**:
-- [ ] 포그라운드 상태에서 알림 수신 확인
-- [ ] 알림 표시 확인 (제목, 내용)
-- [ ] 알림 클릭 시 화면 이동 확인
+- [x] 포그라운드 상태에서 알림 수신 확인 ✅
+- [x] 알림 표시 확인 (제목, 내용) ✅
+- [x] 알림 클릭 시 핸들러 동작 확인 ✅ (로그 출력 확인)
+- [ ] 알림 클릭 시 화면 이동 확인 (라우팅 로직 미구현)
 - [ ] iOS/Android 각각 테스트
 
 #### 4.2 백그라운드 알림 테스트
 **테스트 항목**:
-- [ ] 백그라운드 상태에서 알림 수신 확인
-- [ ] 알림 클릭 시 앱 실행 및 화면 이동 확인
+- [x] 백그라운드 상태에서 알림 수신 확인 ✅
+- [x] 알림 클릭 시 핸들러 동작 확인 ✅ (로그 출력 확인)
+- [ ] 알림 클릭 시 앱 실행 및 화면 이동 확인 (라우팅 로직 미구현)
 - [ ] iOS/Android 각각 테스트
 
 #### 4.3 종료 상태 알림 테스트
 **테스트 항목**:
-- [ ] 앱 종료 상태에서 알림 수신 확인
-- [ ] 알림 클릭 시 앱 실행 및 화면 이동 확인
-- [ ] `getInitialMessage()` 동작 확인
+- [x] 앱 종료 상태에서 알림 수신 확인 ✅
+- [x] 알림 클릭 시 핸들러 동작 확인 ✅ (로그 출력 확인)
+- [x] `getInitialMessage()` 동작 확인 ✅
+- [ ] 알림 클릭 시 앱 실행 및 화면 이동 확인 (라우팅 로직 미구현)
 - [ ] iOS/Android 각각 테스트
 
 #### 4.4 데이터 페이로드 테스트
 **테스트 항목**:
-- [ ] `data` 필드가 올바르게 전달되는지 확인
-- [ ] 알림 클릭 시 `data` 파싱 확인
-- [ ] 화면 이동 시 파라미터 전달 확인
+- [x] `data` 필드가 올바르게 전달되는지 확인 ✅
+- [x] 알림 클릭 시 `data` 파싱 확인 ✅
+- [x] 현재 화면 추적 확인 ✅ (RouteObserver 사용)
+- [ ] 화면 이동 시 파라미터 전달 확인 (라우팅 로직 미구현)
 
 ---
 
@@ -341,12 +365,13 @@ async def create_reservation(...):
 ## 📋 우선순위별 작업 계획
 
 ### Phase 1: 알림 클릭 처리 (높은 우선순위)
-1. 포그라운드 알림 클릭 핸들러 구현
-2. 백그라운드/종료 상태 알림 클릭 핸들러 구현
-3. 화면 라우팅 로직 구현
-4. 테스트 및 검증
+1. ✅ 포그라운드 알림 클릭 핸들러 구현 (완료)
+2. ✅ 백그라운드/종료 상태 알림 클릭 핸들러 구현 (완료)
+3. ✅ 현재 화면 추적 기능 구현 (완료)
+4. [ ] 화면 라우팅 로직 구현 (진행 중)
+5. [ ] 테스트 및 검증
 
-**예상 소요 시간**: 2-3일
+**예상 소요 시간**: 1-2일 (핸들러 구현 완료, 라우팅 로직만 남음)
 
 ### Phase 2: 백엔드 푸시 알림 전송 (중간 우선순위)
 **참고**: 다른 팀원의 예약/결제 API 작업 완료 후 진행 가능
@@ -435,3 +460,9 @@ async def create_reservation(...):
   - `push_debug.py` 리팩토링: `FCMService` 사용으로 변경
   - 중복 초기화 코드 제거
   - 전역 초기화는 `FCMService`에서 자동 처리되도록 완료
+- **2026-01-19**: 알림 클릭 핸들러 구현 완료
+  - 포그라운드 알림 클릭 핸들러 구현 (`main.dart`)
+  - 백그라운드/종료 상태 알림 클릭 핸들러 구현 (`FCMNotifier`)
+  - 현재 화면 추적 기능 구현 (RouteObserver, CurrentScreenTracker)
+  - 알림 클릭 시 로그 출력 및 현재 화면 정보 확인 가능
+  - 화면 라우팅 로직은 아직 미구현 (TODO 주석만 있음)

@@ -11,6 +11,10 @@ import '../weather/weather_screen.dart';
 import '../weather/weather_forecast_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
+import '../../vm/fcm_notifier.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../config.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
   const Dev_07({super.key});
@@ -310,6 +314,81 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     ],
                   ),
 
+                  // FCM 테스트 섹션
+                  Text(
+                    'FCM 테스트',
+                    style: mainTitleStyle.copyWith(color: p.textPrimary),
+                  ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final fcmState = ref.watch(fcmNotifierProvider);
+                      final fcmToken = fcmState.token;
+
+                      return Container(
+                        padding: mainDefaultPadding,
+                        decoration: BoxDecoration(
+                          color: p.cardBackground,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: p.divider),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: mainSmallSpacing,
+                          children: [
+                            Row(
+                              spacing: 8,
+                              children: [
+                                Icon(Icons.notifications, color: p.primary),
+                                Text(
+                                  'FCM 토큰',
+                                  style: mainSmallTextStyle.copyWith(
+                                    color: p.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (fcmToken != null) ...[
+                              SelectableText(
+                                fcmToken,
+                                style: mainSmallTextStyle.copyWith(
+                                  color: p.textPrimary,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                              SizedBox(height: mainDefaultSpacing),
+                              Center(
+                                child: SizedBox(
+                                  width: mainButtonMaxWidth,
+                                  height: mainButtonHeight,
+                                  child: ElevatedButton(
+                                    onPressed: () => _sendTestPush(fcmToken),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: Text(
+                                      '포그라운드 테스트 푸시 발송',
+                                      style: mainMediumTitleStyle.copyWith(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              Text(
+                                'FCM 토큰이 없습니다.\n앱을 재시작하거나 FCM 초기화를 확인하세요.',
+                                style: mainSmallTextStyle.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
                   // 홈으로 이동
                   Text(
                     '네비게이션',
@@ -363,6 +442,76 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   /// 홈 화면으로 이동
   void _navigateToHome() async {
     await CustomNavigationUtil.to(context, const Home());
+  }
+
+  /// 테스트 푸시 발송
+  Future<void> _sendTestPush(String token) async {
+    try {
+      final apiBaseUrl = getApiBaseUrl();
+      final url = Uri.parse('$apiBaseUrl/api/debug/push');
+
+      // 데이터가 담긴 테스트 메시지
+      final requestBody = {
+        'token': token,
+        'title': '포그라운드 테스트 알림',
+        'body': '앱이 포그라운드에 있을 때 로컬 알림이 표시됩니다.',
+        'data': {
+          'type': 'test',
+          'timestamp': DateTime.now().toIso8601String(),
+          'message': '이것은 포그라운드 테스트 메시지입니다.',
+        },
+      };
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('푸시 발송 중...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (mounted) {
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '푸시 발송 성공!\nmessage_id: ${responseData['message_id']}',
+              ),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '푸시 발송 실패: ${response.statusCode}\n${response.body}',
+              ),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('푸시 발송 오류: $e'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// 회원 정보 수정 화면으로 이동
