@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/utils_core.dart';
-import 'package:table_now_app/model/payment.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
-import 'package:table_now_app/vm/payment_notifier.dart';
 
 class PaymentListGroupView extends ConsumerWidget {
   const PaymentListGroupView({super.key});

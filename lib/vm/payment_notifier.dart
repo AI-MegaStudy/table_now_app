@@ -26,8 +26,6 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
   Future<List<Payment>> _fetchData(int? id) async {
-    print('=====customerSeq => $customerSeq');
-
     // Get Data from Backend
     final uri = Uri.parse('$url/api/pay');
     final response = await http.get(uri);
@@ -54,14 +52,13 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   }
 
   Future<void> purchase(List<Payment> payments) async {
-    final response = await http.post(
-      Uri.parse('$url/api/pay/insert'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode([
+    /*
+[
         Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson(),
         Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson(),
-      ]),
-    );
+      ]
+    */
+    final response = await http.post(Uri.parse('$url/api/pay/insert'), headers: {'Content-Type': 'application/json'}, body: json.encode(payments));
     if (response.statusCode != 200) {
       throw Exception("데이터 로딩 실패: ${response.statusCode}");
     }

@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
-import 'package:table_now_app/vm/auth_notifier.dart';
 
 class PaymentResponse {
   final int? pay_id;
