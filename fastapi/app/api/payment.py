@@ -77,7 +77,7 @@ async def select_pays_group_by_reserve(reserve_seq: int):
         conn = connect_db()
         curs = conn.cursor()
         curs.execute("""
-            select pp.*,m.menu_name ,s.store_description,o.option_name from 
+            select pp.*,m.menu_name ,s.store_description,o.option_name,m.menu_image from 
    (
    select count(p.pay_id) as total_row_count,
                      p.reserve_seq,
@@ -116,7 +116,8 @@ async def select_pays_group_by_reserve(reserve_seq: int):
                     'total_pay': row[6],
                     'menu_name' : row[8],
                     'store_description': row[9],
-                    'option_name': row[10]
+                    'option_name': row[10],
+                    'menu_image': row[11]
                 })
             except Exception as e:
                 print(f"Error processing row: {e}, row: {row}")

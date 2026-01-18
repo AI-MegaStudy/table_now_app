@@ -2,16 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/vm/auth_notifier.dart';
 
 class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   int? customerSeq;
-  final String url = 'http://192.168.219.105:8000';
+  late final String url;
   final String error = '';
   @override
   FutureOr<List<Payment>> build() async {
+    url = getApiBaseUrl();
     // Payment는 기본적으로 유저ID가 required됨.
     // 요청할때 유저가 없다면 return []
     final authState = ref.watch(authNotifierProvider);
@@ -26,18 +28,12 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
   Future<List<Payment>> _fetchData(int? id) async {
-    // Get Data from Backend
-    final uri = Uri.parse('$url/api/pay');
-    final response = await http.get(uri);
+    final response = await http.get(Uri.parse('$url/api/pay'));
     if (response.statusCode != 200) {
       throw Exception("데이터 로딩 실패: ${response.statusCode}");
     }
     final jsonData = json.decode(utf8.decode(response.bodyBytes));
     final List results = jsonData["results"];
-
-    for (final i in results) {
-      print('${i}');
-    }
 
     return results.map((data) => Payment.fromJson(data)).toList();
   }
@@ -45,6 +41,7 @@ class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
   Future<void> refreshData(int? id) async {
+    state = const AsyncValue.loading();
     if (customerSeq == null)
       state = AsyncValue.error(Exception('401: no access'), StackTrace.empty);
     else
