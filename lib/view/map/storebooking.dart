@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../model/store.dart'; // 프로젝트 경로에 맞춰 수정하세요
+import '../../model/store.dart'; // 경로 상황에 맞게 수정
 
 class StoreBookingInfoScreen extends ConsumerWidget {
-  final Store store; // 이전 화면에서 넘겨받은 매장 정보
+  final Store store;
 
-  const StoreBookingInfoScreen({super.key, required this.store});
+  // ✅ 생성자 수정
+  const StoreBookingInfoScreen(this.store, {super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 필요한 경우 여기서 ref.watch(다른_provider)를 사용할 수 있습니다.
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -37,16 +36,8 @@ class StoreBookingInfoScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.white),
-            onPressed: () {
-              // 마이페이지 이동 등
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
+
       body: Column(
         children: [
           // 1. Step Indicator
@@ -79,7 +70,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 매장 이미지
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(20),
@@ -111,7 +101,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '카레하우스 ${store.store_description}',
+                                store.store_description ?? "",
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -131,11 +121,8 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  store.store_address,
-                                  style: const TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 15,
-                                  ),
+                                  store.store_address ?? "",
+                                  style: const TextStyle(fontSize: 15),
                                 ),
                               ),
                             ],
@@ -150,7 +137,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '영업시간: ${store.store_open_time} - ${store.store_close_time}',
+                                '영업시간: ${store.store_open_time ?? ""} - ${store.store_close_time ?? ""}',
                                 style: TextStyle(
                                   color: Colors.grey.shade700,
                                   fontSize: 14,
@@ -174,9 +161,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  // 다음 단계(메뉴 선택 등)로 이동 로직
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade400,
                   foregroundColor: Colors.white,
@@ -207,7 +192,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
     );
   }
 
-  // Step 아이콘 위젯
   Widget _buildStep(int number, String title, {bool isActive = false}) {
     return Column(
       children: [
@@ -237,7 +221,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
     );
   }
 
-  // Step 사이 연결선
   Widget _buildLine() => Expanded(
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),

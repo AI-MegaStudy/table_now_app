@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/store_notifire.dart';

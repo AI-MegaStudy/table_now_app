@@ -87,23 +87,23 @@ class _Dev_04State extends ConsumerState<Dev_04> {
                     child: SizedBox(
                       width: mainButtonMaxWidth,
                       height: mainButtonHeight,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MenuDetailScreen(),
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: p.divider),
-                        ),
-                        child: Text(
-                          'Menu Detail',
-                          style: mainMediumTitleStyle.copyWith(
-                            color: p.textPrimary,
-                          ),
-                        ),
-                      ),
+                      // child: OutlinedButton(
+                      //   onPressed: () => Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (context) => MenuDetailScreen(),
+                      //     ),
+                      //   ),
+                      //   style: OutlinedButton.styleFrom(
+                      //     side: BorderSide(color: p.divider),
+                      //   ),
+                      //   child: Text(
+                      //     'Menu Detail',
+                      //     style: mainMediumTitleStyle.copyWith(
+                      //       color: p.textPrimary,
+                      //     ),
+                      //   ),
+                      // ),
                     ),
                   ),
                   Center(

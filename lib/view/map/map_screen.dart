@@ -94,7 +94,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             onTap: () => showModalBottomSheet(
               context: context,
-              builder: (_) => StoreDetailSheet(s),
+              builder: (_) => StoreBookingInfoScreen(s),
             ),
           ),
         );
