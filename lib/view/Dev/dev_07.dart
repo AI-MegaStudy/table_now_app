@@ -12,9 +12,7 @@ import '../weather/weather_forecast_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
 import '../../vm/fcm_notifier.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../../config.dart';
+import '../../utils/push_notification_service.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
   const Dev_07({super.key});
@@ -561,67 +559,43 @@ class _Dev_07State extends ConsumerState<Dev_07> {
 
   /// 테스트 푸시 발송
   Future<void> _sendTestPush(String token) async {
-    try {
-      final apiBaseUrl = getApiBaseUrl();
-      final url = Uri.parse('$apiBaseUrl/api/debug/push');
-
-      // 데이터가 담긴 테스트 메시지
-      final requestBody = {
-        'token': token,
-        'title': '포그라운드 테스트 알림',
-        'body': '앱이 포그라운드에 있을 때 로컬 알림이 표시됩니다.',
-        'data': {
-          'type': 'test',
-          'timestamp': DateTime.now().toIso8601String(),
-          'message': '이것은 포그라운드 테스트 메시지입니다.',
-        },
-      };
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('푸시 발송 중...'),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('푸시 발송 중...'),
+          duration: Duration(seconds: 1),
+        ),
       );
+    }
 
-      if (mounted) {
-        if (response.statusCode == 200) {
-          final responseData = jsonDecode(response.body);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '푸시 발송 성공!\nmessage_id: ${responseData['message_id']}',
-              ),
-              duration: const Duration(seconds: 3),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '푸시 발송 실패: ${response.statusCode}\n${response.body}',
-              ),
-              duration: const Duration(seconds: 3),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+    // PushNotificationService를 사용하여 푸시 알림 발송
+    final messageId = await PushNotificationService.sendToToken(
+      token: token,
+      title: '포그라운드 테스트 알림',
+      body: '앱이 포그라운드에 있을 때 로컬 알림이 표시됩니다.',
+      data: {
+        'type': 'test',
+        'timestamp': DateTime.now().toIso8601String(),
+        'message': '이것은 포그라운드 테스트 메시지입니다.',
+      },
+    );
+
+    if (mounted) {
+      if (messageId != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('푸시 발송 오류: $e'),
+            content: Text(
+              '푸시 발송 성공!\nmessage_id: $messageId',
+            ),
             duration: const Duration(seconds: 3),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('푸시 발송 실패'),
+            duration: Duration(seconds: 3),
             backgroundColor: Colors.red,
           ),
         );

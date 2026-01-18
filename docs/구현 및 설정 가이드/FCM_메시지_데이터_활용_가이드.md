@@ -90,7 +90,7 @@ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
 
 ```dart
 // lib/utils/local_notification_service.dart
-payload: message.data.toString(),  // ⚠️ 현재는 단순 문자열 변환만
+payload: jsonEncode(message.data),  // ✅ JSON 문자열로 변환하여 저장
 ```
 
 ---
@@ -169,7 +169,8 @@ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
 ### 개선 사항
 1. ✅ `data`를 JSON 문자열로 변환하여 payload에 저장
 2. ✅ 알림 클릭 핸들러에서 JSON 파싱
-3. ✅ 화면 라우팅 로직 구현
+3. ✅ 현재 화면 추적 기능 구현 (RouteObserver 사용)
+4. ⏳ 화면 라우팅 로직 구현 (진행 중 - TODO 주석만 있음)
 
 ---
 
@@ -196,3 +197,8 @@ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
   - FCM 메시지 구조 설명
   - notification과 data의 차이점 정리
   - 데이터 활용 예시 추가
+- **2026-01-18**: 구현 상태 업데이트
+  - `data`를 JSON 문자열로 변환하여 payload에 저장하도록 수정 완료
+  - 알림 클릭 핸들러에서 JSON 파싱 구현 완료
+  - 현재 화면 추적 기능 구현 완료 (RouteObserver 사용)
+  - 화면 라우팅 로직은 아직 미구현 (TODO 주석만 있음)

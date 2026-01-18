@@ -12,8 +12,20 @@
 - [x] FCM 토큰 관리 및 로컬 저장 (`FCMStorage`)
 - [x] FCM 토큰 서버 전송 API 연동
 - [x] 알림 권한 요청 및 관리 (iOS/Android)
+  - [x] 알림 권한 상태 확인 및 재시도 로직 구현
+  - [x] 권한 거부 시 에러 메시지 표시
+  - [x] FCM 초기화 재시도 메서드 구현 (`retryInitialization()`)
 - [x] 토큰 갱신 리스너 설정
 - [x] 포그라운드 메시지 핸들러 설정
+- [x] iOS Profile/Release 빌드 설정 문제 해결
+  - [x] Profile 빌드 설정에 `CODE_SIGN_ENTITLEMENTS` 추가
+  - [x] 프로필/릴리스 모드에서도 에러 로그 출력 가능하도록 수정
+  - [x] APNs 토큰 대기 시간 증가 (10초 → 30초)
+  - [x] 앱 생명주기 관찰자 추가 (포그라운드 복귀 시 APNs 토큰 재확인)
+- [x] Dev_07 화면에 FCM 상태 표시 추가
+  - [x] 초기화 상태 표시
+  - [x] 에러 메시지 표시
+  - [x] FCM 초기화 재시도 버튼 추가
 
 ### 포그라운드 알림 표시 (로컬 노티피케이션)
 - [x] `flutter_local_notifications` 패키지 추가 (`pubspec.yaml`)
@@ -337,6 +349,14 @@ async def create_reservation(...):
 - [x] 현재 화면 추적 확인 ✅ (RouteObserver 사용)
 - [ ] 화면 이동 시 파라미터 전달 확인 (라우팅 로직 미구현)
 
+#### 4.5 iOS Profile/Release 빌드 테스트
+**테스트 항목**:
+- [x] Profile 모드 빌드 및 IPA 설치 테스트 ✅
+- [x] Profile 모드에서 FCM 토큰 발급 확인 ✅
+- [x] Profile 모드에서 푸시 알림 수신 확인 ✅
+- [x] 프로비저닝 프로파일 설정 확인 ✅
+- [x] CODE_SIGN_ENTITLEMENTS 설정 확인 ✅
+
 ---
 
 ### 5. 문서화 업데이트
@@ -355,6 +375,10 @@ async def create_reservation(...):
 
 #### 5.3 트러블슈팅 가이드 추가
 **추가 필요**:
+- [x] iOS Profile/Release 빌드에서 FCM 토큰이 안 나오는 경우 ✅
+  - [x] CODE_SIGN_ENTITLEMENTS 설정 확인
+  - [x] 프로비저닝 프로파일 확인
+  - [x] Push Notifications capability 확인
 - [ ] 알림이 표시되지 않는 경우
 - [ ] 알림 클릭 시 화면 이동이 안 되는 경우
 - [ ] 백그라운드/종료 상태 알림 처리 문제
@@ -427,6 +451,18 @@ async def create_reservation(...):
 - FastAPI에서 Admin SDK 초기화
 - 환경 변수로 관리
 
+### 5. iOS Profile/Release 빌드 문제
+**문제**: Debug 모드에서는 작동하지만 Profile/Release 모드(IPA)에서 FCM 토큰이 발급되지 않음
+
+**원인**: Profile 빌드 설정에 `CODE_SIGN_ENTITLEMENTS`가 없어서 entitlements가 적용되지 않음
+
+**해결 방안**:
+- Xcode 프로젝트 설정에서 Profile 빌드 설정에 `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;` 추가
+- 또는 Xcode에서 Runner 타겟 → Build Settings → Code Signing Entitlements 확인
+- 프로비저닝 프로파일에 Push Notifications capability 포함 확인
+
+**참고**: Debug와 Release에는 이미 설정되어 있지만 Profile에는 누락되어 있었음
+
 ---
 
 ## 📝 참고 자료
@@ -466,3 +502,11 @@ async def create_reservation(...):
   - 현재 화면 추적 기능 구현 (RouteObserver, CurrentScreenTracker)
   - 알림 클릭 시 로그 출력 및 현재 화면 정보 확인 가능
   - 화면 라우팅 로직은 아직 미구현 (TODO 주석만 있음)
+- **2026-01-18**: iOS Profile/Release 빌드 문제 해결
+  - Profile 빌드 설정에 `CODE_SIGN_ENTITLEMENTS` 추가
+  - 프로필/릴리스 모드에서도 에러 로그 출력 가능하도록 수정
+  - APNs 토큰 대기 시간 증가 (10초 → 30초)
+  - 앱 생명주기 관찰자 추가 (포그라운드 복귀 시 APNs 토큰 재확인)
+  - 알림 권한 확인 및 재시도 로직 개선
+  - Dev_07 화면에 FCM 상태 표시 및 재시도 버튼 추가
+  - FCM 초기화 재시도 메서드 구현 (`retryInitialization()`)

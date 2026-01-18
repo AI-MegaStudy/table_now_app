@@ -48,6 +48,13 @@ class FCMTokenRequest(BaseModel):
     device_type: str  # "ios" or "android"
 
 
+class PushNotificationRequest(BaseModel):
+    """푸시 알림 발송 요청 모델"""
+    title: str
+    body: str
+    data: Optional[dict] = None
+
+
 # ============================================
 # 전체 고객 조회
 # ============================================
@@ -1042,6 +1049,52 @@ async def register_fcm_token(
             conn.close()
         except:
             pass
+
+
+# ============================================
+# 고객에게 푸시 알림 발송
+# ============================================
+@router.post("/{customer_seq}/push")
+async def send_push_to_customer(
+    customer_seq: int,
+    request: PushNotificationRequest
+):
+    """
+    고객의 모든 기기에 푸시 알림 발송
+    
+    Args:
+        customer_seq: 고객 번호
+        request: 푸시 알림 요청 (title, body, data)
+    
+    Returns:
+        성공 시 발송된 기기 수 반환
+    """
+    try:
+        from ..utils.fcm_service import FCMService
+        
+        # FCMService를 사용하여 고객의 모든 기기에 알림 발송
+        success_count = FCMService.send_notification_to_customer(
+            customer_seq=customer_seq,
+            title=request.title,
+            body=request.body,
+            data=request.data
+        )
+        
+        return {
+            "result": "OK",
+            "success_count": success_count,
+            "message": f"{success_count}개 기기에 알림이 발송되었습니다."
+        }
+        
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "success_count": 0
+        }
 
 
 # ============================================================
