@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:table_now_app/model/store.dart';
 
 class StoreNotifier extends AsyncNotifier<List<Store>> {
-  final String baseUrl = "http://172.16.251.221:8000/api/store";
+  final String baseUrl = "http://192.168.219.103:8000/api/store";
 
   @override
   FutureOr<List<Store>> build() async {

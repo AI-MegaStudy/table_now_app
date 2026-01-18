@@ -13,82 +13,42 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   GoogleMapController? _mapController;
-  Marker? _selectedMarker; // 선택된 마커 저장
-
-  void _onMapCreated(GoogleMapController controller, List<Store> stores) {
-    _mapController = controller;
-    if (stores.isNotEmpty) {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        _fitToScreen(stores);
-      });
-    }
-  }
-
-  void _fitToScreen(List<Store> stores) {
-    if (_mapController == null || stores.isEmpty) return;
-
-    final validStores = stores
-        .where((s) => s.store_lat > 30 && s.store_lng > 120)
-        .toList();
-    if (validStores.isEmpty) return;
-
-    double minLat = validStores.first.store_lat;
-    double maxLat = validStores.first.store_lat;
-    double minLng = validStores.first.store_lng;
-    double maxLng = validStores.first.store_lng;
-
-    for (var s in validStores) {
-      if (s.store_lat < minLat) minLat = s.store_lat;
-      if (s.store_lat > maxLat) maxLat = s.store_lat;
-      if (s.store_lng < minLng) minLng = s.store_lng;
-      if (s.store_lng > maxLng) maxLng = s.store_lng;
-    }
-
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
-        ),
-        80.0,
-      ),
-    );
-  }
+  bool _boundsSet = false;
 
   @override
   Widget build(BuildContext context) {
     final asyncStore = ref.watch(storeNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('매장 지도'), elevation: 0),
+      appBar: AppBar(title: const Text('매장 지도'), elevation: 0),
       body: asyncStore.when(
         data: (storeList) {
-          // 마커 생성
-          final Set<Marker> markers = storeList.map((store) {
+          final markers = storeList.map((store) {
             return Marker(
               markerId: MarkerId(store.store_seq.toString()),
               position: LatLng(store.store_lat, store.store_lng),
-              onTap: () {
-                setState(() {
-                  _selectedMarker = Marker(
-                    markerId: MarkerId(store.store_seq.toString()),
-                    position: LatLng(store.store_lat, store.store_lng),
-                  );
-                });
-                _showStoreDetail(context, store);
-              },
               icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueOrange,
               ),
-              infoWindow: InfoWindow(title: store.store_description),
+              onTap: () => _showStoreDetail(context, store),
             );
           }).toSet();
 
           return GoogleMap(
-            onMapCreated: (controller) => _onMapCreated(controller, storeList),
-            initialCameraPosition: CameraPosition(
-              target: LatLng(storeList[0].store_lat, storeList[0].store_lng),
-              zoom: 14.0,
+            onMapCreated: (controller) {
+              _mapController = controller;
+
+              // layout 이후에 bounds 적용
+              if (!_boundsSet) {
+                _boundsSet = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _fitBounds(storeList);
+                });
+              }
+            },
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(37.5665, 126.9780),
+              zoom: 12,
             ),
             markers: markers,
             myLocationEnabled: true,
@@ -96,85 +56,104 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             zoomControlsEnabled: true,
           );
         },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              SizedBox(height: 16),
-              Text("데이터 로드 실패: $err"),
-              ElevatedButton(
-                onPressed: () => ref.refresh(storeNotifierProvider),
-                child: Text("다시 시도"),
-              ),
-            ],
-          ),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Colors.orange),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          asyncStore.whenData((stores) => _fitToScreen(stores));
-        },
-        backgroundColor: Colors.orange,
-        child: Icon(Icons.center_focus_strong),
+        error: (err, stack) => Center(child: Text("데이터 로드 실패: $err")),
       ),
     );
+  }
+
+  void _fitBounds(List<Store> stores) async {
+    if (_mapController == null || stores.isEmpty) return;
+
+    final positions = stores
+        .map((s) => LatLng(s.store_lat, s.store_lng))
+        .toList();
+
+    // 만약 한 개만 있을 때
+    if (positions.length == 1) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: positions.first, zoom: 15),
+        ),
+      );
+      return;
+    }
+
+    double minLat = positions.first.latitude;
+    double maxLat = positions.first.latitude;
+    double minLng = positions.first.longitude;
+    double maxLng = positions.first.longitude;
+
+    for (var pos in positions) {
+      if (pos.latitude < minLat) minLat = pos.latitude;
+      if (pos.latitude > maxLat) maxLat = pos.latitude;
+      if (pos.longitude < minLng) minLng = pos.longitude;
+      if (pos.longitude > maxLng) maxLng = pos.longitude;
+    }
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
   }
 
   void _showStoreDetail(BuildContext context, Store store) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (_) => Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
                     store.store_description ?? "식당 이름 없음",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                Icon(Icons.restaurant, color: Colors.orange),
+                const Icon(Icons.restaurant, color: Colors.orange),
               ],
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             _buildInfoRow(
               Icons.location_on_outlined,
-              store.store_address ?? '',
+              store.store_address ?? '주소 없음',
             ),
-            _buildInfoRow(Icons.phone_outlined, store.store_phone ?? ''),
+            _buildInfoRow(Icons.phone_outlined, store.store_phone ?? '전화 없음'),
             _buildInfoRow(
               Icons.access_time_outlined,
-              "${store.store_open_time ?? '09:00'} - ${store.store_close_time ?? '22:00'}",
+              "${store.store_open_time ?? ''} - ${store.store_close_time ?? ''}",
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  // 예약 페이지 이동 로직 추가 가능
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   "예약하기",
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
@@ -192,8 +171,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.grey[600]),
-          SizedBox(width: 10),
-          Expanded(child: Text(text, style: TextStyle(fontSize: 15))),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
         ],
       ),
     );

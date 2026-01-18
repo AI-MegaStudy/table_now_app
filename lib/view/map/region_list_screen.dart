@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
+import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/store_notifire.dart';
 // import 'store_booking_info_screen.dart'; // 다음 화면
 
@@ -16,11 +18,11 @@ class RegionListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.orange,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '카레하우스',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        // subtitle: const Text(
+        // subtitle: Text(
         //   '지역을 선택하세요',
         //   style: TextStyle(color: Colors.white70, fontSize: 14),
         // ),
@@ -65,14 +67,11 @@ class RegionListScreen extends ConsumerWidget {
                   ),
                   leading: CircleAvatar(
                     backgroundColor: Colors.orange.shade50,
-                    child: const Icon(Icons.location_on, color: Colors.orange),
+                    child: Icon(Icons.location_on, color: Colors.orange),
                   ),
                   title: Text(
                     regionName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     '매장 $count개',
@@ -83,21 +82,23 @@ class RegionListScreen extends ConsumerWidget {
                     size: 16,
                     color: Colors.grey,
                   ),
-                  onTap: () {
-                    // 해당 지역의 첫 번째 매장 상세로 이동하거나,
-                    // 해당 지역 매장들만 필터링해서 맵화면으로 이동하도록 구현 가능
-                    // 여기서는 이미지 디자인에 맞춰 상세화면으로 예시를 듭니다.
-                  },
+                  onTap: () => _navigateToMap(context),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.orange),
-        ),
+        loading: () =>
+            Center(child: CircularProgressIndicator(color: Colors.orange)),
         error: (err, stack) => Center(child: Text("데이터 로드 실패: $err")),
       ),
+    );
+  } //
+
+  void _navigateToMap(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MapScreen()),
     );
   }
 }
