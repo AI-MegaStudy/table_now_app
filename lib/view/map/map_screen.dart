@@ -2,24 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_now_app/model/store.dart';
-import 'package:table_now_app/vm/map_notifier.dart';
+import 'package:table_now_app/vm/store_notifire.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
   @override
-  ConsumerState<MapScreen> createState() =>
-      _MapScreenState();
+  ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   GoogleMapController? _mapController;
 
   // 지도가 생성된 후 모든 매장이 보이도록 카메라 조정
-  void _onMapCreated(
-    GoogleMapController controller,
-    List<Store> stores,
-  ) {
+  void _onMapCreated(GoogleMapController controller, List<Store> stores) {
     _mapController = controller;
     if (stores.isNotEmpty) {
       // 렌더링이 완료된 후 카메라를 이동시키기 위해 약간의 지연을 줍니다.
@@ -82,37 +78,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           //final stores = storeList[0].store_description;
 
           // 2. 마커 세트 생성
-          final Set<Marker> markers = storeList.map((
-            store,
-          ) {
+          final Set<Marker> markers = storeList.map((store) {
             return Marker(
-              markerId: MarkerId(
-                store.store_seq.toString(),
-              ),
-              position: LatLng(
-                store.store_lat,
-                store.store_lng,
-              ),
+              markerId: MarkerId(store.store_seq.toString()),
+              position: LatLng(store.store_lat, store.store_lng),
               onTap: () => _showStoreDetail(context, store),
               icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueOrange,
               ),
-              infoWindow: InfoWindow(
-                title: store.store_description,
-              ),
+              infoWindow: InfoWindow(title: store.store_description),
             );
           }).toSet();
 
           // 3. 구글 맵 렌더링
           return GoogleMap(
-            onMapCreated: (controller) =>
-                _onMapCreated(controller, storeList),
+            onMapCreated: (controller) => _onMapCreated(controller, storeList),
             initialCameraPosition: CameraPosition(
               // 데이터가 있을 때 첫 번째 매장 위치를 초기값으로 설정
-              target: LatLng(
-                storeList[0].store_lat,
-                storeList[0].store_lng,
-              ),
+              target: LatLng(storeList[0].store_lat, storeList[0].store_lng),
               zoom: 14.0,
             ),
             markers: markers,
@@ -122,23 +105,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         },
         // [B] 로딩 중
-        loading: () =>
-            Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         // [C] 에러 발생
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.red,
-              ),
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
               SizedBox(height: 16),
               Text("데이터 로드 실패: $err"),
               ElevatedButton(
-                onPressed: () =>
-                    ref.refresh(storeNotifierProvider),
+                onPressed: () => ref.refresh(storeNotifierProvider),
                 child: Text("다시 시도"),
               ),
             ],
@@ -148,9 +125,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       // 현재 모든 매장을 다시 한 화면에 모아보는 플로팅 버튼
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          asyncStore.whenData(
-            (stores) => _fitToScreen(stores),
-          );
+          asyncStore.whenData((stores) => _fitToScreen(stores));
         },
         backgroundColor: Colors.orange,
         child: Icon(Icons.center_focus_strong),
@@ -169,45 +144,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
                     store.store_description ?? "식당 이름 없음",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ),
-                Icon(
-                  Icons.restaurant,
-                  color: Colors.orange,
-                ),
+                Icon(Icons.restaurant, color: Colors.orange),
               ],
             ),
             SizedBox(height: 15),
-            _buildInfoRow(
-              Icons.location_on_outlined,
-              store.store_address,
-            ),
-            _buildInfoRow(
-              Icons.phone_outlined,
-              store.store_phone,
-            ),
+            _buildInfoRow(Icons.location_on_outlined, store.store_address),
+            _buildInfoRow(Icons.phone_outlined, store.store_phone),
             _buildInfoRow(
               Icons.access_time_outlined,
               "${store.store_open_time ?? '09:00'} - ${store.store_close_time ?? '22:00'}",
@@ -228,10 +185,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
                 child: Text(
                   "예약하기",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
             ),
@@ -248,12 +202,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         children: [
           Icon(icon, size: 20, color: Colors.grey[600]),
           SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 15),
-            ),
-          ),
+          Expanded(child: Text(text, style: TextStyle(fontSize: 15))),
         ],
       ),
     );
