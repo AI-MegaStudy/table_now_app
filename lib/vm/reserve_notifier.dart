@@ -3,11 +3,12 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/reserve.dart';
 
 class ReserveNotifier extends AsyncNotifier<List<Reserve>>{
 
-  final String baseUrl = "http://127.0.0.1:8000/api/reserve";
+  final String baseUrl = "${getApiBaseUrl()}/api/reserve";
 
   @override
   FutureOr<List<Reserve>> build() async{

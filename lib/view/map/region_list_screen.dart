@@ -102,7 +102,7 @@ class RegionListScreen extends ConsumerWidget {
                       color: Colors.grey.shade600,
                     ),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
                     color: Colors.grey,
@@ -111,7 +111,6 @@ class RegionListScreen extends ConsumerWidget {
                     final storesInRegion =
                         groupedStores[regionName]!;
 
-                    // 지도로 바로 가지 않고 세부 지역(구) 리스트로 이동
                     Navigator.push(
                       context,
                       MaterialPageRoute(

@@ -6,9 +6,8 @@ import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/store.dart';
 
 class StoreNotifier extends AsyncNotifier<List<Store>> {
-  final String baseUrl =
-      //getApiBaseUrl();
-      "http://172.16.251.221:8000/api/store";
+  String get baseUrl => "${getApiBaseUrl()}/api/store";
+  //"http://172.16.251.221:8000/api/store";
 
   @override
   FutureOr<List<Store>> build() async {

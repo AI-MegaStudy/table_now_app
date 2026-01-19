@@ -9,6 +9,7 @@ store_table API - store_table CRUD
 | 날짜     | 작성자| 내용 |
 |2026.01.15|이예은| 초기 생성 |
 |2026.01.16|이예은| APIRouter로 변경, 중복 코드 제거, import 수정 |
+|2026.01.19|유다원| 가게별 조회 생성 |
 """
 
 from fastapi import APIRouter, Form
@@ -47,6 +48,36 @@ async def select_all():
         FROM store_table 
         ORDER BY store_table_seq
     """)
+    
+    rows = curs.fetchall()
+    conn.close()
+    
+    result = [{
+        'store_table_seq': row[0],
+        'store_seq': row[1],
+        'store_table_name': row[2],
+        'store_table_capacity': row[3], 
+        'store_table_inuse': row[4],
+        'created_at': row[5]
+    } for row in rows]
+    
+    return {"results": result}
+
+
+# ============================================
+# 가게별 전체 테이블 조회
+# ============================================
+@router.get("/select_StoreTables_store/{store_seq}")
+async def select_all(store_seq:int):
+    conn = connect_db()
+    curs = conn.cursor()
+    
+    curs.execute("""
+        SELECT store_table_seq, store_seq, store_table_name, store_table_capacity, store_table_inuse, created_at
+        FROM store_table
+        WHERE store_seq = %s 
+        ORDER BY store_table_seq
+    """,(store_seq))
     
     rows = curs.fetchall()
     conn.close()

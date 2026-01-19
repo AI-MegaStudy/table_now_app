@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/location_util.dart';
@@ -55,7 +56,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
         backgroundColor: p.primary,
         foregroundColor: Colors.white,
-
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
@@ -67,7 +67,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
           target: LatLng(37.5665, 126.9780),
-          zoom: 12, //<<<<<<<<<<<
+          zoom: 12,
         ),
         markers: _buildMarkers(storeList),
         myLocationEnabled: true,
@@ -79,7 +79,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             _,
           ) async {
             await Future.delayed(
-              const Duration(milliseconds: 300),
+              Duration(milliseconds: 300),
             );
             _applyBounds(storeList);
           });
@@ -91,7 +91,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Set<Marker> _buildMarkers(List<Store> storeList) {
     final markers = <Marker>{};
 
-    // 내 위치 마커
     if (_userLocation != null) {
       markers.add(
         Marker(
@@ -104,9 +103,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    // 매장 마커
     for (var s in storeList) {
-      // 유효한 좌표만 표시
       if (s.store_lat != 0 && s.store_lng != 0) {
         markers.add(
           Marker(
@@ -115,15 +112,40 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
               BitmapDescriptor.hueOrange,
             ),
-            onTap: () => showModalBottomSheet(
-              context: context,
-              builder: (_) => StoreDetailSheet(s),
-            ),
+            onTap: () {
+              String? distanceString;
+
+              if (_userLocation != null) {
+                double meters = Geolocator.distanceBetween(
+                  _userLocation!.latitude,
+                  _userLocation!.longitude,
+                  s.store_lat,
+                  s.store_lng,
+                );
+
+                distanceString = meters >= 1000
+                    ? "${(meters / 1000).toStringAsFixed(1)}km"
+                    : "${meters.toInt()}m";
+              }
+
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                ),
+                builder: (_) => StoreDetailSheet(
+                  s,
+                  distance: distanceString,
+                ),
+              );
+            },
           ),
         );
       }
     }
-
     return markers;
   }
 
@@ -131,10 +153,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (_mapController == null || _boundsApplied) return;
 
     final points = <LatLng>[];
-
-    if (_userLocation != null) {
-      points.add(_userLocation!);
-    }
+    if (_userLocation != null) points.add(_userLocation!);
 
     for (var s in storeList) {
       if (s.store_lat != 0 && s.store_lng != 0) {
@@ -148,45 +167,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       _mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(points.first, 15),
       );
-      _boundsApplied = true;
-      return;
+    } else {
+      final latitudes = points
+          .map((e) => e.latitude)
+          .toList();
+      final longitudes = points
+          .map((e) => e.longitude)
+          .toList();
+
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          latitudes.reduce((a, b) => a < b ? a : b),
+          longitudes.reduce((a, b) => a < b ? a : b),
+        ),
+        northeast: LatLng(
+          latitudes.reduce((a, b) => a > b ? a : b),
+          longitudes.reduce((a, b) => a > b ? a : b),
+        ),
+      );
+
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 70),
+      );
     }
-
-    final latitudes = points
-        .map((e) => e.latitude)
-        .toList();
-    final longitudes = points
-        .map((e) => e.longitude)
-        .toList();
-
-    double minLat = latitudes.reduce(
-      (a, b) => a < b ? a : b,
-    );
-    double maxLat = latitudes.reduce(
-      (a, b) => a > b ? a : b,
-    );
-    double minLng = longitudes.reduce(
-      (a, b) => a < b ? a : b,
-    );
-    double maxLng = longitudes.reduce(
-      (a, b) => a > b ? a : b,
-    );
-
-    final bounds = LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 70),
-    );
-
     _boundsApplied = true;
   }
 }
-/*
-지도화면-consumerstateful
-controller/init-stateful
-
-storeList직접전달-notifierX
-*/
