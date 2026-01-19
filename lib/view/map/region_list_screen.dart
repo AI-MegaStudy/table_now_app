@@ -23,7 +23,7 @@ class RegionListScreen extends ConsumerWidget {
         title: Text(
           '카레하우스',
           style: TextStyle(
-            color: Colors.white,
+            color: p.chipSelectedText,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -92,6 +92,7 @@ class RegionListScreen extends ConsumerWidget {
                   title: Text(
                     regionName,
                     style: TextStyle(
+                      color: p.chipSelectedBg,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
