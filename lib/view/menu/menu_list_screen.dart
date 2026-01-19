@@ -87,4 +87,3 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
 // 수정 이력
 // ============================================================
 // 2026-01-16 임소연: 초기 생성
-// 2026-01-19 임소연: 

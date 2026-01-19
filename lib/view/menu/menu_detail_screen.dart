@@ -4,6 +4,7 @@ import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
+import 'package:table_now_app/vm/menu_select_notifier.dart';
 import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/option_select_notifier.dart';
 
@@ -16,29 +17,39 @@ class MenuDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
-  // final box = GetStorage();
-  int menuQuantity = 1;
-  int optionQuantity = 0;
-  int optionQuantity2 = 0;
-  int optionQuantity3 = 0;
 
   @override
   void initState() {
     super.initState();
-    // initStorage();
   }
-
-  // void initStorage(){ // key, value
-  //   box.write('p_userid', '');
-  //   box.write('p_password', '');
-  // }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final optionAsync = ref.watch(optionNotifierProvider);
-    int totalPrice = 0;
+    final menuSelect = ref.watch(menuSelectNotifierProvider);
+    final optionSelect = ref.watch(optionSelectNotifierProvider);
+
+    final menuTotalPrice = menuAsync.maybeWhen(
+      data: (menu) {
+        final count = menuSelect.count;
+        return menu[widget.menu_seq].menu_price * count;
+      },
+      orElse: () => 0
+    );
+
+    final optionTotalPrice = optionAsync.maybeWhen(
+      data: (options) {
+        int total = 0;
+        for (final o in options) {
+          final count = optionSelect.counts[o.option_seq] ?? 0;
+          total += o.option_price * count;
+        }
+        return total;
+      },
+      orElse: () => 0,
+    );
 
     return Scaffold(
       backgroundColor: p.background,
@@ -50,7 +61,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
       body: Column(
         children: [
           Expanded(
-            flex: 2,
+            flex: 4,
             child: menuAsync.when(
               data: (menu) {
                 return menu.isEmpty
@@ -70,21 +81,16 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(CustomCommonUtil.formatCurrency(menu[widget.menu_seq].menu_price)),
-                          // cartButton('+', ref.read(optionSelectProvider.notifier).increment),
-                          ElevatedButton(
-                            onPressed: () {
-                              //
-                            },
-                            child: Text('+')
+                          Text(
+                            CustomCommonUtil.formatCurrency(
+                              menuSelect.count == 0 
+                              ? menu[widget.menu_seq].menu_price 
+                              : menu[widget.menu_seq].menu_price * menuSelect.count
+                            )
                           ),
-                          ElevatedButton(
-                            onPressed: () {
-                              //
-                            },
-                            child: Text('-')
-                          ),
-                          // cartButton('-', ref.read(optionSelectProvider.notifier).decrement),
+                          cartButton('+', ref.read(menuSelectNotifierProvider.notifier).increment),
+                          Text('${menuSelect.count}'),
+                          cartButton('-', ref.read(menuSelectNotifierProvider.notifier).decrement),
                         ],
                       ),
                     ],
@@ -96,7 +102,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
             ),
           ),
           Expanded(
-            flex: 1,
+            flex: 3,
             child: optionAsync.when(
               data: (options) {
                 return options.isEmpty
@@ -105,7 +111,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                   itemCount: options.length,
                   itemBuilder: (context, index) {
                     final o = options[index];
-                    final count = ref.watch(optionSelectProvider).counts[o.option_seq] ?? 0;
+                    final count = ref.watch(optionSelectNotifierProvider).counts[o.option_seq] ?? 0;
                     return Card(
                       color: p.background,
                       shadowColor: Colors.transparent,
@@ -121,7 +127,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                               const SizedBox(width: 8),
                               cartButton(
                                 '+',
-                                () => ref.read(optionSelectProvider.notifier).increment(o.option_seq),
+                                () => ref.read(optionSelectNotifierProvider.notifier).increment(o.option_seq),
                               ),
                               const SizedBox(width: 4),
                               SizedBox(
@@ -131,7 +137,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                               const SizedBox(width: 4),
                               cartButton(
                                 '-',
-                                () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq),
+                                () => ref.read(optionSelectNotifierProvider.notifier).decrement(o.option_seq),
                               ),
                             ],
                           ),
@@ -149,7 +155,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
             onPressed: () {
               //
             }, 
-            child: Text('담기') // 추후 가격 표시 예정
+            child: Text('${CustomCommonUtil.formatCurrency(menuTotalPrice + optionTotalPrice)} 담기') // 추후 가격 표시 예정
           )
         ],
       )
@@ -179,4 +185,4 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
 // 수정 이력
 // ============================================================
 // 2026-01-16 임소연: 초기 생성
-// 2026-01-19 임소연: +, - 
+// 2026-01-19 임소연: +, - 버튼 클릭 시 전체 가격 자동으로 계산
