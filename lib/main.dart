@@ -34,6 +34,10 @@ Future<void> main() async {
     storage.remove(storageKeyCustomer);
   }
 
+  // Get setting data One time when it is loaded
+  // Save it to storage         
+  storage.write(storageTossKey, 'BZ6CaEybDVHeBOywltykQQCPbmr5vmzW4PDFJBww1LMP72JT4GJa+CjdwEAHMhsd');
+
   // Firebase 초기화
   try {
     await Firebase.initializeApp(

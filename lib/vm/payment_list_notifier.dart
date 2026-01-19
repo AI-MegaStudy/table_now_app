@@ -3,8 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config.dart';
+import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_now_app/utils/utils.dart';
+import 'package:table_now_app/vm/reservation_notifier.dart';
 
 class PaymentResponse {
   final int? pay_id;
@@ -54,14 +57,25 @@ class PaymentResponse {
 }
 
 class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
+  late final String url = getApiBaseUrl();
+  final String error = '';
+
   int _reserve_seq = 0;
   int _total_payment = 0;
-  late final String url;
-  final String error = '';
+  late final int? _customerSeq;
 
   @override
   FutureOr<List<PaymentResponse>> build() async {
-    url = getApiBaseUrl();
+    // Get Customer ID
+    final Customer? customer = CustomerStorage.getCustomer();
+    if (customer != null) {
+      _customerSeq = customer.customerSeq;
+    }
+    // Get Reservation OBJ
+
+    // Need MenuList picked
+    // 메뉴리스트를 받는다. 어떤 형식?
+
     return [];
   }
 
@@ -72,25 +86,28 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   Future<void> fetchData(int id) async {
     // Get Data from Backend
     if (_reserve_seq != id) {
-      _total_payment = 0;
-      _reserve_seq = id;
+      try {
+        _total_payment = 0;
+        _reserve_seq = id;
 
-      await Future.delayed(Duration(seconds: 1));
-      final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
-      final response = await http.get(uri);
-      if (response.statusCode != 200) {
-        throw Exception("데이터 로딩 실패: ${response.statusCode}");
+        await Future.delayed(Duration(seconds: 1));
+        final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
+        final response = await http.get(uri);
+        if (response.statusCode != 200) {
+          throw Exception("데이터 로딩 실패: ${response.statusCode}");
+        }
+        final jsonData = json.decode(utf8.decode(response.bodyBytes));
+        final List results = jsonData["results"];
+
+        // 총 가격을 뽑는다.
+        for (final pay in results) _total_payment += pay['total_pay'] as int;
+
+        state = AsyncValue.data(
+          results.map((data) => PaymentResponse.fromJson(data)).toList(),
+        );
+      } catch (error,stackTrace) {
+        state = AsyncValue.error(error, stackTrace);
       }
-      final jsonData = json.decode(utf8.decode(response.bodyBytes));
-      final List results = jsonData["results"];
-
-      // 총 가격을 뽑는다.
-      for (final pay in results) {
-        _total_payment += pay['total_pay'] as int;
-        print(pay['menu_image']);
-      }
-
-      state = AsyncValue.data(results.map((data) => PaymentResponse.fromJson(data)).toList());
     }
   }
 
@@ -108,8 +125,22 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
       Uri.parse('$url/api/pay/insert'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode([
-        Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson(),
-        Payment(reserve_seq: 1, store_seq: 1, menu_seq: 5, pay_quantity: 2, pay_amount: 500, created_at: DateTime.now()).toJson(),
+        Payment(
+          reserve_seq: 1,
+          store_seq: 1,
+          menu_seq: 5,
+          pay_quantity: 2,
+          pay_amount: 500,
+          created_at: DateTime.now(),
+        ).toJson(),
+        Payment(
+          reserve_seq: 1,
+          store_seq: 1,
+          menu_seq: 5,
+          pay_quantity: 2,
+          pay_amount: 500,
+          created_at: DateTime.now(),
+        ).toJson(),
       ]),
     );
     if (response.statusCode != 200) {
@@ -160,6 +191,11 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
     }
   }
 
+  Future<String> getDecodedData() async {
+    print(await http.get(Uri.parse(url+"api/pay/get_toss_client_key")));
+    return 'aaaa';
+  }
+
   // // 유저의 payment를 지운다
   // Future<void> deleteData(int id) async {
   //   final currentPayment = state.value ?? [];
@@ -184,6 +220,8 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
 //    final r = ref.watch(authNotifierProvider);
 
-final paymentListAsyncNotifierProvider = AsyncNotifierProvider.autoDispose<PaymentListAsyncNotifier, List<PaymentResponse>>(
-  PaymentListAsyncNotifier.new,
-);
+final paymentListAsyncNotifierProvider =
+    AsyncNotifierProvider.autoDispose<
+      PaymentListAsyncNotifier,
+      List<PaymentResponse>
+    >(PaymentListAsyncNotifier.new);

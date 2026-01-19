@@ -3,31 +3,46 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config.dart';
+import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_now_app/utils/utils.dart';
 import 'package:table_now_app/vm/auth_notifier.dart';
 
 class PaymentAsyncNotifier extends AsyncNotifier<List<Payment>> {
   int? customerSeq;
-  late final String url;
+  late final String url = getApiBaseUrl();
   final String error = '';
   @override
   FutureOr<List<Payment>> build() async {
-    url = getApiBaseUrl();
+    // url = getApiBaseUrl();
     // Payment는 기본적으로 유저ID가 required됨.
     // 요청할때 유저가 없다면 return []
-    final authState = ref.watch(authNotifierProvider);
-    if (authState.customer == null) {
-      state = AsyncValue.error(Exception('401: no access'), StackTrace.empty);
-      return [];
+
+    // 그냥 storage에서 가져오는 것이 더 좋을 것 같다. 
+    final Customer? customer = CustomerStorage.getCustomer();
+    if(customer != null) {
+      customerSeq = customer.customerSeq;
     }
-    customerSeq = authState.customer!.customerSeq;
+
+
+    // final authState = ref.watch(authNotifierProvider);
+    // if (authState.customer == null) {
+    //   state = AsyncValue.error(Exception('401: no access'), StackTrace.empty);
+    //   return [];
+    // }
+    // customerSeq = authState.customer!.customerSeq;
     return await _fetchData(null);
   }
 
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
   Future<List<Payment>> _fetchData(int? id) async {
+    if(customerSeq==null) {
+      // state = AsyncValue.error(Exception('401: no access(1)'), StackTrace.empty);
+      throw Exception('데이터 로딩 실패: 401');
+      
+    }
     final response = await http.get(Uri.parse('$url/api/pay'));
     if (response.statusCode != 200) {
       throw Exception("데이터 로딩 실패: ${response.statusCode}");
