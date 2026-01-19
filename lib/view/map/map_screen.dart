@@ -79,7 +79,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             _,
           ) async {
             await Future.delayed(
-              const Duration(milliseconds: 300),
+              Duration(milliseconds: 300),
             );
             _applyBounds(storeList);
           });

@@ -18,10 +18,9 @@ class _BookingLocationScreenState
     extends ConsumerState<NavigatorScreen> {
   GoogleMapController? _mapController;
 
-  // 길찾기 외부 앱 호출 함수
   Future<void> _openMapDirections() async {
     final s = widget.store;
-    // Google Maps 길찾기 URL (웹/앱 공용)
+
     final url =
         'https://www.google.com/maps/dir/?api=1&destination=${s.store_lat},${s.store_lng}';
 
