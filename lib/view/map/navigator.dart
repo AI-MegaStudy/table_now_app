@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:table_now_app/theme/palette_context.dart';
 import 'package:url_launcher/url_launcher.dart'; // 길찾기 외부 앱 호출용
 import 'package:table_now_app/model/store.dart';
 
@@ -36,18 +37,32 @@ class _BookingLocationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final s = widget.store;
     final storeLocation = LatLng(s.store_lat, s.store_lng);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("매장 위치 확인"),
-        backgroundColor: Colors.orange,
+        title: Text(
+          "매장 위치 확인",
+          style: TextStyle(
+            // color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        backgroundColor: p.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
-          // 1. 지도 영역 (화면의 절반 정도)
           Expanded(
             flex: 3,
             child: GoogleMap(
@@ -71,8 +86,6 @@ class _BookingLocationScreenState
               myLocationEnabled: true,
             ),
           ),
-
-          // 2. 하단 안내 및 버튼 영역
           Expanded(
             flex: 2,
             child: Container(
@@ -89,12 +102,12 @@ class _BookingLocationScreenState
                 children: [
                   Text(
                     s.store_description ?? "매장 정보",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     s.store_address ?? "주소 정보 없음",
                     style: TextStyle(
@@ -103,15 +116,13 @@ class _BookingLocationScreenState
                     ),
                   ),
                   // const spacer(),
-
-                  // 길찾기 버튼
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: OutlinedButton.icon(
                       onPressed: _openMapDirections,
-                      icon: const Icon(Icons.near_me),
-                      label: const Text("Google 지도로 길찾기"),
+                      icon: Icon(Icons.near_me),
+                      label: Text("Google 지도로 길찾기"),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.blue,
                         side: const BorderSide(
@@ -120,21 +131,19 @@ class _BookingLocationScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // 다음 단계 버튼
+                  SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        // 다음 예약 단계로 이동 로직
+                        //
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text("위치 확인 및 다음 단계"),
+                      child: Text("위치 확인 및 다음 단계"),
                     ),
                   ),
                 ],
@@ -146,3 +155,7 @@ class _BookingLocationScreenState
     );
   }
 }
+
+/*
+동적제어 & ref객체
+ */

@@ -46,8 +46,23 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("지역 매장 지도"),
-        backgroundColor: Colors.amberAccent,
+        title: Text(
+          "지역 매장 지도",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: p.primary,
+        foregroundColor: Colors.white,
+
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
