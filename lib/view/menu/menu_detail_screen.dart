@@ -38,7 +38,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final optionAsync = ref.watch(optionNotifierProvider);
-
+    int totalPrice = 0;
 
     return Scaffold(
       backgroundColor: p.background,
@@ -57,8 +57,14 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 ? const Center(child: Text('점검 중'),)
                 : Center(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Image.network('https://cheng80.myqnapcloud.com/tablenow/${menu[widget.menu_seq].menu_image}'),
+                      Align(
+                        alignment: Alignment.center, 
+                        child: Image.network(
+                          'https://cheng80.myqnapcloud.com/tablenow/${menu[widget.menu_seq].menu_image}'
+                        )
+                      ),
                       Text(menu[widget.menu_seq].menu_name),
                       Text(menu[widget.menu_seq].menu_description),
                       Row(
@@ -109,8 +115,15 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(o.option_name,),
-                              Text(CustomCommonUtil.formatCurrency(o.option_price)),
-                              cartButton('+', () => ref.read(optionSelectProvider.notifier).increment(o.option_seq)),
+                              Text(CustomCommonUtil.formatCurrency(count==0 ? o.option_price : o.option_price * count)),
+                              cartButton(
+                                '+', 
+                                () {
+                                  ref.read(optionSelectProvider.notifier).increment(o.option_seq);
+                                  totalPrice += o.option_price * count;
+                                  print(totalPrice);
+                                }
+                              ),
                               Text('$count'),
                               cartButton('-', () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq)),
                             ],
