@@ -137,7 +137,7 @@ class _ReservePage01State extends State<ReservePage01> {
 
                   TableCalendar(
                     firstDay: DateTime.now(),
-                    lastDay: DateTime.now().add(const Duration(days: 365)),
+                    lastDay: DateTime.now().add(const Duration(days: 7)),
                     focusedDay: _focusedDay,
                     selectedDayPredicate: (day) =>
                         isSameDay(_selectedDay, day),
