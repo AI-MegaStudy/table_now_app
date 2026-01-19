@@ -102,6 +102,7 @@ class _BookingLocationScreenState
                   Text(
                     s.store_description ?? "매장 정보",
                     style: TextStyle(
+                      color: p.background,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
