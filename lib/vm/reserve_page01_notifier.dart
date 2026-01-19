@@ -80,24 +80,30 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
 
       List<StoreTable> tableData = (data3['results'] as List).map((d) => StoreTable.fromJson(d)).toList();
 
-      //{날짜,{시간{테이블 번호, [테이블 이름, 테이블 인원]}} 생성
-      Map<String, Map<String, List<String>>> bigMap = {};
-      Map<String, List<String>> smallMap = {};
-      for(int i=0; i<=reserveData.length; i++){
-        String rdate = reserveData[i].reserve_date.split(' ')[0];
-        String rtime = reserveData[i].reserve_date.split(' ')[1];
-        List<String> tables = reserveData[i].reserve_tables.split(",");
-        smallMap[rtime] = [];
-        for(int j=0; j<=tables.length; j++){
-          //smallMap[rtime]!.add({tables[j],[]});
+      //{'2025-01-15': { '12:00:00': {'1': ['1','4']}} 형식으로 만들기
+      Map<String, Map<String, Map<String, List<String>>>> map = {};
+
+      for (int i = 0; i < reserveData.length; i++) {
+        final reserve = reserveData[i];
+
+        final rdate = reserve.reserve_date.split('T')[0];
+        final rtime = reserve.reserve_date.split('T')[1].substring(0, 5);
+        final tables = reserve.reserve_tables.split(',');
+
+        map.putIfAbsent(rdate, () => {});
+        map[rdate]!.putIfAbsent(rtime, () => {});
+
+        for(int j = 0; j < tables.length; j++){
+          map[rdate]![rtime]!.putIfAbsent(tables[j], () => []);
         }
-        
       }
-      
+      print(map);
 
       return ReservePage01State(store: storeData, times: timesData, leftDates: [], leftTimes: [], leftTables: []);
-    } catch (e) {
+    } catch (e, stack) {
       // 에러가 날 경우 상태를 error로 바꿔줌
+      print("🔥 ERROR: $e");
+      print(stack);
       throw Exception("스토어 로딩 에러: $e");
     }
   }
