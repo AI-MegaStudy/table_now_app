@@ -169,3 +169,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _boundsApplied = true;
   }
 }
+/*
+지도화면-consumerstateful
+controller/init-stateful
+
+storeList직접전달-notifierX
+*/

@@ -113,3 +113,8 @@ class StoreDetailSheet extends StatelessWidget {
     );
   }
 }
+
+/*
+변화없음-stateless
+수동 단순 전달
+ */

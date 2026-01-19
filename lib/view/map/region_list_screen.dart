@@ -134,3 +134,8 @@ class RegionListScreen extends ConsumerWidget {
     );
   }
 }
+/*
+정적화면-consumer
+데이터가공-notifier
+감시-요약 및 필터링
+ */
