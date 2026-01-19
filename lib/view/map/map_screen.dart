@@ -67,7 +67,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
           target: LatLng(37.5665, 126.9780),
-          zoom: 12, //<<<<<<<<<<<<<
+          zoom: 12, //<<<<<<<<<<<
         ),
         markers: _buildMarkers(storeList),
         myLocationEnabled: true,

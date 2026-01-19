@@ -124,9 +124,12 @@ class _BookingLocationScreenState
                       icon: Icon(Icons.near_me),
                       label: Text("Google 지도로 길찾기"),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue,
+                        //    foregroundColor: Colors.blue,
+                        //foregroundColor: Colors.orange,
+                        foregroundColor: p.primary,
                         side: const BorderSide(
-                          color: Colors.blue,
+                          //color: Colors.blue,
+                          color: Colors.orange,
                         ),
                       ),
                     ),
@@ -157,5 +160,7 @@ class _BookingLocationScreenState
 }
 
 /*
+ConsumerStatefulWidget
 동적제어 & ref객체
+공통 팔레트 구글맵
  */
