@@ -56,7 +56,7 @@ class PaymentListView extends ConsumerWidget {
                 )
               : Text('no data'),
           error: (error, stackTrace) => Text('ERROR: $error'),
-          loading: () => Text('....loading'),
+          loading: () => const CircularProgressIndicator(),
         ),
       ),
     );

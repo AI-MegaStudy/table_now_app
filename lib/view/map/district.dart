@@ -33,10 +33,10 @@ class DistrictListScreen extends ConsumerWidget {
     final districts = groupedDistricts.keys.toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: p.chipSelectedText,
       appBar: AppBar(
         backgroundColor: p.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: p.chipSelectedText,
         elevation: 0,
         title: Text(
           '$regionName 세부지역',
@@ -91,11 +91,17 @@ class DistrictListScreen extends ConsumerWidget {
               title: Text(
                 districtName,
                 style: TextStyle(
+                  color: p.chipSelectedBg,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              subtitle: Text('매장 $count개'),
+              subtitle: Text(
+                '매장 $count개',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                ),
+              ),
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,

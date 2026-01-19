@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_now_app/model/store.dart';
+import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/view/map/storebooking.dart';
 
 class StoreDetailSheet extends StatelessWidget {
@@ -14,6 +15,7 @@ class StoreDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 20,
@@ -32,6 +34,7 @@ class StoreDetailSheet extends StatelessWidget {
           Text(
             store.store_description ?? "매장 이름 없음",
             style: TextStyle(
+              color: p.primary,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),

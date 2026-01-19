@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/tosspayments_result.dart';
 
+/// Reverve, Selected Menu list
+/// 성공했으면 저장.
+
 /// [ResultPage] class는 결제의 성공 혹은 실패 여부를 보여주는 위젯입니다.
 class TossResultPage extends StatelessWidget {
   /// 기본 생성자입니다.

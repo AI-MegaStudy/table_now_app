@@ -38,7 +38,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final optionAsync = ref.watch(optionNotifierProvider);
-
+    int totalPrice = 0;
 
     return Scaffold(
       backgroundColor: p.background,
@@ -57,8 +57,14 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 ? const Center(child: Text('점검 중'),)
                 : Center(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Image.network('https://cheng80.myqnapcloud.com/tablenow/${menu[widget.menu_seq].menu_image}'),
+                      Align(
+                        alignment: Alignment.center, 
+                        child: Image.network(
+                          'https://cheng80.myqnapcloud.com/tablenow/${menu[widget.menu_seq].menu_image}'
+                        )
+                      ),
                       Text(menu[widget.menu_seq].menu_name),
                       Text(menu[widget.menu_seq].menu_description),
                       Row(
@@ -106,13 +112,27 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(o.option_name,),
-                              Text(CustomCommonUtil.formatCurrency(o.option_price)),
-                              cartButton('+', () => ref.read(optionSelectProvider.notifier).increment(o.option_seq)),
-                              Text('$count'),
-                              cartButton('-', () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq)),
+                              Expanded(
+                                child: Text(o.option_name, maxLines: 1, overflow: TextOverflow.ellipsis,),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(CustomCommonUtil.formatCurrency(count == 0 ? o.option_price : o.option_price * count,)),
+                              const SizedBox(width: 8),
+                              cartButton(
+                                '+',
+                                () => ref.read(optionSelectProvider.notifier).increment(o.option_seq),
+                              ),
+                              const SizedBox(width: 4),
+                              SizedBox(
+                                width: 24,
+                                child: Center(child: Text('$count')),
+                              ),
+                              const SizedBox(width: 4),
+                              cartButton(
+                                '-',
+                                () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq),
+                              ),
                             ],
                           ),
                         ],
@@ -122,7 +142,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 );
               }, 
               error: (error, stackTrace) => Center(child: Text('Error: $error')),
-              loading: () => Center(child: CircularProgressIndicator(),)
+              loading: () => Center(child: CircularProgressIndicator())
             ),
           ),
           ElevatedButton(

@@ -7,6 +7,12 @@ import uuid
 import random
 from ..database.connection import connect_db
 
+# encrypt package
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+import base64
+
 # 라우터 생성
 router = APIRouter()
 
@@ -60,6 +66,46 @@ async def select_pays():
                 continue
         
         return {"results": results}
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+
+
+
+@router.get("/get_toss_client_key")
+async def select_pay_toss_key():
+
+
+    try:
+        # private key
+        privateKey:bytes = base64.b16encode(b'\xfa\xf9\x8c\x06\xefL9XIdu\x0c-\xe6p\x06')
+        #get_random_bytes(16)
+        print(privateKey)
+    
+        text = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq'
+        cipher = AES.new(privateKey, AES.MODE_CBC,'This is an IV456'.encode('utf8'))
+        
+        textBytes =  bytes(text,'utf-8')
+       
+        ciphertext =  base64.b64encode(cipher.encrypt(pad(textBytes,AES.block_size)))
+        print(f"Original key: {base64.b16decode(privateKey)}")
+        print(f"Original Data: {text}")
+        print(f"Ciphertext: {ciphertext}")
+        # print(f"Ciphertext decode: {base64.b64decode(ciphertext)}")
+        print(cipher.iv)
+
+
+        # decipher = AES.new(b'FAF98C06EF4C39584964750C2DE67006', AES.MODE_CBC, cipher.iv)
+        # decrypted_data = unpad(decipher.decrypt(
+        #     base64.b64decode(ciphertext)
+        # ),AES.block_size) # 복호화 후 패딩 제거
+
+        # print(f"Decrypted Data: {decrypted_data}")
+
+        # todo: GT - need to encrypt key
+        return {'result':ciphertext}
     except Exception as e:
         import traceback
         error_msg = str(e)
@@ -128,7 +174,7 @@ async def select_pays_group_by_reserve(reserve_seq: int):
         import traceback
         error_msg = str(e)
         traceback.print_exc()
-        return {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+        return {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
 
 
 
@@ -177,7 +223,7 @@ async def select_pays_by_reserve(reserve_seq:int):
         import traceback
         error_msg = str(e)
         traceback.print_exc()
-        return {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+        return {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
 
 
 
@@ -216,7 +262,7 @@ async def create_pay(items: list[dict]):
         import traceback
         error_msg = str(e)
         traceback.print_exc()
-        return {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+        return {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
     finally:
         conn.close()
 
