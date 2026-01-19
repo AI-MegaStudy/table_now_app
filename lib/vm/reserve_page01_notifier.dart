@@ -80,8 +80,8 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
 
       List<StoreTable> tableData = (data3['results'] as List).map((d) => StoreTable.fromJson(d)).toList();
 
-      // 리스트 [날짜,[테이블 번호, 테이블 이름, 테이블 인원]]
-      List<dynamic> list = [];
+      //{날짜,{시간{[테이블 번호, 테이블 이름, 테이블 인원]}}
+      
       for(int i=0; i<=reserveData.length; i++){
       
       }
