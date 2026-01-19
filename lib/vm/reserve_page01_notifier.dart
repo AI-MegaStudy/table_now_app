@@ -10,16 +10,16 @@ import 'package:table_now_app/model/store_table.dart';
 class ReservePage01State {
   final Store store;
   final List<String> times;
-  final List<String> leftDates;
-  final List<String> leftTimes;
-  final List<String> leftTables;
+  final List<String> reservedDates;
+  final List<String> reservedTimes;
+  final List<String> reservedTables;
 
   ReservePage01State({
     required this.store,
     required this.times,
-    required this.leftDates,
-    required this.leftTimes,
-    required this.leftTables
+    required this.reservedDates,
+    required this.reservedTimes,
+    required this.reservedTables
   });
 }
 
@@ -60,7 +60,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
       }
 
       //예약 정보 받아오기
-      final res2 = await http.get(Uri.parse("$baseUrl/reserve/select_reserves_8/${date.split(" ")[0]}"));
+      final res2 = await http.get(Uri.parse("$baseUrl/reserve/select_reserves_8_store/${date.split(" ")[0]}/$seq"));
       if (res2.statusCode != 200) {
         throw Exception('예약 불러오기 실패: ${res2.statusCode}');
       }
@@ -94,12 +94,25 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         map[rdate]!.putIfAbsent(rtime, () => {});
 
         for(int j = 0; j < tables.length; j++){
-          map[rdate]![rtime]!.putIfAbsent(tables[j], () => []);
+          String tableNum = tables[j];
+          map[rdate]![rtime]!.putIfAbsent(tableNum, () => []);
+
+          for(int k = 0; k < tableData.length; k++){
+            if(tableData[k].store_table_seq == int.parse(tableNum)){
+              map[rdate]![rtime]![tableNum]!.add('${tableData[k].store_table_name}');
+              map[rdate]![rtime]![tableNum]!.add('${tableData[k].store_table_capacity}');
+              break;
+            }
+          }
         }
       }
-      print(map);
 
-      return ReservePage01State(store: storeData, times: timesData, leftDates: [], leftTimes: [], leftTables: []);
+      // 막혀있는 날짜, 시간, 테이블 리스트 만들기
+      
+      
+
+
+      return ReservePage01State(store: storeData, times: timesData, reservedDates: [], reservedTimes: [], reservedTables: []);
     } catch (e, stack) {
       // 에러가 날 경우 상태를 error로 바꿔줌
       print("🔥 ERROR: $e");
