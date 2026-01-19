@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
-import 'package:table_now_app/view/reserve_page01.dart';
+import 'package:table_now_app/view/reservepage/reserve_page01.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 

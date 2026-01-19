@@ -80,7 +80,7 @@ class ReserveNotifier extends AsyncNotifier<List<Reserve>>{
   }
 
 
-} // StudentNotifier
+} // reserveNotifier
 
 final reserveNotifierProvider = AsyncNotifierProvider<ReserveNotifier, List<Reserve>>(
   ReserveNotifier.new
