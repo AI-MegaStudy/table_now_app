@@ -126,10 +126,12 @@ CREATE TABLE `device_token` (
     `customer_seq` INT NOT NULL COMMENT '고객 번호',
     `fcm_token` VARCHAR(255) NOT NULL COMMENT 'FCM 토큰',
     `device_type` VARCHAR(10) NOT NULL COMMENT '기기 타입 (ios/android)',
+    `device_id` VARCHAR(255) NULL COMMENT '기기 고유 식별자 (Android: androidId, iOS: identifierForVendor)',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성 일시',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 일시',
     PRIMARY KEY (`device_token_seq`),
     KEY `idx_fcm_token` (`fcm_token`),
+    KEY `idx_device_id` (`device_id`),
     CONSTRAINT `fk_device_token_customer_seq` FOREIGN KEY (`customer_seq`) REFERENCES `customer` (`customer_seq`) ON UPDATE RESTRICT ON DELETE CASCADE,
     UNIQUE KEY `uk_customer_token` (`customer_seq`, `fcm_token`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
@@ -265,3 +267,7 @@ CREATE TABLE `pay` (
 --   - FCM 토큰 관리를 위한 device_token 테이블 추가
 --   - customer 테이블과의 외래키 관계 설정 (ON DELETE CASCADE)
 --   - 한 사용자가 여러 기기 사용 가능하도록 설계
+-- 2026-01-20: device_token 테이블에 device_id 컬럼 추가
+--   - 기기 고유 식별자 컬럼 추가 (Android: androidId, iOS: identifierForVendor)
+--   - 동일 기기에서 여러 사용자 로그인 지원을 위해 UNIQUE 키는 (customer_seq, fcm_token)만 유지
+--   - idx_device_id 인덱스 추가

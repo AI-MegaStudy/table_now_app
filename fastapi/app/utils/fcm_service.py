@@ -8,6 +8,7 @@ FCM 푸시 알림 발송 서비스
 import firebase_admin
 from firebase_admin import credentials, messaging
 import os
+import time
 from typing import Optional, Dict, List
 
 
@@ -72,6 +73,10 @@ class FCMService:
             return None
         
         try:
+            # Android에서 동일 알림이 카운트만 올라가는 문제 방지
+            # 각 알림마다 고유한 tag 생성 (밀리초 기반)
+            android_tag = f"notification_{int(time.time() * 1000)}"
+            
             message = messaging.Message(
                 token=token,
                 notification=messaging.Notification(
@@ -79,6 +84,11 @@ class FCMService:
                     body=body,
                 ),
                 data={k: str(v) for k, v in (data or {}).items()},
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        tag=android_tag,  # 고유 태그로 각 알림을 별도로 표시
+                    ),
+                ),
             )
             
             message_id = messaging.send(message)
@@ -89,7 +99,11 @@ class FCMService:
             print("⚠️  FCM token is invalid or expired")
             return None
         except Exception as e:
+            import traceback
             print(f"❌ Failed to send push notification: {e}")
+            print(f"❌ Error type: {type(e).__name__}")
+            print(f"❌ Traceback:")
+            traceback.print_exc()
             return None
     
     @classmethod
@@ -136,12 +150,22 @@ class FCMService:
                 print(f"⚠️  No FCM tokens found for customer_seq: {customer_seq}")
                 return 0
             
-            # 각 토큰에 알림 발송
+            # 각 토큰에 알림 발송 및 만료된 토큰 정리
             success_count = 0
+            invalid_tokens = []
+            
             for token in tokens:
                 message_id = cls.send_notification(token, title, body, data)
                 if message_id:
                     success_count += 1
+                else:
+                    # 발송 실패한 토큰은 만료되었을 가능성이 높음
+                    # UnregisteredError가 발생했을 수 있으므로 추적
+                    invalid_tokens.append(token)
+            
+            # 만료된 토큰이 있으면 DB에서 삭제
+            if invalid_tokens:
+                cls._cleanup_invalid_tokens(invalid_tokens, customer_seq)
             
             print(f"✅ Sent notifications to {success_count}/{len(tokens)} devices")
             return success_count
@@ -191,6 +215,10 @@ class FCMService:
             tokens = tokens[:500]
         
         try:
+            # Android에서 동일 알림이 카운트만 올라가는 문제 방지
+            # 각 알림마다 고유한 tag 생성 (밀리초 기반)
+            android_tag = f"notification_{int(time.time() * 1000)}"
+            
             message = messaging.MulticastMessage(
                 tokens=tokens,
                 notification=messaging.Notification(
@@ -198,6 +226,11 @@ class FCMService:
                     body=body,
                 ),
                 data={k: str(v) for k, v in (data or {}).items()},
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        tag=android_tag,  # 고유 태그로 각 알림을 별도로 표시
+                    ),
+                ),
             )
             
             response = messaging.send_multicast(message)
@@ -209,6 +242,54 @@ class FCMService:
         except Exception as e:
             print(f"❌ Failed to send multicast notification: {e}")
             return 0
+    
+    @classmethod
+    def _cleanup_invalid_tokens(cls, invalid_tokens: List[str], customer_seq: int):
+        """
+        만료된 FCM 토큰을 DB에서 삭제
+        
+        Args:
+            invalid_tokens: 만료된 토큰 리스트
+            customer_seq: 고객 번호
+        """
+        if not invalid_tokens:
+            return
+        
+        try:
+            from ..database.connection import connect_db
+            
+            conn = connect_db()
+            curs = conn.cursor()
+            
+            try:
+                # 만료된 토큰 삭제
+                placeholders = ','.join(['%s'] * len(invalid_tokens))
+                curs.execute(f"""
+                    DELETE FROM device_token 
+                    WHERE customer_seq = %s AND fcm_token IN ({placeholders})
+                """, [customer_seq] + invalid_tokens)
+                
+                deleted_count = curs.rowcount
+                conn.commit()
+                
+                if deleted_count > 0:
+                    print(f"🧹 Cleaned up {deleted_count} invalid FCM token(s) for customer_seq: {customer_seq}")
+                    
+            except Exception as e:
+                conn.rollback()
+                print(f"⚠️  Failed to cleanup invalid tokens: {e}")
+            finally:
+                try:
+                    curs.close()
+                except:
+                    pass
+                try:
+                    conn.close()
+                except:
+                    pass
+                    
+        except Exception as e:
+            print(f"⚠️  Failed to cleanup invalid tokens: {e}")
 
 
 # ============================================================

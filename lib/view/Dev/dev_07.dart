@@ -9,6 +9,7 @@ import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
 import '../weather/weather_screen.dart';
 import '../weather/weather_forecast_screen.dart';
+import '../fcm/fcm_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
 
@@ -20,11 +21,6 @@ class Dev_07 extends ConsumerStatefulWidget {
 }
 
 class _Dev_07State extends ConsumerState<Dev_07> {
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   /// 로그아웃 처리
   Future<void> _handleLogout() async {
     // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
@@ -310,6 +306,31 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     ],
                   ),
 
+                  // FCM 테스트 페이지
+                  Text(
+                    'FCM 테스트',
+                    style: mainTitleStyle.copyWith(color: p.textPrimary),
+                  ),
+                  Center(
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToFcmScreen(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
+                        ),
+                        child: Text(
+                          'FCM 테스트 화면',
+                          style: mainMediumTitleStyle.copyWith(
+                            color: p.textOnPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                   // 홈으로 이동
                   Text(
                     '네비게이션',
@@ -358,6 +379,11 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   /// 날씨 예보 화면으로 이동
   void _navigateToWeatherForecastScreen() async {
     await CustomNavigationUtil.to(context, const WeatherForecastScreen());
+  }
+
+  /// FCM 테스트 화면으로 이동
+  void _navigateToFcmScreen() async {
+    await CustomNavigationUtil.to(context, const FcmScreen());
   }
 
   /// 홈 화면으로 이동

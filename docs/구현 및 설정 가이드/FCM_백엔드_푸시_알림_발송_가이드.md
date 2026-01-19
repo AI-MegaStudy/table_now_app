@@ -1,8 +1,10 @@
-# FCM 백엔드 푸시 알림 발송 가이드
+# FCM 푸시 알림 발송 가이드
 
-백엔드 API에서 FCM 푸시 알림을 발송하는 방법을 설명합니다.
+백엔드 API와 Flutter 클라이언트에서 FCM 푸시 알림을 발송하는 방법을 설명합니다.
 
-**대상**: 백엔드 개발자 (예약, 결제 등 API 개발자)
+**대상**: 
+- 백엔드 개발자 (예약, 결제 등 API 개발자)
+- Flutter 클라이언트 개발자
 
 ---
 
@@ -77,7 +79,62 @@ FCMService.send_notification_to_customer(
 
 ---
 
-## 📖 상세 사용법
+## 🎯 Flutter 클라이언트에서 사용하기
+
+Flutter 앱에서도 간단하게 푸시 알림을 발송할 수 있습니다.
+
+### 빠른 시작 (Flutter)
+
+#### 1. Import 추가
+
+```dart
+import 'package:table_now_app/utils/push_notification_service.dart';
+```
+
+#### 2. 알림 발송
+
+**특정 FCM 토큰에 발송:**
+```dart
+// 특정 토큰에 알림 발송
+final messageId = await PushNotificationService.sendToToken(
+  token: 'fcm_token_here',
+  title: '알림 제목',
+  body: '알림 내용',
+  data: {
+    'type': 'custom',
+    'key': 'value',
+  },
+);
+
+if (messageId != null) {
+  print('✅ 알림 발송 성공: $messageId');
+} else {
+  print('❌ 알림 발송 실패');
+}
+```
+
+**고객의 모든 기기에 발송 (권장):**
+```dart
+// 고객 번호만 있으면 자동으로 모든 기기에 발송
+final successCount = await PushNotificationService.sendToCustomer(
+  customerSeq: 123,
+  title: '예약 완료',
+  body: '예약이 완료되었습니다.',
+  data: {
+    'type': 'reservation_complete',
+    'reserve_seq': '456',
+    'screen': 'reservation_detail',
+  },
+);
+
+print('✅ $successCount개 기기에 알림 발송 완료');
+```
+
+**끝!** 이게 전부입니다. 🎉
+
+---
+
+## 📖 상세 사용법 (백엔드)
 
 ### 함수 종류
 
@@ -188,7 +245,76 @@ success_count = FCMService.send_multicast_notification(
 
 ## 💡 실제 사용 예시
 
-### 예시 1: 예약 완료 API (`reserve.py`)
+### Flutter 클라이언트 예시
+
+#### 예시 1: 예약 완료 후 알림 발송
+```dart
+import 'package:table_now_app/utils/push_notification_service.dart';
+
+// 예약 완료 후
+Future<void> onReservationComplete(int customerSeq, int reserveSeq) async {
+  // ... 예약 완료 로직 ...
+  
+  // 푸시 알림 발송
+  await PushNotificationService.sendToCustomer(
+    customerSeq: customerSeq,
+    title: '예약 완료',
+    body: '예약이 완료되었습니다.',
+    data: {
+      'type': 'reservation_complete',
+      'reserve_seq': reserveSeq.toString(),
+      'screen': 'reservation_detail',
+    },
+  );
+}
+```
+
+#### 예시 2: 예약 취소 후 알림 발송
+```dart
+Future<void> onReservationCancelled(int customerSeq, int reserveSeq) async {
+  // ... 예약 취소 로직 ...
+  
+  await PushNotificationService.sendToCustomer(
+    customerSeq: customerSeq,
+    title: '예약 취소',
+    body: '예약이 취소되었습니다.',
+    data: {
+      'type': 'reservation_cancelled',
+      'reserve_seq': reserveSeq.toString(),
+      'screen': 'reservation_list',
+    },
+  );
+}
+```
+
+#### 예시 3: 특정 토큰에 알림 발송 (테스트용)
+```dart
+// Dev_07 화면에서 사용 예시
+Future<void> sendTestPush(String token) async {
+  final messageId = await PushNotificationService.sendToToken(
+    token: token,
+    title: '테스트 알림',
+    body: '이것은 테스트 메시지입니다.',
+    data: {
+      'type': 'test',
+      'timestamp': DateTime.now().toIso8601String(),
+    },
+  );
+  
+  if (messageId != null) {
+    // 성공 처리
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('알림 발송 성공: $messageId')),
+    );
+  }
+}
+```
+
+---
+
+### 백엔드 API 예시
+
+#### 예시 1: 예약 완료 API (`reserve.py`)
 
 ```python
 from fastapi import APIRouter
@@ -261,6 +387,60 @@ async def complete_payment(customer_seq: int, ...):
     
     return {"result": "OK"}
 ```
+
+---
+
+## 📝 Flutter PushNotificationService API
+
+### 함수 종류
+
+`PushNotificationService`는 다음 2가지 함수를 제공합니다:
+
+#### 1. `sendToCustomer()` (권장)
+
+**용도**: 고객의 모든 기기에 알림 발송
+
+**특징**:
+- 고객 번호만 있으면 자동으로 DB에서 FCM 토큰 조회
+- 여러 기기를 사용하는 고객에게 모두 발송
+- 가장 간단하고 편리함
+
+**사용 예시**:
+```dart
+final successCount = await PushNotificationService.sendToCustomer(
+  customerSeq: customerSeq,
+  title: '예약 완료',
+  body: '예약이 완료되었습니다.',
+  data: {
+    'type': 'reservation_complete',
+    'reserve_seq': '123',
+    'screen': 'reservation_detail',
+  },
+);
+```
+
+**반환값**: 발송 성공한 기기 수 (int)
+
+---
+
+#### 2. `sendToToken()`
+
+**용도**: 특정 FCM 토큰에 알림 발송
+
+**사용 예시**:
+```dart
+final messageId = await PushNotificationService.sendToToken(
+  token: 'fcm_token_here',
+  title: '알림 제목',
+  body: '알림 내용',
+  data: {
+    'type': 'custom',
+    'key': 'value',
+  },
+);
+```
+
+**반환값**: 메시지 ID (String?) 또는 null (실패 시)
 
 ---
 
@@ -358,6 +538,51 @@ data={
 
 ---
 
+## 🔄 백엔드 API 엔드포인트
+
+### 1. 특정 토큰에 알림 발송
+```
+POST /api/debug/push
+Content-Type: application/json
+
+{
+  "token": "fcm_token_here",
+  "title": "알림 제목",
+  "body": "알림 내용",
+  "data": {
+    "type": "custom",
+    "key": "value"
+  }
+}
+```
+
+### 2. 고객의 모든 기기에 알림 발송 (신규 추가)
+```
+POST /api/customer/{customer_seq}/push
+Content-Type: application/json
+
+{
+  "title": "알림 제목",
+  "body": "알림 내용",
+  "data": {
+    "type": "reservation_complete",
+    "reserve_seq": "123",
+    "screen": "reservation_detail"
+  }
+}
+```
+
+**응답 예시**:
+```json
+{
+  "result": "OK",
+  "success_count": 2,
+  "message": "2개 기기에 알림이 발송되었습니다."
+}
+```
+
+---
+
 ## 변경 이력
 
 - **2026-01-19**: 초기 문서 작성
@@ -366,3 +591,8 @@ data={
 - **2026-01-19**: 사전 요구사항 섹션 추가
   - Firebase 서비스 계정 키 파일 필요 여부 명시
   - 확인 방법 및 로그 메시지 설명 추가
+- **2026-01-18**: Flutter 클라이언트 사용법 추가
+  - `PushNotificationService` 유틸리티 클래스 생성
+  - Flutter에서 푸시 알림 발송 방법 추가
+  - 백엔드 API 엔드포인트 추가 (`POST /api/customer/{customer_seq}/push`)
+  - Flutter 사용 예시 추가

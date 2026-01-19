@@ -1,76 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
-import 'package:device_info_plus/device_info_plus.dart';
 
 // 커스텀 공용 유틸리티 클래스
 // 위젯 및 공통 기능 관련 유틸리티 함수들을 제공합니다.
 class CustomCommonUtil {
-  static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
-  static bool? _isPhysicalDeviceCache;
-
-  /// 실기기 여부 확인 (캐시 사용)
-  ///
-  /// 첫 호출 시 디바이스 정보를 확인하고 캐시에 저장합니다.
-  /// 이후 호출 시에는 캐시된 값을 반환합니다.
-  static Future<bool> isPhysicalDevice() async {
-    if (_isPhysicalDeviceCache != null) {
-      return _isPhysicalDeviceCache!;
-    }
-
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await _deviceInfo.androidInfo;
-        _isPhysicalDeviceCache = androidInfo.isPhysicalDevice;
-      } else if (Platform.isIOS) {
-        final iosInfo = await _deviceInfo.iosInfo;
-        _isPhysicalDeviceCache = iosInfo.isPhysicalDevice;
-      } else {
-        // 웹이나 다른 플랫폼은 실기기로 간주
-        _isPhysicalDeviceCache = true;
-      }
-    } catch (e) {
-      // 디바이스 정보 확인 실패 시 기본값으로 실기기로 간주
-      if (kDebugMode) {
-        print('⚠️  디바이스 정보 확인 실패: $e');
-      }
-      _isPhysicalDeviceCache = true;
-    }
-
-    return _isPhysicalDeviceCache ?? true;
-  }
-
-  /// FastAPI 서버 기본 URL (비동기 - 실기기 체크 포함)
-  /// [apiBaseUrl]이 제공되면 해당 값을 사용하고, 없으면 플랫폼과 실기기 여부에 따라 자동 선택
-  /// - 실기기: 호스트 IP 필요 (customApiBaseUrl 설정 필요, 없으면 기본값 사용)
-  /// - iOS 시뮬레이터: http://127.0.0.1:8000
-  /// - Android 에뮬레이터: http://10.0.2.2:8000
-  ///
-  /// 실기기 여부는 [isPhysicalDevice()]로 확인합니다.
-  static Future<String> getApiBaseUrl([String? apiBaseUrl]) async {
-    if (apiBaseUrl != null && apiBaseUrl.isNotEmpty) {
-      return apiBaseUrl;
-    }
-
-    // 실기기 여부 확인
-    final isPhysical = await isPhysicalDevice();
-
-    if (isPhysical) {
-      // 실기기인 경우 플랫폼에 따라 기본값 반환
-      // (실제로는 customApiBaseUrl 설정을 권장)
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:8000';
-      }
-      return 'http://127.0.0.1:8000';
-    }
-
-    // 에뮬레이터/시뮬레이터인 경우
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://127.0.0.1:8000';
-  }
-
   /// FastAPI 서버 기본 URL (동기 - 플랫폼만 체크)
   ///
   /// 실기기 체크 없이 플랫폼에 따라 기본값만 반환합니다.

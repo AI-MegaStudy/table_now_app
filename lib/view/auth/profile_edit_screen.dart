@@ -54,6 +54,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   /// 고객 정보 조회
   Future<void> _loadCustomerData() async {
+    if (!mounted) return;
     // 인증 Notifier에서 로그인 정보 가져오기
     final authState = ref.read(authNotifierProvider);
 
@@ -66,9 +67,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         _emailController.text = _customer!.customerEmail;
         _phoneController.text = _customer!.customerPhone ?? '';
         _provider = _customer!.provider;
-        setState(() {
-          _isLoadingData = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoadingData = false;
+          });
+        }
         return;
       } catch (e) {
         // 데이터 파싱 실패 시 API로 조회
@@ -79,10 +82,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     // GetStorage에 데이터가 없거나 파싱 실패 시 API로 조회
     // customer_seq가 없으면 에러
     if (_customerSeq == null) {
-      setState(() {
-        _isLoadingData = false;
-        _errorMessage = '로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요.';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+          _errorMessage = '로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요.';
+        });
+      }
       return;
     }
 
@@ -299,6 +304,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   CustomButton(
                     btnText: '다시 시도',
                     onCallBack: () {
+                      if (!mounted) return;
                       setState(() {
                         _errorMessage = null;
                         _isLoadingData = true;
