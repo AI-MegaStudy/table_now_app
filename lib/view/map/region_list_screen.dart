@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/view/map/district.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
-import 'package:table_now_app/vm/store_notifire.dart';
+import 'package:table_now_app/vm/store_notifier.dart';
 
 class RegionListScreen extends ConsumerWidget {
   const RegionListScreen({super.key});
@@ -16,7 +17,8 @@ class RegionListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.orange,
+        backgroundColor: p.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
           '카레하우스',
@@ -29,7 +31,14 @@ class RegionListScreen extends ConsumerWidget {
         //   '지역을 선택하세요',
         //   style: TextStyle(color: Colors.white70, fontSize: 14),
         // ),
-        centerTitle: false,
+        // centerTitle: false,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: asyncStore.when(
         data: (storeList) {
@@ -58,9 +67,7 @@ class RegionListScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
-                  ),
+                  border: Border.all(color: Colors.grey),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
@@ -76,10 +83,10 @@ class RegionListScreen extends ConsumerWidget {
                         vertical: 10,
                       ),
                   leading: CircleAvatar(
-                    backgroundColor: Colors.orange.shade50,
+                    backgroundColor: Colors.white,
                     child: Icon(
                       Icons.location_on,
-                      color: Colors.orange,
+                      color: p.primary,
                     ),
                   ),
                   title: Text(
@@ -103,7 +110,19 @@ class RegionListScreen extends ConsumerWidget {
                   onTap: () {
                     final storesInRegion =
                         groupedStores[regionName]!;
-                    _navigateToMap(context, storesInRegion);
+
+                    // 지도로 바로 가지 않고 세부 지역(구) 리스트로 이동
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DistrictListScreen(
+                              regionName: regionName,
+                              storesInRegion:
+                                  storesInRegion,
+                            ),
+                      ),
+                    );
                   },
                 ),
               );
@@ -112,7 +131,7 @@ class RegionListScreen extends ConsumerWidget {
         },
         loading: () => Center(
           child: CircularProgressIndicator(
-            color: Colors.orange,
+            color: p.primary,
           ),
         ),
         error: (err, stack) =>
@@ -134,3 +153,8 @@ class RegionListScreen extends ConsumerWidget {
     );
   }
 }
+/*
+정적화면-consumer
+데이터가공-notifier
+감시-요약 및 필터링
+ */

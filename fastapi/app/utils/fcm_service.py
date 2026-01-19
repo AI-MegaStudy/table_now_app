@@ -150,6 +150,12 @@ class FCMService:
                 print(f"⚠️  No FCM tokens found for customer_seq: {customer_seq}")
                 return 0
             
+            # 토큰 목록 로그 출력
+            print(f"📱 고객 {customer_seq}의 FCM 토큰 목록 ({len(tokens)}개):")
+            for i, token in enumerate(tokens, 1):
+                # print(f"   [{i}] {token[:20]}...{token[-10:]}")
+                print(f"   [{i}] {token}")
+            
             # 각 토큰에 알림 발송 및 만료된 토큰 정리
             success_count = 0
             invalid_tokens = []

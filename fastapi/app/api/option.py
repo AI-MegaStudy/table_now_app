@@ -29,7 +29,7 @@ port = 8000
 # TODO: 전체 목록 조회 API 구현
 # - 이미지 BLOB 컬럼은 제외하고 조회
 # - ORDER BY id 정렬
-@router.get("/select_options")
+@router.get("/select_option")
 async def select_all():
     conn = connect_db()
     curs = conn.cursor()
@@ -37,7 +37,7 @@ async def select_all():
     # TODO: SQL 작성
     curs.execute("""
         SELECT option_seq, store_seq, menu_seq, option_name, option_price, option_cost, created_at 
-        FROM option 
+        FROM table_now_db.option 
         ORDER BY option_seq
     """)
     
@@ -71,19 +71,16 @@ async def select_one(store_seq: int, menu_seq: int):
     # TODO: SQL 작성
     curs.execute("""
         SELECT option_seq, store_seq, menu_seq, option_name, option_price, option_cost, created_at 
-        FROM option 
+        FROM table_now_db.option 
         WHERE store_seq = %s and menu_seq = %s
         ORDER BY option_seq
     """, (store_seq, menu_seq))
     
-    row = curs.fetchone()
+    rows = curs.fetchall()
     conn.close()
     
-    if row is None:
-        return {"result": "Error", "message": "option not found"}
-    
     # TODO: 결과 매핑
-    result = {
+    result = [{
         'option_seq': row[0],
         'store_seq': row[1],
         'menu_seq': row[2],
@@ -91,7 +88,7 @@ async def select_one(store_seq: int, menu_seq: int):
         'option_price': row[4],
         'option_cost': row[5],
         'created_at': row[6]
-    }
+    } for row in rows]
     return {"result": result}
 
 
@@ -121,7 +118,7 @@ async def insert_one(
         
         # TODO: SQL 작성
         sql = """
-            INSERT INTO option (store_seq, menu_seq, option_name, option_price, option_cost, created_at) 
+            INSERT INTO table_now_db.option (store_seq, menu_seq, option_name, option_price, option_cost, created_at) 
             VALUES (%s, %s, %s, %s, %s, %s)
         """
         curs.execute(sql, (store_seq, menu_seq, option_name, option_price, option_cost, created_at_dt))
@@ -160,7 +157,7 @@ async def update_one(
         
         # TODO: SQL 작성
         sql = """
-            UPDATE option 
+            UPDATE table_now_db.option 
             SET store_seq=%s, menu_seq=%s, option_name=%s, option_price=%s, option_cost=%s, created_at=%s 
             WHERE option_seq=%s
         """
@@ -185,7 +182,7 @@ async def delete_one(item_id: int):
         conn = connect_db()
         curs = conn.cursor()
         
-        sql = "DELETE FROM option WHERE id=%s"
+        sql = "DELETE FROM table_now_db.option WHERE id=%s"
         curs.execute(sql, (item_id,))
         
         conn.commit()

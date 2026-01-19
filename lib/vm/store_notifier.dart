@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/store.dart';
 
 class StoreNotifier extends AsyncNotifier<List<Store>> {
   final String baseUrl =
+      //getApiBaseUrl();
       "http://172.16.251.221:8000/api/store";
 
   @override

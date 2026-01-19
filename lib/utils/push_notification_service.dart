@@ -34,7 +34,8 @@ class PushNotificationService {
 
       if (kDebugMode) {
         print('📤 푸시 알림 발송 중...');
-        print('   Token: ${token.substring(0, 20)}...');
+        // print('   Token: ${token.substring(0, 20)}...');
+        print('   Token: $token');
         print('   Title: $title');
         print('   Body: $body');
       }

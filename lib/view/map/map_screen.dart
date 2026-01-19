@@ -46,13 +46,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("지역 매장 지도"),
-        backgroundColor: Colors.amberAccent,
+        title: Text(
+          "지역 매장 지도",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: p.primary,
+        foregroundColor: Colors.white,
+
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
           target: LatLng(37.5665, 126.9780),
-          zoom: 12, //<<<<<<<<<<<<<
+          zoom: 12, //<<<<<<<<<<<
         ),
         markers: _buildMarkers(storeList),
         myLocationEnabled: true,
@@ -169,3 +184,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _boundsApplied = true;
   }
 }
+/*
+지도화면-consumerstateful
+controller/init-stateful
+
+storeList직접전달-notifierX
+*/

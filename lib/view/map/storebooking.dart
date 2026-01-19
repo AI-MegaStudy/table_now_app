@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/view/map/navigator.dart';
 
 class StoreBookingInfoScreen extends ConsumerWidget {
   final Store store;
@@ -10,11 +11,12 @@ class StoreBookingInfoScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.palette;
+    //final menuAsync = ref.watch(menuNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.orange,
+        backgroundColor: p.primary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -44,7 +46,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
           ],
         ),
       ),
-
       body: Column(
         children: [
           Padding(
@@ -66,7 +67,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -86,8 +86,9 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                             top: Radius.circular(20),
                           ),
                       child: Image.network(
-                        store.store_image ??
-                            'https://via.placeholder.com/400x200',
+                        //  store.store_image ??
+                        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                        // 'https://via.placeholder.com/400x200',
                         //'https://cheng80.myqnapcloud.com/tablenow/${menus[widget.menu_seq].menu_image}'
                         height: 220,
                         width: double.infinity,
@@ -190,29 +191,27 @@ class StoreBookingInfoScreen extends ConsumerWidget {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade400,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '다음',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NavigatorScreen(store: store),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_ios, size: 16),
-                  ],
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  "다음",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),

@@ -112,29 +112,44 @@ class FCMNotifier extends Notifier<FCMState> {
         await _waitForAPNSToken();
       } else if (Platform.isAndroid) {
         // Android 13 (API 33) 이상에서 알림 권한 요청
-        // firebase_messaging 패키지가 자동으로 처리하지만, 명시적으로 요청하는 것이 안전합니다
+        // iOS와 동일하게 권한 상태를 먼저 확인하고, 필요할 때만 요청
         try {
-          final permission = await _messaging.requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+          // 현재 알림 권한 상태 확인
+          final currentStatus = await _messaging.getNotificationSettings();
+          print('📱 Android 현재 알림 권한 상태: ${currentStatus.authorizationStatus}');
+          
+          // 권한이 없으면 요청 (notDetermined 상태일 때만)
+          if (currentStatus.authorizationStatus == AuthorizationStatus.notDetermined) {
+            print('📱 Android 알림 권한 요청 중...');
+            final permission = await _messaging.requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
 
-          // 알림 권한 상태 로컬 저장
-          final isGranted =
-              permission.authorizationStatus ==
-                  AuthorizationStatus.authorized ||
-              permission.authorizationStatus == AuthorizationStatus.provisional;
-          await FCMStorage.saveNotificationPermissionStatus(isGranted);
+            // 알림 권한 상태 로컬 저장
+            final isGranted =
+                permission.authorizationStatus ==
+                    AuthorizationStatus.authorized ||
+                permission.authorizationStatus == AuthorizationStatus.provisional;
+            await FCMStorage.saveNotificationPermissionStatus(isGranted);
 
-          if (kDebugMode) {
-            print('📱 Android 알림 권한 상태: ${permission.authorizationStatus}');
+            print('📱 Android 알림 권한 요청 결과: ${permission.authorizationStatus}');
+          } else if (currentStatus.authorizationStatus == AuthorizationStatus.authorized ||
+                     currentStatus.authorizationStatus == AuthorizationStatus.provisional) {
+            // 이미 권한이 허용되어 있으면 요청하지 않음
+            print('📱 Android 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
+            
+            // 로컬 저장소에도 허용 상태 저장
+            await FCMStorage.saveNotificationPermissionStatus(true);
+          } else {
+            // 권한이 거부된 경우
+            print('⚠️  Android 알림 권한이 거부되어 있습니다: ${currentStatus.authorizationStatus}');
+            await FCMStorage.saveNotificationPermissionStatus(false);
           }
         } catch (e) {
-          if (kDebugMode) {
-            print('⚠️  Android 알림 권한 요청 실패: $e');
-            print('💡 Android 13 미만에서는 런타임 권한 요청이 필요 없습니다.');
-          }
+          print('⚠️  Android 알림 권한 확인/요청 실패: $e');
+          print('💡 Android 13 미만에서는 런타임 권한 요청이 필요 없습니다.');
         }
       }
 
