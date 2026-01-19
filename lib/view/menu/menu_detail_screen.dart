@@ -112,20 +112,27 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(o.option_name,),
-                              Text(CustomCommonUtil.formatCurrency(count==0 ? o.option_price : o.option_price * count)),
-                              cartButton(
-                                '+', 
-                                () {
-                                  ref.read(optionSelectProvider.notifier).increment(o.option_seq);
-                                  totalPrice += o.option_price * count;
-                                  print(totalPrice);
-                                }
+                              Expanded(
+                                child: Text(o.option_name, maxLines: 1, overflow: TextOverflow.ellipsis,),
                               ),
-                              Text('$count'),
-                              cartButton('-', () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq)),
+                              const SizedBox(width: 8),
+                              Text(CustomCommonUtil.formatCurrency(count == 0 ? o.option_price : o.option_price * count,)),
+                              const SizedBox(width: 8),
+                              cartButton(
+                                '+',
+                                () => ref.read(optionSelectProvider.notifier).increment(o.option_seq),
+                              ),
+                              const SizedBox(width: 4),
+                              SizedBox(
+                                width: 24,
+                                child: Center(child: Text('$count')),
+                              ),
+                              const SizedBox(width: 4),
+                              cartButton(
+                                '-',
+                                () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq),
+                              ),
                             ],
                           ),
                         ],
@@ -135,7 +142,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 );
               }, 
               error: (error, stackTrace) => Center(child: Text('Error: $error')),
-              loading: () => Center(child: CircularProgressIndicator(),)
+              loading: () => Center(child: CircularProgressIndicator())
             ),
           ),
           ElevatedButton(
