@@ -13,6 +13,7 @@ import 'package:table_now_app/utils/local_notification_service.dart';
 import 'package:table_now_app/utils/current_screen_tracker.dart';
 import 'package:table_now_app/utils/route_observer_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:convert';
 
 // 전역 NavigatorKey (알림 클릭 시 현재 화면 확인용)
@@ -175,6 +176,17 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       navigatorKey: navigatorKey, // 전역 NavigatorKey 설정 (알림 클릭 시 현재 화면 확인용)
       navigatorObservers: [ScreenTrackingRouteObserver()], // 라우트 변경 감지
       title: 'TableNow',
+      // 로케일 설정 (Google Maps 언어 설정용)
+      locale: const Locale('ko', 'KR'), // 한국어 강제 설정
+      supportedLocales: const [
+        Locale('ko', 'KR'), // 한국어
+        Locale('en', 'US'), // 영어 (fallback)
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       themeMode: themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
