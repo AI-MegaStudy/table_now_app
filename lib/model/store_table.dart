@@ -3,7 +3,7 @@ class StoreTable {
   final int store_seq;
   final int store_table_name;
   final int store_table_capacity;
-  final String store_table_inuse;
+  final int store_table_inuse;
   final String created_at;
 
   StoreTable({
@@ -22,7 +22,7 @@ class StoreTable {
       store_seq: json['store_seq'] ?? 0,
       store_table_name: json['store_table_name'] ?? 0,
       store_table_capacity: json['store_table_capacity'] ?? 0,
-      store_table_inuse: json['store_table_inuse'] ?? 'N',
+      store_table_inuse: json['store_table_inuse'] ?? 0,
       created_at: json['created_at'] ?? '',
     );
   }

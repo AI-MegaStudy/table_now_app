@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/vm/store_one_notifire.dart';
+import 'package:table_now_app/vm/reserve_page01_notifier.dart';
 
 class ReservePage01 extends ConsumerStatefulWidget {
   const ReservePage01({super.key});
@@ -17,15 +18,9 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
   DateTime? _selectedDay;
   String? _selectedTime;
 
-  final List<String> times = [
-    '11:00', '11:30', '12:00',
-    '12:30', '13:00', '13:30',
-    '17:00', '17:30', '18:00',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final storeAsync = ref.watch(storeOneNotifierProvider);
+    final reserveAsync = ref.watch(reservePage01NotifierProvider);
     final p = context.palette;
 
     return Scaffold(
@@ -42,8 +37,10 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
           ),
         ],
       ),
-      body: storeAsync.when(
-        data: (store){
+      body: reserveAsync.when(
+        data: (data){
+          Store store = data.store;
+          List<String> times = data.times;
           return Column(
             children: [
               /// STEP INDICATOR
@@ -163,9 +160,9 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                             shape: BoxShape.circle,
                           ),
                           todayDecoration: BoxDecoration(
-                            color: p.primary,
-                            shape: BoxShape.circle,
-                          ),
+                            color: Colors.grey,
+                            shape: BoxShape.circle
+                          )
                         ),
                       ),
 
@@ -214,7 +211,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color:
-                                      selected ? p.primary : Colors.black,
+                                      selected ? p.textOnPrimary : Colors.black,
                                 ),
                               ),
                             ),
@@ -240,9 +237,12 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                       ),
                     ),
                     onPressed: () {},
-                    child: const Text(
+                    child: Text(
                       '다음',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: p.textOnPrimary
+                      ),
                     ),
                   ),
                 ),
@@ -250,12 +250,9 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
             ],
           );
         },
-        error: (error, stackTrace) => Center(child: Text('Error: $error')), 
+        error: (error, stackTrace) => Center(child: Text('Error: $stackTrace')), 
         loading: () => Center(child: CircularProgressIndicator()),
       )
-      
-      
-      
       
     );
   }
