@@ -11,12 +11,12 @@ class StoreBookingInfoScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.palette;
-    // final menuAsync = ref.watch(menuNotifierProvider);
+    //final menuAsync = ref.watch(menuNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.orange,
+        backgroundColor: p.primary,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -86,8 +86,9 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                             top: Radius.circular(20),
                           ),
                       child: Image.network(
-                        store.store_image ??
-                            'https://via.placeholder.com/400x200',
+                        //  store.store_image ??
+                        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                        // 'https://via.placeholder.com/400x200',
                         //'https://cheng80.myqnapcloud.com/tablenow/${menus[widget.menu_seq].menu_image}'
                         height: 220,
                         width: double.infinity,

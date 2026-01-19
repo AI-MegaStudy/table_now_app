@@ -46,6 +46,13 @@ class _Dev_02State extends ConsumerState<Dev_02> {
             centerTitle: mainAppBarCenterTitle,
             backgroundColor: p.background,
             foregroundColor: p.textPrimary,
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios,
+                //color: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
           body: SingleChildScrollView(
             child: Padding(
