@@ -4,10 +4,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/utils/fcm_storage.dart';
 import 'package:table_now_app/utils/local_notification_service.dart';
+import 'package:table_now_app/utils/current_screen_tracker.dart';
 
 /// FCM 토큰 상태 모델
 class FCMState {
@@ -51,36 +53,62 @@ class FCMNotifier extends Notifier<FCMState> {
   /// 알림 권한 요청, 토큰 가져오기, 토큰 갱신 리스너 설정을 수행합니다.
   Future<void> initialize() async {
     try {
-      if (kDebugMode) {
-        print('🚀 FCM 초기화 시작...');
-        print(
-          '📱 Platform: ${Platform.isIOS
-              ? 'iOS'
-              : Platform.isAndroid
-              ? 'Android'
-              : 'Unknown'}',
-        );
-      }
+      // 프로필/릴리스 모드에서도 초기화 시작 확인 가능하도록 항상 출력
+      print('🚀 FCM 초기화 시작...');
+      print(
+        '📱 Platform: ${Platform.isIOS
+            ? 'iOS'
+            : Platform.isAndroid
+            ? 'Android'
+            : 'Unknown'}',
+      );
 
       // iOS 알림 권한 요청 (필수)
       if (Platform.isIOS) {
-        final permission = await _messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        // 현재 알림 권한 상태 확인
+        final currentStatus = await _messaging.getNotificationSettings();
+        print('📱 현재 알림 권한 상태: ${currentStatus.authorizationStatus}');
+        
+        // 권한이 없으면 요청
+        if (currentStatus.authorizationStatus == AuthorizationStatus.notDetermined) {
+          print('📱 알림 권한 요청 중...');
+          final permission = await _messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
 
-        // 알림 권한 상태 로컬 저장
-        final isGranted =
-            permission.authorizationStatus == AuthorizationStatus.authorized ||
-            permission.authorizationStatus == AuthorizationStatus.provisional;
-        await FCMStorage.saveNotificationPermissionStatus(isGranted);
+          // 알림 권한 상태 로컬 저장
+          final isGranted =
+              permission.authorizationStatus == AuthorizationStatus.authorized ||
+              permission.authorizationStatus == AuthorizationStatus.provisional;
+          await FCMStorage.saveNotificationPermissionStatus(isGranted);
 
-        if (kDebugMode) {
-          print('📱 알림 권한 상태: ${permission.authorizationStatus}');
+          // 프로필/릴리스 모드에서도 권한 상태 확인 가능하도록 항상 출력
+          print('📱 iOS 알림 권한 요청 결과: ${permission.authorizationStatus}');
+          
+          if (permission.authorizationStatus == AuthorizationStatus.denied) {
+            print('⚠️  알림 권한이 거부되었습니다.');
+            print('💡 설정 > TableNow > 알림에서 권한을 활성화하세요.');
+            state = state.copyWith(
+              errorMessage: '알림 권한이 거부되었습니다. 설정에서 활성화하세요.',
+              isInitialized: true, // 초기화는 완료했지만 토큰은 받지 못함
+            );
+            return; // 권한이 거부되면 APNs 토큰을 받을 수 없음
+          }
+        } else if (currentStatus.authorizationStatus == AuthorizationStatus.denied) {
+          print('⚠️  알림 권한이 거부되어 있습니다.');
+          print('💡 설정 > TableNow > 알림에서 권한을 활성화하세요.');
+          state = state.copyWith(
+            errorMessage: '알림 권한이 거부되어 있습니다. 설정에서 활성화하세요.',
+            isInitialized: true, // 초기화는 완료했지만 토큰은 받지 못함
+          );
+          return; // 권한이 거부되면 APNs 토큰을 받을 수 없음
+        } else {
+          print('📱 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
         }
 
-        // iOS: APNs 토큰이 등록될 때까지 대기
+        // iOS: APNs 토큰이 등록될 때까지 대기 (권한이 허용된 경우에만)
         await _waitForAPNSToken();
       } else if (Platform.isAndroid) {
         // Android 13 (API 33) 이상에서 알림 권한 요청
@@ -122,62 +150,66 @@ class FCMNotifier extends Notifier<FCMState> {
       // 포그라운드 메시지 핸들러 설정
       _setupForegroundMessageHandler();
 
+      // 백그라운드/종료 상태 알림 클릭 핸들러 설정
+      _setupBackgroundMessageHandlers();
+
       state = state.copyWith(isInitialized: true, removeErrorMessage: true);
 
-      if (kDebugMode) {
-        print('✅ FCM initialized successfully');
-        print('🔥 FCM_TOKEN = ${state.token ?? "null"}');
+      // 프로필/릴리스 모드에서도 초기화 상태 확인 가능하도록 항상 출력
+      print('✅ FCM initialized successfully');
+      print('🔥 FCM_TOKEN = ${state.token ?? "null"}');
 
-        if (state.token == null) {
-          print('⚠️  FCM 토큰을 받지 못했습니다.');
-          print('📝 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-        }
+      if (state.token == null) {
+        print('⚠️  FCM 토큰을 받지 못했습니다.');
+        print('📝 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       final errorMsg = 'FCM 초기화 중 오류가 발생했습니다: $e';
       state = state.copyWith(isInitialized: false, errorMessage: errorMsg);
 
-      if (kDebugMode) {
-        print('❌ FCM initialization error: $errorMsg');
-      }
+      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+      print('❌ FCM initialization error: $errorMsg');
+      print('Stack trace: $stackTrace');
     }
   }
 
   /// iOS: APNs 토큰이 등록될 때까지 대기
   ///
   /// APNs 토큰이 등록되어야 FCM 토큰을 받을 수 있습니다.
-  /// 최대 10초까지 대기하며, 0.5초마다 확인합니다.
+  /// 최대 30초까지 대기하며, 1초마다 확인합니다.
+  /// IPA로 설치한 앱은 초기화가 더 느릴 수 있으므로 대기 시간을 늘렸습니다.
   Future<void> _waitForAPNSToken() async {
     if (!Platform.isIOS) return;
 
-    const maxAttempts = 20; // 10초 (0.5초 * 20)
-    const delayDuration = Duration(milliseconds: 500);
+    const maxAttempts = 30; // 30초 (1초 * 30)
+    const delayDuration = Duration(seconds: 1);
+
+    print('⏳ APNs 토큰 대기 시작... (최대 ${maxAttempts}초)');
 
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         final apnsToken = await _messaging.getAPNSToken();
         if (apnsToken != null) {
-          if (kDebugMode) {
-            print('✅ APNs token received');
-          }
+          print('✅ APNs token received (${attempt + 1}초 후)');
           return;
         }
       } catch (e) {
         // APNs 토큰이 아직 없음, 계속 대기
       }
 
-      if (kDebugMode && attempt == 0) {
-        print('⏳ Waiting for APNs token...');
+      // 5초마다 진행 상황 출력
+      if ((attempt + 1) % 5 == 0) {
+        print('⏳ APNs 토큰 대기 중... (${attempt + 1}/${maxAttempts}초)');
       }
 
       await Future.delayed(delayDuration);
     }
 
-    if (kDebugMode) {
-      print(
-        '⚠️  APNs token not received after 10 seconds. FCM token may not be available.',
-      );
-    }
+    // 프로필/릴리스 모드에서도 경고 확인 가능하도록 항상 출력
+    print(
+      '⚠️  APNs token not received after ${maxAttempts} seconds. FCM token may not be available.',
+    );
+    print('💡 IPA로 설치한 앱은 초기화가 더 느릴 수 있습니다. 앱을 재시작하거나 잠시 후 다시 시도하세요.');
   }
 
   /// 토큰 새로고침
@@ -192,7 +224,8 @@ class FCMNotifier extends Notifier<FCMState> {
 
       state = state.copyWith(token: token, removeErrorMessage: true);
 
-      if (kDebugMode && token != null) {
+      // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
+      if (token != null) {
         print('🔥 FCM_TOKEN updated: $token');
         print('💾 FCM 토큰 로컬 저장 완료');
 
@@ -203,15 +236,15 @@ class FCMNotifier extends Notifier<FCMState> {
         } else {
           print('✅ 토큰이 서버와 동기화되어 있습니다.');
         }
-      } else if (kDebugMode && token == null) {
+      } else {
         print('⚠️  FCM token is null.');
         print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Failed to get FCM token: $e');
-        print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-      }
+    } catch (e, stackTrace) {
+      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+      print('❌ Failed to get FCM token: $e');
+      print('Stack trace: $stackTrace');
+      print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다.');
     }
   }
@@ -279,9 +312,70 @@ class FCMNotifier extends Notifier<FCMState> {
     });
   }
 
+  /// 백그라운드/종료 상태 알림 클릭 핸들러 설정
+  ///
+  /// 앱이 백그라운드나 종료 상태에서 알림을 클릭했을 때 처리합니다.
+  void _setupBackgroundMessageHandlers() {
+    // 백그라운드 상태에서 알림 클릭
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationTap(message, '백그라운드');
+    });
+
+    // 앱 종료 상태에서 알림 클릭으로 앱 실행
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        _handleNotificationTap(message, '종료 상태');
+      }
+    });
+  }
+
+  /// 알림 클릭 처리 (공통 핸들러)
+  ///
+  /// 포그라운드, 백그라운드, 종료 상태 모두에서 사용됩니다.
+  void _handleNotificationTap(RemoteMessage message, String state) {
+    if (kDebugMode) {
+      print('🔔 알림 클릭 ($state):');
+      print('   Title: ${message.notification?.title}');
+      print('   Body: ${message.notification?.body}');
+      print('   Data: ${message.data}');
+    }
+
+    // 현재 화면 정보 가져오기 (백그라운드/종료 상태에서는 null일 수 있음)
+    final currentScreen = CurrentScreenTracker.getCurrentScreen();
+
+    if (kDebugMode) {
+      if (currentScreen != null) {
+        print('   현재 화면: $currentScreen');
+      } else {
+        print('   현재 화면: 알 수 없음 (앱이 백그라운드/종료 상태였을 수 있음)');
+      }
+
+      // 데이터 파싱
+      if (message.data.isNotEmpty) {
+        try {
+          print('   데이터: ${message.data}');
+        } catch (e) {
+          print('   데이터 파싱 실패: $e');
+        }
+      }
+    }
+
+    // TODO: 여기에 화면 이동 로직 추가
+    // 예: message.data['screen']에 따라 적절한 화면으로 이동
+    // navigatorKey를 사용하여 화면 이동
+  }
+
   /// 토큰 수동 새로고침
   Future<void> refreshToken() async {
     await _refreshToken();
+  }
+
+  /// FCM 초기화 재시도
+  /// 
+  /// 알림 권한이 거부된 경우 설정에서 활성화한 후 이 메서드를 호출하세요.
+  Future<void> retryInitialization() async {
+    print('🔄 FCM 초기화 재시도 중...');
+    await initialize();
   }
 
   /// 현재 토큰 가져오기
@@ -292,6 +386,29 @@ class FCMNotifier extends Notifier<FCMState> {
 
   /// 서버에 FCM 토큰 전송
   ///
+  /// 기기 식별자 가져오기
+  /// Android: androidId, iOS: identifierForVendor
+  Future<String?> _getDeviceId() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return androidInfo.id; // Settings.Secure.ANDROID_ID
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.identifierForVendor; // IDFV
+      }
+      
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  기기 식별자 가져오기 실패: $e');
+      }
+      return null;
+    }
+  }
+
   /// [customerSeq] 고객 번호
   /// 반환값: 성공 여부 (bool)
   Future<bool> sendTokenToServer(int customerSeq) async {
@@ -306,6 +423,12 @@ class FCMNotifier extends Notifier<FCMState> {
     try {
       await FCMStorage.saveLastSyncAttempt(DateTime.now());
 
+      // 기기 식별자 가져오기
+      final deviceId = await _getDeviceId();
+      if (deviceId == null && kDebugMode) {
+        print('⚠️  기기 식별자를 가져올 수 없습니다. 기기 식별 없이 진행합니다.');
+      }
+
       // getApiBaseUrl()은 동기 함수 (앱 시작 시 초기화됨)
       final apiBaseUrl = getApiBaseUrl();
       final url = Uri.parse('$apiBaseUrl/api/customer/$customerSeq/fcm-token');
@@ -314,6 +437,9 @@ class FCMNotifier extends Notifier<FCMState> {
         print('📤 서버에 FCM 토큰 전송 중...');
         print('   URL: $url');
         print('   Token: ${token.substring(0, 20)}...');
+        if (deviceId != null) {
+          print('   Device ID: $deviceId');
+        }
       }
 
       final response = await http.post(
@@ -322,6 +448,7 @@ class FCMNotifier extends Notifier<FCMState> {
         body: jsonEncode({
           'fcm_token': token,
           'device_type': Platform.isIOS ? 'ios' : 'android',
+          if (deviceId != null) 'device_id': deviceId,
         }),
       );
 

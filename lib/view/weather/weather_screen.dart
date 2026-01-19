@@ -61,8 +61,23 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     }
   }
 
-  /// OpenWeatherMap API에서 데이터 가져오기 및 저장
-  Future<void> _fetchFromApi() async {
+  /// DB에서 저장된 날씨 데이터 불러오기
+  Future<void> _loadWeatherFromDb() async {
+    if (_selectedStore == null) {
+      CustomCommonUtil.showErrorSnackbar(
+        context: context,
+        message: '지점을 선택해주세요.',
+      );
+      return;
+    }
+
+    await ref
+        .read(weatherNotifierProvider.notifier)
+        .fetchWeather(storeSeq: _selectedStore!.store_seq);
+  }
+
+  /// 오늘 날씨를 OpenWeatherMap API에서 가져와서 DB에 저장
+  Future<void> _saveTodayWeather() async {
     if (_selectedStore == null) {
       CustomCommonUtil.showErrorSnackbar(
         context: context,
@@ -79,14 +94,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       if (success) {
         CustomCommonUtil.showSuccessSnackbar(
           context: context,
-          title: '날씨 데이터 업데이트',
-          message: '날씨 데이터가 성공적으로 업데이트되었습니다.',
+          title: '날씨 데이터 저장',
+          message: '오늘 날씨가 성공적으로 저장되었습니다.',
         );
       } else {
         final errorMsg = ref.read(weatherNotifierProvider).errorMessage;
         CustomCommonUtil.showErrorSnackbar(
           context: context,
-          message: errorMsg ?? '날씨 데이터 업데이트에 실패했습니다.',
+          message: errorMsg ?? '오늘 날씨 저장에 실패했습니다.',
         );
       }
     }
@@ -104,13 +119,13 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         backgroundColor: p.background,
         foregroundColor: p.textPrimary,
         actions: [
-          // 새로고침 버튼 (리스트만 지우기)
+          // 새로고침 버튼 (날씨 데이터 다시 불러오기)
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: weatherState.isLoading
+            onPressed: (weatherState.isLoading || _selectedStore == null)
                 ? null
                 : () {
-                    ref.read(weatherNotifierProvider.notifier).reset();
+                    _loadWeatherFromDb();
                   },
           ),
         ],
@@ -161,18 +176,25 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                           setState(() {
                             _selectedStore = newValue;
                           });
+                          // 지점 선택 시 자동으로 날씨 데이터 불러오기
+                          if (newValue != null) {
+                            _loadWeatherFromDb();
+                          } else {
+                            // 지점 선택 해제 시 리스트 초기화
+                            ref.read(weatherNotifierProvider.notifier).reset();
+                          }
                         },
                       ),
                     ),
             ),
 
-            // 받기! 버튼
+            // 오늘 날씨 넣기 버튼
             CustomButton(
-              btnText: '받기!',
+              btnText: '오늘 날씨 넣기',
               onCallBack: (weatherState.isLoading || _selectedStore == null)
                   ? null
-                  : _fetchFromApi,
-              buttonType: ButtonType.elevated,
+                  : _saveTodayWeather,
+              buttonType: ButtonType.outlined,
             ),
 
             // 로딩 중
@@ -227,9 +249,17 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                     children: [
                       Icon(Icons.cloud_off, size: 64, color: p.textSecondary),
                       Text(
-                        '날씨 데이터가 없습니다.\n지점을 선택하고 "받기!" 버튼을 눌러주세요.',
+                        '날씨 데이터가 없습니다.\n지점을 선택하면 자동으로 불러옵니다.',
                         textAlign: TextAlign.center,
                         style: mainBodyTextStyle.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: mainDefaultSpacing),
+                      Text(
+                        '오늘 날씨를 저장하려면\n"오늘 날씨 넣기" 버튼을 눌러주세요.',
+                        textAlign: TextAlign.center,
+                        style: mainSmallTextStyle.copyWith(
                           color: p.textSecondary,
                         ),
                       ),
@@ -412,3 +442,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 //   - 선택한 지점의 날씨 데이터만 조회 및 표시
 //   - "받기!" 버튼으로 OpenWeatherMap API에서 날씨 데이터 가져오기 및 저장
 //   - store_seq 기반 날씨 조회로 변경
+//
+// 2026-01-19: 버튼 기능 분리
+//   - "받기!" 버튼: DB에서 저장된 날씨 데이터만 불러오기 (저장하지 않음)
+//   - "오늘 날씨 넣기" 버튼 추가: 오늘 날씨를 OpenWeatherMap API에서 가져와서 DB에 저장 후 리스트 갱신

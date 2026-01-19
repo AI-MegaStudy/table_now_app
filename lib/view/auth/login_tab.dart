@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -193,11 +195,38 @@ class _LoginTabState extends ConsumerState<LoginTab> {
 
     try {
       // Google Sign-In 초기화
+      // Web client ID 사용 (google-services.json의 client_type: 3)
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
+        // Android에서 명시적으로 serverClientId 설정 (Web client ID)
+        serverClientId: '447164902457-anlngk8m69k69cr4nq27nrn49tbcfai9.apps.googleusercontent.com',
       );
 
+      if (kDebugMode) {
+        print('🔐 Google Sign-In 초기화 완료');
+        print('   Server Client ID: ${googleSignIn.serverClientId}');
+      }
+
+      // Google 로그인 시도 전 상태 확인
+      if (kDebugMode) {
+        print('🔐 Google 로그인 시도 전 상태 확인...');
+        try {
+          // 이전 로그인 상태 확인 (에러 발생 여부 확인용)
+          final currentUser = await googleSignIn.signInSilently();
+          if (currentUser != null) {
+            print('   ✅ 이전 로그인 세션 발견: ${currentUser.email}');
+          } else {
+            print('   ℹ️  이전 로그인 세션 없음');
+          }
+        } catch (e) {
+          print('   ⚠️  signInSilently 실패 (정상일 수 있음): $e');
+        }
+      }
+
       // Google 로그인 시도
+      if (kDebugMode) {
+        print('🔐 Google 로그인 시도 중...');
+      }
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       // 사용자가 로그인 취소한 경우
@@ -331,7 +360,37 @@ class _LoginTabState extends ConsumerState<LoginTab> {
 
       // 에러 처리
       String errorMessage = 'Google 로그인 중 오류가 발생했습니다.';
-      if (e.toString().contains('TimeoutException')) {
+      
+      if (e is PlatformException) {
+        // Google Sign-In PlatformException 처리
+        final code = e.code;
+        final message = e.message ?? '';
+        final details = e.details?.toString() ?? '';
+        
+        if (kDebugMode) {
+          print('❌ PlatformException 상세 정보:');
+          print('   Code: $code');
+          print('   Message: $message');
+          print('   Details: $details');
+          print('   Full Exception: $e');
+        }
+        
+        if (code == 'network_error' || code == '7') {
+          errorMessage = '네트워크 연결에 실패했습니다.\n\n가능한 원인:\n'
+              '1. Google Play Services 업데이트 필요\n'
+              '2. 에뮬레이터의 Google 계정 확인\n'
+              '3. 인터넷 연결 확인\n'
+              '4. 앱 재설치 필요\n\n'
+              '에러 코드: $code\n'
+              '상세: ${message.isNotEmpty ? message : details}';
+        } else if (code == 'sign_in_canceled' || code == '12500') {
+          errorMessage = '로그인이 취소되었습니다.';
+        } else if (code == 'sign_in_failed' || code == '10') {
+          errorMessage = 'Google 로그인에 실패했습니다.\n앱 설정을 확인해주세요.\n\n에러 코드: $code';
+        } else {
+          errorMessage = 'Google 로그인 오류: $code\n${message.isNotEmpty ? message : details}';
+        }
+      } else if (e.toString().contains('TimeoutException')) {
         errorMessage = '요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.';
       } else if (e.toString().contains('SocketException')) {
         errorMessage = '네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.';

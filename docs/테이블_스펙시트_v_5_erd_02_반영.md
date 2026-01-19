@@ -97,7 +97,7 @@
 ## 4. weather (날씨)
 
 - 구분: 연관 엔티티(Associative Entity)
-- 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, reserve가 참조함
+- 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, 독립적인 속성을 보유. reserve(릴레이션쉽)가 직접 참조함
 
 | 컬럼명           | 타입         | 키  | NULL | 비고            | 설명           |
 | ---------------- | ------------ | --- | ---- | --------------- | -------------- |
@@ -110,10 +110,11 @@
 **비고:**
 
 - PK는 `(store_seq, weather_datetime)` 복합키
-- 각 식당별로 날씨 정보를 저장
+- 각 식당별로 날씨 정보를 저장 (store : weather = 1:N)
 - OpenWeatherMap API 호출 시 해당 식당의 `store_lat`, `store_lng`를 사용하여 날씨 정보 저장
-- `reserve` 테이블이 `weather` 테이블을 참조하여 예약 시점의 날씨 정보를 연결
+- `reserve` 테이블(릴레이션쉽)이 `weather` 테이블을 참조하여 예약 시점의 날씨 정보를 연결
 - 독립적인 속성(`weather_type`, `weather_low`, `weather_high`)을 보유한 연관 엔티티
+- **연관 엔티티로 분류하는 이유**: N:M 관계를 해소하는 것이 아니라, 독립적인 속성을 가진 관계를 표현하며, 다른 릴레이션쉽(`reserve`)이 직접 참조하는 구조이기 때문
 
 ---
 
@@ -145,8 +146,8 @@
 
 ## 6. menu (메뉴)
 
-- 구분: 연관 엔티티(Associative Entity)
-- 설명: 식당에 속한 메뉴 마스터
+- 구분: 릴레이션쉽(Relationship)
+- 설명: 식당에 속한 메뉴 마스터 (store : menu = 1:N)
 
 | 컬럼명           | 타입         | 키  | NULL | 비고            | 설명            |
 | ---------------- | ------------ | --- | ---- | --------------- | --------------- |
@@ -243,6 +244,128 @@
 
 ---
 
+## 테이블 간 관계 (1:N, N:M)
+
+본 섹션은 ERD_02 기준으로 각 테이블 간의 관계를 정의한다.
+
+### 1:N 관계 (일대다)
+
+#### customer 관련
+- **customer : reserve = 1:N**
+  - 한 고객이 여러 예약을 가질 수 있음
+  - `reserve.customer_seq` → `customer.customer_seq` (FK)
+
+- **customer : device_token = 1:N**
+  - 한 고객이 여러 기기의 FCM 토큰을 등록할 수 있음
+  - `device_token.customer_seq` → `customer.customer_seq` (FK, ON DELETE CASCADE)
+
+- **customer : password_reset_auth = 1:N**
+  - 한 고객이 여러 번의 비밀번호 변경 인증 요청을 할 수 있음
+  - `password_reset_auth.customer_seq` → `customer.customer_seq` (FK, ON DELETE CASCADE)
+
+#### store 관련
+- **store : store_table = 1:N**
+  - 한 식당이 여러 테이블을 보유함
+  - `store_table.store_seq` → `store.store_seq` (FK)
+
+- **store : weather = 1:N**
+  - 한 식당이 여러 시점의 날씨 정보를 가질 수 있음
+  - `weather.store_seq` → `store.store_seq` (FK, 복합키의 일부)
+
+- **store : menu = 1:N**
+  - 한 식당이 여러 메뉴를 보유함
+  - `menu.store_seq` → `store.store_seq` (FK)
+
+- **store : option = 1:N**
+  - 한 식당이 여러 옵션을 보유함
+  - `option.store_seq` → `store.store_seq` (FK)
+
+- **store : reserve = 1:N**
+  - 한 식당이 여러 예약을 받을 수 있음
+  - `reserve.store_seq` → `store.store_seq` (FK)
+
+- **store : pay = 1:N**
+  - 한 식당이 여러 결제 내역을 가질 수 있음
+  - `pay.store_seq` → `store.store_seq` (FK)
+
+#### menu 관련
+- **menu : option = 1:N**
+  - 한 메뉴가 여러 옵션을 가질 수 있음
+  - `option.menu_seq` → `menu.menu_seq` (FK)
+
+- **menu : pay = 1:N**
+  - 한 메뉴가 여러 결제 내역에 포함될 수 있음
+  - `pay.menu_seq` → `menu.menu_seq` (FK)
+
+#### option 관련
+- **option : pay = 1:N**
+  - 한 옵션이 여러 결제 내역에 포함될 수 있음
+  - `pay.option_seq` → `option.option_seq` (FK, NULL 허용)
+
+#### reserve 관련
+- **reserve : weather = N:1**
+  - 여러 예약이 하나의 날씨 정보를 참조할 수 있음
+  - `reserve.store_seq`, `reserve.weather_datetime` → `weather.store_seq`, `weather.weather_datetime` (복합키 FK)
+  - `reserve.store_seq`와 `weather.store_seq`가 자동으로 일치해야 함
+
+### N:M 관계 및 연관 엔티티로의 해소
+
+#### reserve ↔ menu/option = N:M (pay로 해소)
+- **원래 관계**: 한 예약(reserve)은 여러 메뉴/옵션을 포함할 수 있고, 한 메뉴/옵션은 여러 예약에 포함될 수 있음
+- **해소 방법**: `pay` 테이블이 연관 엔티티(Associative Entity)로 N:M 관계를 해소
+  - `pay.reserve_seq` → `reserve.reserve_seq` (FK)
+  - `pay.menu_seq` → `menu.menu_seq` (FK)
+  - `pay.option_seq` → `option.option_seq` (FK, NULL 허용)
+- **결과**: 
+  - reserve : pay = 1:N (한 예약이 여러 결제 내역을 가짐)
+  - menu : pay = 1:N (한 메뉴가 여러 결제 내역에 포함됨)
+  - option : pay = 1:N (한 옵션이 여러 결제 내역에 포함됨)
+
+**연관 엔티티 `pay`의 역할:**
+- `reserve`와 `menu`/`option`의 N:M 관계를 해소
+- 예약 단위의 실제 결제 내역을 저장 (수량, 금액 등 추가 속성 포함)
+- `store_seq`도 포함하여 식당 정보도 함께 관리
+
+### 관계 요약
+
+#### 1:N 관계
+
+| 부모 테이블 | 자식 테이블 | 관계 | FK 컬럼 |
+|------------|------------|------|---------|
+| customer | reserve | 1:N | reserve.customer_seq |
+| customer | device_token | 1:N | device_token.customer_seq |
+| customer | password_reset_auth | 1:N | password_reset_auth.customer_seq |
+| store | store_table | 1:N | store_table.store_seq |
+| store | weather | 1:N | weather.store_seq (복합키) |
+| store | menu | 1:N | menu.store_seq |
+| store | option | 1:N | option.store_seq |
+| store | reserve | 1:N | reserve.store_seq |
+| store | pay | 1:N | pay.store_seq |
+| menu | option | 1:N | option.menu_seq |
+| menu | pay | 1:N | pay.menu_seq |
+| option | pay | 1:N | pay.option_seq |
+| reserve | pay | 1:N | pay.reserve_seq |
+| weather | reserve | N:1 | reserve.store_seq, reserve.weather_datetime (복합키) |
+
+#### N:M 관계 (연관 엔티티로 해소)
+
+| 관계 | 해소 테이블 | 설명 |
+|------|------------|------|
+| reserve ↔ menu | pay | 한 예약이 여러 메뉴를 주문하고, 한 메뉴가 여러 예약에 포함됨 |
+| reserve ↔ option | pay | 한 예약이 여러 옵션을 주문하고, 한 옵션이 여러 예약에 포함됨 |
+
+**참고:**
+- 연관 엔티티(Associative Entity)는 두 가지 경우에 사용됨:
+  1. **N:M 관계 해소**: `pay` 테이블이 `reserve`와 `menu`/`option`의 N:M 관계를 해소
+  2. **독립 속성을 가진 관계 표현**: `weather` 테이블이 `store`와 날씨 정보를 연결하며 독립적인 속성 보유
+- `weather`는 연관 엔티티이지만 N:M 관계를 해소하는 것이 아니라, 독립적인 속성을 가진 관계를 표현
+- `weather`는 다른 릴레이션쉽(`reserve`)이 직접 참조하는 구조이므로 연관 엔티티로 분류
+- `menu`는 실제로는 1:N 관계이므로 릴레이션쉽(Relationship)으로 분류
+- `pay` 테이블은 `reserve`, `store`, `menu`, `option`을 모두 참조하는 다중 FK 구조
+- `weather`와 `reserve`의 관계는 복합키를 사용하는 특수한 경우 (N:1 관계)
+
+---
+
 ## 변경 이력
 
 - **2026-01-15**: customer 테이블 소셜 로그인 컬럼 추가 (작성자: 김택권)
@@ -268,3 +391,9 @@
   - `weather` 테이블의 구분을 "릴레이션쉽(Relationship)"에서 "연관 엔티티(Associative Entity)"로 변경
   - `reserve` 테이블이 `weather`를 참조하는 구조를 명확히 함
   - 독립적인 속성을 보유하고 여러 엔티티를 연결하는 연관 엔티티의 특성 반영
+- **2026-01-20**: 테이블 구분 수정 (작성자: 김택권)
+  - `weather` 테이블은 연관 엔티티로 유지 (독립적인 속성을 가진 관계 표현, 다른 릴레이션쉽이 직접 참조)
+  - `menu` 테이블의 구분을 "연관 엔티티"에서 "릴레이션쉽"으로 수정 (실제 관계는 `store : menu = 1:N`)
+  - 연관 엔티티는 두 가지 경우에 사용됨을 명확히 함:
+    1. N:M 관계 해소 (`pay`)
+    2. 독립 속성을 가진 관계 표현 (`weather`)

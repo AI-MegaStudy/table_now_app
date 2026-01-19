@@ -105,6 +105,7 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(customer: customer, errorMessage: null);
 
       // FCM 토큰을 서버에 전송
+      // 로그인 화면에서 로그인할 때 토큰이 서버에 등록되도록 함
       try {
         final fcmNotifier = ref.read(fcmNotifierProvider.notifier);
         final token = fcmNotifier.currentToken;
@@ -117,6 +118,7 @@ class AuthNotifier extends Notifier<AuthState> {
           await fcmNotifier.sendTokenToServer(customer.customerSeq);
         } else if (kDebugMode) {
           print('⚠️  FCM 토큰이 없어 서버 전송을 건너뜁니다.');
+          print('💡 FCM 초기화가 완료되면 자동으로 전송됩니다.');
         }
       } catch (e) {
         // FCM 토큰 전송 실패는 로그인 실패로 처리하지 않음

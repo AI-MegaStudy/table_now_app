@@ -46,6 +46,15 @@ class LoginRequest(BaseModel):
 class FCMTokenRequest(BaseModel):
     fcm_token: str
     device_type: str  # "ios" or "android"
+    device_id: Optional[str] = None  # 기기 고유 식별자 (Android: androidId, iOS: identifierForVendor)
+    device_id: Optional[str] = None  # 기기 고유 식별자 (Android: androidId, iOS: identifierForVendor)
+
+
+class PushNotificationRequest(BaseModel):
+    """푸시 알림 발송 요청 모델"""
+    title: str
+    body: str
+    data: Optional[dict] = None
 
 
 # ============================================
@@ -92,6 +101,78 @@ async def select_customers():
         error_msg = str(e)
         traceback.print_exc()
         return {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+
+
+# ============================================
+# FCM 토큰이 등록된 고객 리스트 조회
+# ============================================
+# 주의: 이 엔드포인트는 /{customer_seq} 보다 앞에 위치해야 합니다
+# 그렇지 않으면 FastAPI가 "with-fcm-token"을 customer_seq로 인식하려고 시도합니다
+@router.get("/with-fcm-token")
+async def get_customers_with_fcm_token():
+    """
+    FCM 토큰이 등록된 고객 리스트 조회
+    - device_token 테이블에 등록된 고객만 반환
+    - 고객 정보와 함께 등록된 기기 수도 반환
+    """
+    conn = connect_db()
+    curs = conn.cursor()
+    
+    try:
+        # FCM 토큰이 등록된 고객 조회 (중복 제거, 기기 수 포함)
+        # 최근 30일 이내에 업데이트된 토큰만 카운트 (활성 기기만 표시)
+        # device_id가 있으면 device_id 기준으로, 없으면 fcm_token 기준으로 카운트
+        curs.execute("""
+            SELECT DISTINCT
+                c.customer_seq,
+                c.customer_name,
+                c.customer_email,
+                c.customer_phone,
+                COUNT(DISTINCT COALESCE(dt.device_id, dt.fcm_token)) as device_count
+            FROM customer c
+            INNER JOIN device_token dt ON c.customer_seq = dt.customer_seq
+            WHERE dt.updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY c.customer_seq, c.customer_name, c.customer_email, c.customer_phone
+            ORDER BY c.customer_seq
+        """)
+        
+        rows = curs.fetchall()
+        
+        result = []
+        for row in rows:
+            result.append({
+                'customer_seq': row[0],
+                'customer_name': row[1],
+                'customer_email': row[2],
+                'customer_phone': row[3],
+                'device_count': row[4]
+            })
+        
+        return {
+            "result": "OK",
+            "results": result,
+            "total_count": len(result)
+        }
+        
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "results": [],
+            "total_count": 0
+        }
+    finally:
+        try:
+            curs.close()
+        except:
+            pass
+        try:
+            conn.close()
+        except:
+            pass
 
 
 # ============================================
@@ -994,7 +1075,42 @@ async def register_fcm_token(
                 "errorMsg": "device_type은 'ios' 또는 'android'여야 합니다."
             }
         
-        # 3. 기존 토큰 확인
+        # 3. 기기 ID가 있으면 동일 기기 확인 및 다른 사용자 토큰 정리
+        if request.device_id:
+            # 같은 고객의 같은 기기 ID가 있는지 확인
+            curs.execute("""
+                SELECT device_token_seq, fcm_token FROM device_token 
+                WHERE customer_seq = %s AND device_id = %s
+            """, (customer_seq, request.device_id))
+            existing_device = curs.fetchone()
+            
+            if existing_device:
+                # 같은 기기에서 앱 재설치한 경우: 기존 토큰 업데이트
+                existing_token_seq = existing_device[0]
+                existing_fcm_token = existing_device[1]
+                
+                if existing_fcm_token == request.fcm_token:
+                    # 같은 토큰이면 업데이트만
+                    curs.execute("""
+                        UPDATE device_token 
+                        SET device_type = %s, updated_at = NOW()
+                        WHERE device_token_seq = %s
+                    """, (device_type, existing_token_seq))
+                else:
+                    # 다른 토큰이면 토큰 교체 (앱 재설치로 새 토큰 발급됨)
+                    curs.execute("""
+                        UPDATE device_token 
+                        SET fcm_token = %s, device_type = %s, updated_at = NOW()
+                        WHERE device_token_seq = %s
+                    """, (request.fcm_token, device_type, existing_token_seq))
+                
+                conn.commit()
+                return {
+                    "result": "OK",
+                    "message": "FCM 토큰이 업데이트되었습니다. (동일 기기)"
+                }
+        
+        # 4. 기존 토큰 확인 (기기 ID가 없거나 동일 기기를 찾지 못한 경우)
         curs.execute("""
             SELECT device_token_seq FROM device_token 
             WHERE customer_seq = %s AND fcm_token = %s
@@ -1003,18 +1119,28 @@ async def register_fcm_token(
         
         if existing_token:
             # 기존 토큰 업데이트 (updated_at 자동 갱신)
-            curs.execute("""
-                UPDATE device_token 
-                SET device_type = %s, updated_at = NOW()
-                WHERE customer_seq = %s AND fcm_token = %s
-            """, (device_type, customer_seq, request.fcm_token))
+            if request.device_id:
+                # 기기 ID도 함께 업데이트
+                curs.execute("""
+                    UPDATE device_token 
+                    SET device_type = %s, device_id = %s, updated_at = NOW()
+                    WHERE customer_seq = %s AND fcm_token = %s
+                """, (device_type, request.device_id, customer_seq, request.fcm_token))
+            else:
+                curs.execute("""
+                    UPDATE device_token 
+                    SET device_type = %s, updated_at = NOW()
+                    WHERE customer_seq = %s AND fcm_token = %s
+                """, (device_type, customer_seq, request.fcm_token))
         else:
             # 새 토큰 등록
+            # 주의: 같은 기기 ID를 가진 다른 사용자의 토큰도 별도로 유지됨
+            # (테스트 환경에서 같은 기기에서 여러 사용자가 로그인할 수 있음)
             curs.execute("""
                 INSERT INTO device_token 
-                (customer_seq, fcm_token, device_type, created_at, updated_at)
-                VALUES (%s, %s, %s, NOW(), NOW())
-            """, (customer_seq, request.fcm_token, device_type))
+                (customer_seq, fcm_token, device_type, device_id, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
+            """, (customer_seq, request.fcm_token, device_type, request.device_id))
         
         conn.commit()
         
@@ -1042,6 +1168,52 @@ async def register_fcm_token(
             conn.close()
         except:
             pass
+
+
+# ============================================
+# 고객에게 푸시 알림 발송
+# ============================================
+@router.post("/{customer_seq}/push")
+async def send_push_to_customer(
+    customer_seq: int,
+    request: PushNotificationRequest
+):
+    """
+    고객의 모든 기기에 푸시 알림 발송
+    
+    Args:
+        customer_seq: 고객 번호
+        request: 푸시 알림 요청 (title, body, data)
+    
+    Returns:
+        성공 시 발송된 기기 수 반환
+    """
+    try:
+        from ..utils.fcm_service import FCMService
+        
+        # FCMService를 사용하여 고객의 모든 기기에 알림 발송
+        success_count = FCMService.send_notification_to_customer(
+            customer_seq=customer_seq,
+            title=request.title,
+            body=request.body,
+            data=request.data
+        )
+        
+        return {
+            "result": "OK",
+            "success_count": success_count,
+            "message": f"{success_count}개 기기에 알림이 발송되었습니다."
+        }
+        
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return {
+            "result": "Error",
+            "errorMsg": error_msg,
+            "success_count": 0
+        }
 
 
 # ============================================================
