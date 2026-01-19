@@ -10,7 +10,7 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
 
   @override
   FutureOr<List<Menu>> build() async{
-    return await fetchMenu(1); // 만들어지자마자 fetch함
+    return await fetchMenu(1); // 앞단에서 받아오기
   }
 
   List<Menu> menus = [];
@@ -28,7 +28,6 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
     }
 
     final data = json.decode(utf8.decode(res.bodyBytes));
-    print(data);
     return (data['results'] as List).map((d) => Menu.fromJson(d)).toList(); // 차이점: list로 return
   }
 
@@ -42,7 +41,6 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
     }
 
     final data = json.decode(utf8.decode(res.bodyBytes));
-    print(data);
     return (data['results'] as List).map((d) => Menu.fromJson(d)).toList(); // 차이점: list로 return
   }
 
@@ -92,3 +90,15 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
 final menuNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
   MenuNotifier.new
 );
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-16
+// 작성자: 임소연
+// 설명: Menu Notifier
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-15 임소연: 초기 생성

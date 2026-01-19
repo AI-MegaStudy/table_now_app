@@ -2,9 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_now_app/menu/menu_detail_screen.dart';
-import 'package:table_now_app/menu/menu_list_screen.dart';
-import 'package:table_now_app/menu/reservation_complete_screen.dart';
+import 'package:table_now_app/view/menu/menu_list_screen.dart';
+import 'package:table_now_app/view/menu/reservation_complete_screen.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -81,29 +80,6 @@ class _Dev_04State extends ConsumerState<Dev_04> {
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  Center(
-                    child: SizedBox(
-                      width: mainButtonMaxWidth,
-                      height: mainButtonHeight,
-                      // child: OutlinedButton(
-                      //   onPressed: () => Navigator.push(
-                      //     context,
-                      //     MaterialPageRoute(
-                      //       builder: (context) => MenuDetailScreen(),
-                      //     ),
-                      //   ),
-                      //   style: OutlinedButton.styleFrom(
-                      //     side: BorderSide(color: p.divider),
-                      //   ),
-                      //   child: Text(
-                      //     'Menu Detail',
-                      //     style: mainMediumTitleStyle.copyWith(
-                      //       color: p.textPrimary,
-                      //     ),
-                      //   ),
-                      // ),
                     ),
                   ),
                   Center(
