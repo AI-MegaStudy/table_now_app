@@ -120,6 +120,58 @@ async def select_all_8(date: str):
             } for row in rows
         ]
     }
+
+
+# ============================================
+# 8일 조회, 가게 한 개만
+# ============================================
+# TODO: 전체 목록 조회 API 구현
+# - 이미지 BLOB 컬럼은 제외하고 조회
+# - ORDER BY id 정렬
+
+@router.get("/select_reserves_8_store/{date}/{seq}")
+async def select_all_8(date: str, seq: int):
+    conn = connect_db()
+    curs = conn.cursor()
+
+    dt = datetime.strptime(date, "%Y-%m-%d")
+    dt_plus_7 = dt + timedelta(days=7)
+
+    start_dt = dt.strftime("%Y-%m-%d 00:00:00")
+    end_dt = dt_plus_7.strftime("%Y-%m-%d 23:59:59")
+
+    curs.execute("""
+        SELECT reserve_seq, store_seq, customer_seq,
+               weather_datetime, reserve_tables,
+               reserve_capacity, reserve_date,
+               created_at, payment_key, payment_status
+        FROM reserve
+        WHERE store_seq = %s
+        AND created_at BETWEEN %s AND %s
+        ORDER BY reserve_seq
+    """, (seq, start_dt, end_dt))
+
+    rows = curs.fetchall()
+    conn.close()
+
+    return {
+        "results": [
+            {
+                'reserve_seq': row[0],
+                'store_seq': row[1],
+                'customer_seq': row[2],
+                'weather_datetime': row[3],
+                'reserve_tables': row[4],
+                'reserve_capacity': row[5],
+                'reserve_date': row[6],
+                'created_at': row[7],
+                'payment_key': row[8],
+                'payment_status': row[9]
+            } for row in rows
+        ]
+    }
+
+
 # ============================================
 # 단일 조회 (Read One)
 # ============================================

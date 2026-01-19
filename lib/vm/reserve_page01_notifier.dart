@@ -10,16 +10,16 @@ import 'package:table_now_app/model/store_table.dart';
 class ReservePage01State {
   final Store store;
   final List<String> times;
-  final List<String> leftDates;
-  final List<String> leftTimes;
-  final List<String> leftTables;
+  final List<String> reservedDates;
+  final List<String> reservedTimes;
+  final List<String> reservedTables;
 
   ReservePage01State({
     required this.store,
     required this.times,
-    required this.leftDates,
-    required this.leftTimes,
-    required this.leftTables
+    required this.reservedDates,
+    required this.reservedTimes,
+    required this.reservedTables
   });
 }
 
@@ -60,7 +60,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
       }
 
       //예약 정보 받아오기
-      final res2 = await http.get(Uri.parse("$baseUrl/reserve/select_reserves_8/${date.split(" ")[0]}"));
+      final res2 = await http.get(Uri.parse("$baseUrl/reserve/select_reserves_8_store/${date.split(" ")[0]}/$seq"));
       if (res2.statusCode != 200) {
         throw Exception('예약 불러오기 실패: ${res2.statusCode}');
       }
@@ -80,24 +80,43 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
 
       List<StoreTable> tableData = (data3['results'] as List).map((d) => StoreTable.fromJson(d)).toList();
 
-      //{날짜,{시간{테이블 번호, [테이블 이름, 테이블 인원]}} 생성
-      Map<String, Map<String, List<String>>> bigMap = {};
-      Map<String, List<String>> smallMap = {};
-      for(int i=0; i<=reserveData.length; i++){
-        String rdate = reserveData[i].reserve_date.split(' ')[0];
-        String rtime = reserveData[i].reserve_date.split(' ')[1];
-        List<String> tables = reserveData[i].reserve_tables.split(",");
-        smallMap[rtime] = [];
-        for(int j=0; j<=tables.length; j++){
-          //smallMap[rtime]!.add({tables[j],[]});
+      //{'2025-01-15': { '12:00:00': {'1': ['1','4']}} 형식으로 만들기
+      Map<String, Map<String, Map<String, List<String>>>> map = {};
+
+      for (int i = 0; i < reserveData.length; i++) {
+        final reserve = reserveData[i];
+
+        final rdate = reserve.reserve_date.split('T')[0];
+        final rtime = reserve.reserve_date.split('T')[1].substring(0, 5);
+        final tables = reserve.reserve_tables.split(',');
+
+        map.putIfAbsent(rdate, () => {});
+        map[rdate]!.putIfAbsent(rtime, () => {});
+
+        for(int j = 0; j < tables.length; j++){
+          String tableNum = tables[j];
+          map[rdate]![rtime]!.putIfAbsent(tableNum, () => []);
+
+          for(int k = 0; k < tableData.length; k++){
+            if(tableData[k].store_table_seq == int.parse(tableNum)){
+              map[rdate]![rtime]![tableNum]!.add('${tableData[k].store_table_name}');
+              map[rdate]![rtime]![tableNum]!.add('${tableData[k].store_table_capacity}');
+              break;
+            }
+          }
         }
-        
       }
+
+      // 막혀있는 날짜, 시간, 테이블 리스트 만들기
+      
       
 
-      return ReservePage01State(store: storeData, times: timesData, leftDates: [], leftTimes: [], leftTables: []);
-    } catch (e) {
+
+      return ReservePage01State(store: storeData, times: timesData, reservedDates: [], reservedTimes: [], reservedTables: []);
+    } catch (e, stack) {
       // 에러가 날 경우 상태를 error로 바꿔줌
+      print("🔥 ERROR: $e");
+      print(stack);
       throw Exception("스토어 로딩 에러: $e");
     }
   }
