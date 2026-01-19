@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/vm/store_notifire.dart';
+import 'package:table_now_app/vm/store_one_notifire.dart';
 
 class ReservePage01 extends ConsumerStatefulWidget {
   const ReservePage01({super.key});
@@ -25,7 +25,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
 
   @override
   Widget build(BuildContext context) {
-    final storeAsync = ref.watch(storeNotifierProvider);
+    final storeAsync = ref.watch(storeOneNotifierProvider);
     final p = context.palette;
 
     return Scaffold(
@@ -44,9 +44,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
       ),
       body: storeAsync.when(
         data: (store){
-          return store.isEmpty
-          ? Center(child: Text('가게 정보가 없습니다'))
-          : Column(
+          return Column(
             children: [
               /// STEP INDICATOR
               Padding(
@@ -105,7 +103,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                                 top: Radius.circular(12),
                               ),
                               child: Image.network(
-                                'https://cheng80.myqnapcloud.com/tablenow/abiko_100h.jpg',
+                                'https://cheng80.myqnapcloud.com/tablenow/${store.store_image}',
                                 height: 180,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
@@ -115,18 +113,18 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                               padding: const EdgeInsets.all(12),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
-                                    '카레하우스 이태원점',
+                                    store.store_description!,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   SizedBox(height: 4),
-                                  Text('서울 용산구 이태원로 지하 200'),
+                                  Text(store.store_address),
                                   SizedBox(height: 2),
-                                  Text('영업시간: 11:00 - 23:00'),
+                                  Text('영업시간: ${store.store_open_time} ~ ${store.store_close_time}'),
                                 ],
                               ),
                             ),
