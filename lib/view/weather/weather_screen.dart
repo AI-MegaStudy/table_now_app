@@ -34,6 +34,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
   /// 지점 리스트 가져오기
   Future<void> _loadStores() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingStores = true;
     });
@@ -63,6 +64,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
   /// DB에서 저장된 날씨 데이터 불러오기
   Future<void> _loadWeatherFromDb() async {
+    if (!mounted) return;
     if (_selectedStore == null) {
       CustomCommonUtil.showErrorSnackbar(
         context: context,
@@ -78,6 +80,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
   /// 오늘 날씨를 OpenWeatherMap API에서 가져와서 DB에 저장
   Future<void> _saveTodayWeather() async {
+    if (!mounted) return;
     if (_selectedStore == null) {
       CustomCommonUtil.showErrorSnackbar(
         context: context,
@@ -173,6 +176,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                           );
                         }).toList(),
                         onChanged: (Store? newValue) {
+                          if (!mounted) return;
                           setState(() {
                             _selectedStore = newValue;
                           });

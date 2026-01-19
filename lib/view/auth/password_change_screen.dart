@@ -60,6 +60,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
 
   /// 인증 코드 요청
   Future<void> _requestAuthCode() async {
+    if (!mounted) return;
     if (_isRequestingCode) return;
 
     setState(() {
@@ -81,10 +82,12 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
       final responseData = json.decode(utf8.decode(response.bodyBytes));
 
       if (response.statusCode == 200 && responseData['result'] == 'OK') {
-        setState(() {
-          _authToken = responseData['auth_token'];
-          _expiresAt = DateTime.parse(responseData['expires_at']);
-        });
+        if (mounted) {
+          setState(() {
+            _authToken = responseData['auth_token'];
+            _expiresAt = DateTime.parse(responseData['expires_at']);
+          });
+        }
 
         if (mounted) {
           CustomCommonUtil.showSuccessSnackbar(
@@ -128,6 +131,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
 
   /// 인증 코드 검증
   Future<void> _verifyAuthCode() async {
+    if (!mounted) return;
     if (_authToken == null) {
       CustomCommonUtil.showErrorSnackbar(
         context: context,
@@ -167,9 +171,11 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
 
       if (response.statusCode == 200 && responseData['result'] == 'OK') {
         // 인증 성공 - 2단계로 이동
-        setState(() {
-          _currentStep = 2;
-        });
+        if (mounted) {
+          setState(() {
+            _currentStep = 2;
+          });
+        }
 
         if (mounted) {
           CustomCommonUtil.showSuccessSnackbar(
@@ -213,6 +219,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
 
   /// 비밀번호 변경
   Future<void> _changePassword() async {
+    if (!mounted) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }

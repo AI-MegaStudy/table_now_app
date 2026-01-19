@@ -41,6 +41,7 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
 
   /// 현재 위치 가져오기 및 날씨 데이터 가져오기
   Future<void> _getCurrentLocationAndFetchWeather() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingLocation = true;
       _locationError = null;
@@ -51,9 +52,11 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
-        setState(() {
-          _locationError = '위치 서비스가 비활성화되어 있습니다.';
-        });
+        if (mounted) {
+          setState(() {
+            _locationError = '위치 서비스가 비활성화되어 있습니다.';
+          });
+        }
         await _fetchWeather(_defaultLat, _defaultLon);
         if (mounted) {
           setState(() {
@@ -71,9 +74,11 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
         permission = await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _locationError = '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
-          });
+          if (mounted) {
+            setState(() {
+              _locationError = '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+            });
+          }
           await _fetchWeather(_defaultLat, _defaultLon);
           if (mounted) {
             setState(() {
@@ -85,9 +90,11 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _locationError = '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.';
-        });
+        if (mounted) {
+          setState(() {
+            _locationError = '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+          });
+        }
         await _fetchWeather(_defaultLat, _defaultLon);
         if (mounted) {
           setState(() {
@@ -135,9 +142,11 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
       // 위치를 가져오지 못한 경우 기본 좌표 사용
       final finalPosition = position;
       if (finalPosition == null) {
-        setState(() {
-          _locationError = '위치를 가져오지 못했습니다. 기본 위치(서울)를 사용합니다.';
-        });
+        if (mounted) {
+          setState(() {
+            _locationError = '위치를 가져오지 못했습니다. 기본 위치(서울)를 사용합니다.';
+          });
+        }
         await _fetchWeather(_defaultLat, _defaultLon);
         if (mounted) {
           setState(() {
@@ -147,11 +156,13 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
         return;
       }
 
-      setState(() {
-        _currentLat = finalPosition.latitude;
-        _currentLon = finalPosition.longitude;
-        _locationError = null;
-      });
+      if (mounted) {
+        setState(() {
+          _currentLat = finalPosition.latitude;
+          _currentLon = finalPosition.longitude;
+          _locationError = null;
+        });
+      }
 
       // 현재 위치로 날씨 데이터 가져오기
       await _fetchWeather(_currentLat!, _currentLon!);
@@ -167,19 +178,21 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
         print('위치 가져오기 오류: $e');
       }
 
-      setState(() {
-        String errorMessage = '위치를 가져오는 중 오류가 발생했습니다. 기본 위치(서울)를 사용합니다.';
+      if (mounted) {
+        setState(() {
+          String errorMessage = '위치를 가져오는 중 오류가 발생했습니다. 기본 위치(서울)를 사용합니다.';
 
-        if (e is TimeoutException) {
-          errorMessage = '위치를 가져오는 시간이 초과되었습니다. 기본 위치(서울)를 사용합니다.';
-        } else if (e.toString().contains('PERMISSION_DENIED')) {
-          errorMessage = '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
-        } else if (e.toString().contains('LOCATION_SERVICES_DISABLED')) {
-          errorMessage = '위치 서비스가 비활성화되어 있습니다. 기본 위치(서울)를 사용합니다.';
-        }
+          if (e is TimeoutException) {
+            errorMessage = '위치를 가져오는 시간이 초과되었습니다. 기본 위치(서울)를 사용합니다.';
+          } else if (e.toString().contains('PERMISSION_DENIED')) {
+            errorMessage = '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+          } else if (e.toString().contains('LOCATION_SERVICES_DISABLED')) {
+            errorMessage = '위치 서비스가 비활성화되어 있습니다. 기본 위치(서울)를 사용합니다.';
+          }
 
-        _locationError = errorMessage;
-      });
+          _locationError = errorMessage;
+        });
+      }
 
       await _fetchWeather(_defaultLat, _defaultLon);
 
