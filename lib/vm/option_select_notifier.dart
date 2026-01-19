@@ -44,7 +44,19 @@ class OptionSelectNotifier extends Notifier<OptionSelectState> {
   }
 }
 
-// StateNotifierProvider: 클래스를 외부에서 사용 가능하게 만들어주는 Provider
-final optionSelectProvider = NotifierProvider<OptionSelectNotifier, OptionSelectState>(
-  OptionSelectNotifier.new // 계산해서 CounterNotifier로 줌
+// autoDispose : 화면 나가면 자동 초기화
+final optionSelectNotifierProvider = NotifierProvider.autoDispose<OptionSelectNotifier, OptionSelectState>(
+  OptionSelectNotifier.new
 );
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-19
+// 작성자: 임소연
+// 설명: Option Select Notifier | 화면에서 주문금액 합계 계산
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-19 임소연: 초기 생성
