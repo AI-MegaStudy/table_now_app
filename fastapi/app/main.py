@@ -42,7 +42,7 @@ app.add_middleware(
 # app.include_router(example_router.router, prefix="/api/example", tags=["example"])
 
 # API 라우터 import 및 등록
-from app.api import customer, weather, menu, option, store, reserve, store_table, push_debug
+from app.api import customer, weather, menu, option, store, reserve, store_table, push_debug, payment
 
 # Customer API 라우터 등록
 app.include_router(customer.router, prefix="/api/customer", tags=["customer"])
@@ -61,6 +61,9 @@ app.include_router(store.router, prefix="/api/store", tags=["store"])
 
 # Reserve API 라우터 등록 : 유다원
 app.include_router(reserve.router, prefix="/api/reserve", tags=["reserve"])
+
+# Pay API 라우터 등록 : 이광태
+app.include_router(payment.router, prefix="/api/pay", tags=["pay"])
 
 # StoreTable API 라우터 등록 : 이예은
 app.include_router(store_table.router, prefix="/api/store_table", tags=["store_table"])
