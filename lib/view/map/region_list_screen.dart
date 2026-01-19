@@ -4,7 +4,7 @@ import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/view/map/district.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
-import 'package:table_now_app/vm/store_notifire.dart';
+import 'package:table_now_app/vm/store_notifier.dart';
 
 class RegionListScreen extends ConsumerWidget {
   const RegionListScreen({super.key});
