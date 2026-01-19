@@ -8,9 +8,11 @@ import 'package:table_now_app/custom/custom_button.dart';
 import 'package:table_now_app/custom/custom_text_field.dart';
 import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/theme/app_colors.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/auth/password_change_screen.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/vm/auth_notifier.dart';
 
 /// 회원 정보 수정 화면
@@ -277,15 +279,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: AppBar(
-        title: Text(
-          '회원 정보 수정',
-          style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
-        ),
-        centerTitle: mainAppBarCenterTitle,
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
-      ),
+      drawer: const ProfileDrawer(),
+          appBar: CommonAppBar(
+            title: Text(
+              '회원 정보 수정',
+              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+            ),
+            actions: [
+              
+            ],
+          ),
       body: _isLoadingData
           ? Center(child: CircularProgressIndicator(color: p.primary))
           : _errorMessage != null

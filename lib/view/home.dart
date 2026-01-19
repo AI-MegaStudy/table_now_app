@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/Dev/dev_01.dart';
 import 'package:table_now_app/view/Dev/dev_02.dart';
 import 'package:table_now_app/view/Dev/dev_03.dart';
@@ -10,6 +12,7 @@ import 'package:table_now_app/view/Dev/dev_04.dart';
 import 'package:table_now_app/view/Dev/dev_05.dart';
 import 'package:table_now_app/view/Dev/dev_06.dart';
 import 'package:table_now_app/view/Dev/dev_07.dart';
+import 'package:table_now_app/view/Dev/dev_08.dart';
 import 'package:table_now_app/view/Dev/dev_firebase_test.dart';
 import 'package:table_now_app/view/auth/auth_screen.dart';
 import 'package:table_now_app/view/map/region_list_screen.dart';
@@ -33,6 +36,7 @@ class _HomeState extends ConsumerState<Home> {
     const Dev_05(),
     const Dev_06(),
     const Dev_07(),
+    const Dev_08(), //<<<< 드로워 테스트 페이지
   ];
 
   @override
@@ -74,6 +78,7 @@ class _HomeState extends ConsumerState<Home> {
 
         return Scaffold(
           backgroundColor: p.background,
+         /*
           appBar: AppBar(
             title: Text(
               '홈',
@@ -106,6 +111,50 @@ class _HomeState extends ConsumerState<Home> {
                       Icons.dark_mode,
                       size: 20,
                       color: isDarkMode ? p.primary : p.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          */ 
+
+
+          appBar: CommonAppBar(
+            title: Text(
+              '홈',
+              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+            ),
+            actions: [
+              // 테마 스위치
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: mainSmallSpacing),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: mainSmallSpacing,
+                  children: [
+                    Icon(
+                      Icons.light_mode,
+                      size: 20,
+                      // 라이트모드일 때 밝은 노란색으로 부각 (주황색 배경과 따뜻하게 어울림), 다크모드일 때는 약하게
+                      color: isDarkMode
+                          ? p.textOnPrimary.withOpacity(0.5)
+                          : const Color(0xFFFFF9C4), // 밝은 노란색 (해 아이콘에 어울림)
+                    ),
+                    Switch(
+                      value: isDarkMode,
+                      onChanged: (value) {
+                        ref.read(themeNotifierProvider.notifier).toggleTheme();
+                      },
+                      activeThumbColor: p.textOnPrimary,
+                    ),
+                    Icon(
+                      Icons.dark_mode,
+                      size: 20,
+                      // 다크모드일 때 accent 색상으로 부각, 라이트모드일 때는 약하게
+                      color: isDarkMode
+                          ? p.accent
+                          : p.textOnPrimary.withOpacity(0.5),
                     ),
                   ],
                 ),
@@ -236,6 +285,20 @@ class _HomeState extends ConsumerState<Home> {
         child: SizedBox(
           width: mainButtonMaxWidth,
           height: mainButtonHeight,
+          child: OutlinedButton(
+            onPressed: () => _navigateToDevPage(7),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: p.divider)),
+            child: Text(
+              '공용앱바 & 드로워 페이지',
+              style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+            ),
+          ),
+        ),
+      ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
           child: ElevatedButton(
             onPressed: () => _navigateToFirebaseTest(),
             style: ElevatedButton.styleFrom(
@@ -266,6 +329,7 @@ class _HomeState extends ConsumerState<Home> {
           ),
         ),
       ),
+     
     ];
   }
 

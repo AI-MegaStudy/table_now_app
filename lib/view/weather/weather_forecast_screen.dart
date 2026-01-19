@@ -69,27 +69,12 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
       // 위치 권한 확인
       LocationPermission permission = await Geolocator.checkPermission();
 
-      if (permission == LocationPermission.denied) {
-        // 권한 요청
-        permission = await Geolocator.requestPermission();
-
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            setState(() {
-              _locationError = '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
-            });
-          }
-          await _fetchWeather(_defaultLat, _defaultLon);
-          if (mounted) {
-            setState(() {
-              _isLoadingLocation = false;
-            });
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
+      // 권한이 이미 허용된 경우 (whileInUse 또는 always) - 요청하지 않음
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        // 권한이 이미 허용되어 있으므로 위치 가져오기 진행
+      } else if (permission == LocationPermission.deniedForever) {
+        // 영구적으로 거부된 경우 - 요청하지 않고 기본 위치 사용
         if (mounted) {
           setState(() {
             _locationError = '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.';
@@ -102,6 +87,28 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
           });
         }
         return;
+      } else if (permission == LocationPermission.denied) {
+        // 권한이 거부된 경우에만 요청
+        permission = await Geolocator.requestPermission();
+
+        // 요청 후 다시 확인
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
+          if (mounted) {
+            setState(() {
+              _locationError = permission == LocationPermission.deniedForever
+                  ? '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.'
+                  : '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+            });
+          }
+          await _fetchWeather(_defaultLat, _defaultLon);
+          if (mounted) {
+            setState(() {
+              _isLoadingLocation = false;
+            });
+          }
+          return;
+        }
       }
 
       // 현재 위치 가져오기

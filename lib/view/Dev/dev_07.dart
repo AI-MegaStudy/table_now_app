@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 import '../../custom/util/navigation/custom_navigation_util.dart';
@@ -12,6 +14,7 @@ import '../weather/weather_forecast_screen.dart';
 import '../fcm/fcm_screen.dart';
 import '../home.dart';
 import '../../vm/auth_notifier.dart';
+import '../drawer/drawer.dart';
 
 class Dev_07 extends ConsumerStatefulWidget {
   const Dev_07({super.key});
@@ -21,6 +24,8 @@ class Dev_07 extends ConsumerStatefulWidget {
 }
 
 class _Dev_07State extends ConsumerState<Dev_07> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   /// 로그아웃 처리
   Future<void> _handleLogout() async {
     // 인증 Notifier를 통해 로그아웃 처리 (GetStorage 자동 삭제 및 전역 상태 업데이트)
@@ -46,15 +51,26 @@ class _Dev_07State extends ConsumerState<Dev_07> {
       builder: (context) {
         final p = context.palette;
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: p.background,
-          appBar: AppBar(
+          // drawer: const AppDrawer(),
+          drawer: const ProfileDrawer(),
+          appBar: CommonAppBar(
             title: Text(
               '프로젝트 관리자 페이지',
               style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
             ),
-            centerTitle: mainAppBarCenterTitle,
-            backgroundColor: p.background,
-            foregroundColor: p.textPrimary,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.account_circle,
+                  color: p.textOnPrimary,
+                ),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             child: Padding(

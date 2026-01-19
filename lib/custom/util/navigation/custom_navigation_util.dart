@@ -306,10 +306,14 @@ class CustomNavigationUtil {
     bool enableSwipeBack = false,
     PageTransitionType transitionType = PageTransitionType.slide,
   }) {
+    // 위젯 타입에서 화면 이름 자동 생성 (라우트 이름이 없는 경우)
+    final screenName = settings?.name ?? page.runtimeType.toString();
+    final routeSettings = settings ?? RouteSettings(name: screenName);
+    
     if (enableSwipeBack) {
       return Navigator.pushAndRemoveUntil<T>(
         context,
-        MaterialPageRoute<T>(builder: (context) => page, settings: settings),
+        MaterialPageRoute<T>(builder: (context) => page, settings: routeSettings),
         (route) => false,
       );
     } else {
@@ -317,7 +321,7 @@ class CustomNavigationUtil {
         context,
         _NoSwipeBackPageRoute<T>(
           builder: (context) => page,
-          settings: settings,
+          settings: routeSettings,
           transitionType: transitionType,
         ),
         (route) => false,

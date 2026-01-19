@@ -6,7 +6,6 @@ import 'package:table_now_app/vm/reservation_notifier.dart';
 import '../../../custom/custom_drawer.dart';
 import '../../../custom/custom_text.dart';
 import '../../../vm/auth_notifier.dart';
-import '../../../core/global_storage.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -131,7 +130,6 @@ class AppDrawer extends ConsumerWidget {
         onPressed: () {
           ref.read(authNotifierProvider.notifier).logout();
           ref.read(reservationNotifierProvider.notifier).clear();
-          GlobalStorage.instance.clear();
 
           Navigator.pushAndRemoveUntil(
             context,

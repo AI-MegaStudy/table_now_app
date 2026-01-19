@@ -14,6 +14,9 @@ requests>=2.31.0  # HTTP 요청 (OpenWeatherMap API 호출용)
 # Firebase
 firebase-admin>=6.0.0  # FCM 푸시 알림 발송용
 
+# 암호화 (Payment API용)
+pycryptodome>=3.19.0  # AES 암호화 (Crypto.Cipher 사용)
+
 # 개발 도구 (선택사항)
 pytest>=7.4.3
 pytest-asyncio>=0.21.1
