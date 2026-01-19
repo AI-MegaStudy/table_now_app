@@ -28,11 +28,7 @@ class _TossHomeState extends State<TossHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('toss payments 결제정보'),
-        centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-      ),
+      appBar: AppBar(title: const Text('toss payments 결제정보'), centerTitle: true, systemOverlayStyle: SystemUiOverlayStyle.dark),
       body: SafeArea(
         minimum: const EdgeInsets.symmetric(horizontal: 15),
         child: Form(
@@ -50,23 +46,13 @@ class _TossHomeState extends State<TossHome> {
                 items: payMethods.map<DropdownMenuItem<String>>((String i) {
                   return DropdownMenuItem<String>(
                     value: i,
-                    child: Text(
-                      {
-                            '카드': '카드',
-                            '가상계좌': '가상계좌',
-                            '계좌이체': '계좌이체',
-                            '휴대폰': '휴대폰',
-                            '상품권': '상품권',
-                          }[i] ??
-                          '카드',
-                    ),
+                    child: Text({'카드': '카드', '가상계좌': '가상계좌', '계좌이체': '계좌이체', '휴대폰': '휴대폰', '상품권': '상품권'}[i] ?? '카드'),
                   );
                 }).toList(),
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: '주문번호(orderId)'),
-                initialValue:
-                    'tosspaymentsFlutter_${DateTime.now().millisecondsSinceEpoch}',
+                initialValue: 'tosspaymentsFlutter_${DateTime.now().millisecondsSinceEpoch}',
                 onSaved: (String? value) {
                   orderId = value!;
                 },
@@ -81,26 +67,20 @@ class _TossHomeState extends State<TossHome> {
               TextFormField(
                 decoration: const InputDecoration(labelText: '결제금액(amount)'),
                 initialValue: '50000',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onSaved: (String? value) {
                   amount = value!;
                 },
               ),
               TextFormField(
-                decoration: const InputDecoration(
-                  labelText: '구매자명(customerName)',
-                ),
+                decoration: const InputDecoration(labelText: '구매자명(customerName)'),
                 initialValue: '김토스',
                 onSaved: (String? value) {
                   customerName = value!;
                 },
               ),
               TextFormField(
-                decoration: const InputDecoration(
-                  labelText: '이메일(customerEmail)',
-                ),
+                decoration: const InputDecoration(labelText: '이메일(customerEmail)'),
                 initialValue: 'email@tosspayments.com',
                 keyboardType: TextInputType.emailAddress,
                 onSaved: (String? value) {
@@ -122,30 +102,15 @@ class _TossHomeState extends State<TossHome> {
                       successUrl: Constants.success,
                       failUrl: Constants.fail,
                     );
-                    Navigator.of(context)
-                        .push(
-                          MaterialPageRoute(
-                            builder: (context) => TossPayment(data: data),
-                          ),
-                        )
-                        .then((result) {
-                          if (result != null) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    TossResultPage(result: result),
-                              ),
-                            );
-                          }
-                        });
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => TossPayment(data: data))).then((result) {
+                      if (result != null) {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => TossResultPage(result: result)));
+                      }
+                    });
                   },
                   child: const Text(
                     '결제하기',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
