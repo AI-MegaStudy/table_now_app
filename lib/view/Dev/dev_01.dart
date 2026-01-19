@@ -64,13 +64,13 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
                           onPressed: () => CustomNavigationUtil.to(context, const PaymentListGroupView()),
-                          child: Text('유저의 PAY GROUP 리스트'),
+                          child: Text('유저의 reservation 결제 페이지'),
                         ),
-                        ElevatedButton(
-                          // CustomNavigationUtil.to(context, const AuthScreen());
-                          onPressed: () => CustomNavigationUtil.to(context, const TossHome()),
-                          child: Text('토스페이테스트'),
-                        ),
+                        // ElevatedButton(
+                        //   // CustomNavigationUtil.to(context, const AuthScreen());
+                        //   onPressed: () => CustomNavigationUtil.to(context, const TossHome()),
+                        //   child: Text('토스페이테스트'),
+                        // ),
                       ],
                     ),
                   ),

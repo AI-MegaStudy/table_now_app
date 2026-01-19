@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/utils_core.dart';
-import 'package:table_now_app/main.dart';
+
 import 'package:table_now_app/theme/app_colors.dart';
-import 'package:table_now_app/view/payment/purchase/toss_home.dart';
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
-import 'package:table_now_app/vm/payment_notifier.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
 
 class PaymentListGroupView extends ConsumerWidget {
@@ -35,22 +33,19 @@ class PaymentListGroupView extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-
-
                       // 메뉴정보및 주문 정보 박스
                       SizedBox(
-                        
                         height:
                             MediaQuery.of(context).size.height -
                             detailBoxHeight,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          
+
                           children: [
                             // subOrderInfoBox(data[0].store_description),
                             textSubTitle('주문 정보'),
-                            
+
                             Container(
                               padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
                               child: Column(
@@ -58,14 +53,13 @@ class PaymentListGroupView extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('예약 번호: $reserve_seq'),
-                                   Text('예약 날짜: 예약된 날짜'),
-                              Text('총 인원: '),
-                              Text('테이블 번호: '),
-                              Text('상점: ${data[0].store_description}'),
+                                  Text('예약 날짜: 예약된 날짜'),
+                                  Text('총 인원: '),
+                                  Text('테이블 번호: '),
+                                  Text('상점: ${data[0].store_description}'),
                                 ],
                               ),
                             ),
-                           
 
                             textSubTitle('주문 메뉴 정보'),
 
@@ -77,7 +71,6 @@ class PaymentListGroupView extends ConsumerWidget {
                                   itemCount: data.length,
                                   itemBuilder: (context, index) {
                                     return Card(
-                                      
                                       child: Row(
                                         spacing: 10,
                                         crossAxisAlignment:
@@ -113,21 +106,29 @@ class PaymentListGroupView extends ConsumerWidget {
                                               ),
                                             ],
                                           ),
-                                          
+
                                           SizedBox(
-                                            width: MediaQuery.of(context).size.width/1.8,
-                                          
+                                            width:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width /
+                                                1.8,
+
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                            children: [
-                                              Text("${data[index].total_count}개"),
-                                               Text(
-                                            "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  "${data[index].total_count}개",
+                                                ),
+                                                Text(
+                                                  "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                            ],
-                                          )),
-                                         
                                         ],
                                       ),
                                     );
@@ -142,6 +143,10 @@ class PaymentListGroupView extends ConsumerWidget {
                       // 맨 밑에 메뉴 박스
                       Container(
                         height: cardBoxHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          color: Colors.blue[100],
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -150,7 +155,7 @@ class PaymentListGroupView extends ConsumerWidget {
                               style: TextStyle(fontSize: 20),
                             ),
                             SizedBox(
-                              width: MediaQuery.of(context).size.width / 4,
+                              width: MediaQuery.of(context).size.width / 5,
                             ),
                             paymentCardType(
                               context,
@@ -216,7 +221,7 @@ class PaymentListGroupView extends ConsumerWidget {
     );
   }
 
-  Widget subOrderInfoBox(String storeName){
+  Widget subOrderInfoBox(String storeName) {
     return Container(
       padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
       child: Column(
@@ -224,14 +229,13 @@ class PaymentListGroupView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           textSubTitle('주문 정보'),
-                            Text('예약 번호: $reserve_seq'),
-                            Text('예약 날짜: 예약된 날짜'),
-                            Text('총 인원: '),
-                            Text('테이블 번호: '),
-                            Text('상점: ${storeName}'),
+          Text('예약 번호: $reserve_seq'),
+          Text('예약 날짜: 예약된 날짜'),
+          Text('총 인원: '),
+          Text('테이블 번호: '),
+          Text('상점: ${storeName}'),
         ],
-      )
-
+      ),
     );
   }
 
@@ -252,34 +256,36 @@ class PaymentListGroupView extends ConsumerWidget {
       successUrl: Constants.success,
       failUrl: Constants.fail,
     );
-    return ElevatedButton.icon(
-      onPressed: () {
-        CustomNavigationUtil.to(context, TossPayment(data: data)).then((
-          result,
-        ) {
-          if (result != null) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => TossResultPage(result: result),
-              ),
-            );
-          }
-        });
-
-      },
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        backgroundColor: p.background,
-      ),
-      // icon: Icon(Icons.card_giftcard),
-      label: Row(
-        spacing: 5,
-        children: [
-          imgUrl == 'image'
-              ? Icon(Icons.card_giftcard, size: 25)
-              : Image.network(imgUrl, width: 25),
-          Text(cardName),
-        ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          CustomNavigationUtil.to(context, TossPayment(data: data)).then((
+            result,
+          ) {
+            if (result != null) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TossResultPage(result: result),
+                ),
+              );
+            }
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          backgroundColor: p.background,
+        ),
+        // icon: Icon(Icons.card_giftcard),
+        label: Row(
+          spacing: 5,
+          children: [
+            imgUrl == 'image'
+                ? Icon(Icons.card_giftcard, size: 25)
+                : Image.network(imgUrl, width: 25),
+            Text(cardName),
+          ],
+        ),
       ),
     );
   }
