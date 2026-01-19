@@ -34,7 +34,7 @@ class StoreDetailSheet extends StatelessWidget {
           Text(
             store.store_description ?? "매장 이름 없음",
             style: TextStyle(
-              color: p.background,
+              color: p.primary,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
