@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/option_notifier.dart';
+import 'package:table_now_app/vm/option_select_notifier.dart';
 
 class MenuDetailScreen extends ConsumerStatefulWidget {
   const MenuDetailScreen({super.key, required this.menu_seq});
@@ -16,7 +16,11 @@ class MenuDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
-  final box = GetStorage();
+  // final box = GetStorage();
+  int menuQuantity = 1;
+  int optionQuantity = 0;
+  int optionQuantity2 = 0;
+  int optionQuantity3 = 0;
 
   @override
   void initState() {
@@ -34,6 +38,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final optionAsync = ref.watch(optionNotifierProvider);
+
 
     return Scaffold(
       backgroundColor: p.background,
@@ -60,8 +65,20 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(CustomCommonUtil.formatCurrency(menu[widget.menu_seq].menu_price)),
-                          cartButton('+', addToCart),
-                          cartButton('-', removeFromCart),
+                          // cartButton('+', ref.read(optionSelectProvider.notifier).increment),
+                          ElevatedButton(
+                            onPressed: () {
+                              //
+                            },
+                            child: Text('+')
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              //
+                            },
+                            child: Text('-')
+                          ),
+                          // cartButton('-', ref.read(optionSelectProvider.notifier).decrement),
                         ],
                       ),
                     ],
@@ -82,6 +99,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                   itemCount: options.length,
                   itemBuilder: (context, index) {
                     final o = options[index];
+                    final count = ref.watch(optionSelectProvider).counts[o.option_seq] ?? 0;
                     return Card(
                       color: p.background,
                       shadowColor: Colors.transparent,
@@ -92,6 +110,9 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                             children: [
                               Text(o.option_name,),
                               Text(CustomCommonUtil.formatCurrency(o.option_price)),
+                              cartButton('+', () => ref.read(optionSelectProvider.notifier).increment(o.option_seq)),
+                              Text('$count'),
+                              cartButton('-', () => ref.read(optionSelectProvider.notifier).decrement(o.option_seq)),
                             ],
                           ),
                         ],
@@ -105,7 +126,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () => {
+            onPressed: () {
               //
             }, 
             child: Text('담기') // 추후 가격 표시 예정
@@ -116,20 +137,15 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
   } // build
 
   // ---- widgets ----
-  Widget cartButton(String text, VoidCallback function){
+  Widget cartButton(String text, VoidCallback onpressed){
     return ElevatedButton(
-      onPressed: () => function,
+      onPressed: onpressed,
       child: Text(text)
     );
   }
-  
+
   // ---- functions ----
-  void addToCart(){
-    
-  }
-  void removeFromCart(){
-    
-  }
+  
 }
 
 // ============================================================
@@ -143,4 +159,4 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
 // 수정 이력
 // ============================================================
 // 2026-01-16 임소연: 초기 생성
-// 2026-01-19 임소연: +, - 버튼 추가
+// 2026-01-19 임소연: +, - 
