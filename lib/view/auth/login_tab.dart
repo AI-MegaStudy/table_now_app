@@ -416,6 +416,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
     required String providerSubject,
     required String customerName,
   }) async {
+    if (!mounted) return;
     // 로딩 오버레이 표시
     CustomCommonUtil.showLoadingOverlay(context, message: '계정 통합 중...');
 
@@ -577,6 +578,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
                   Checkbox(
                     value: _autoLoginEnabled,
                     onChanged: (value) {
+                      if (!mounted) return;
                       setState(() {
                         _autoLoginEnabled = value ?? false;
                       });
@@ -584,6 +586,7 @@ class _LoginTabState extends ConsumerState<LoginTab> {
                   ),
                   GestureDetector(
                     onTap: () {
+                      if (!mounted) return;
                       setState(() {
                         _autoLoginEnabled = !_autoLoginEnabled;
                       });

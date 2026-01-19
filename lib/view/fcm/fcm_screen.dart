@@ -33,6 +33,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
   /// FCM 토큰이 등록된 고객 리스트 불러오기
   Future<void> _loadCustomersWithFcmToken() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingCustomers = true;
     });
@@ -49,37 +50,45 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
         if (responseData['result'] == 'OK') {
           final results = responseData['results'] ?? [];
 
-          setState(() {
-            _customersWithFcmToken = List<Map<String, dynamic>>.from(results);
-            _isLoadingCustomers = false;
-          });
+          if (mounted) {
+            setState(() {
+              _customersWithFcmToken = List<Map<String, dynamic>>.from(results);
+              _isLoadingCustomers = false;
+            });
+          }
         } else {
           final errorMsg = responseData['errorMsg'] ?? '알 수 없는 오류';
           if (kDebugMode) {
             print('FCM 고객 목록 조회 실패: $errorMsg');
           }
-          setState(() {
-            _customersWithFcmToken = [];
-            _isLoadingCustomers = false;
-          });
+          if (mounted) {
+            setState(() {
+              _customersWithFcmToken = [];
+              _isLoadingCustomers = false;
+            });
+          }
         }
       } else {
         if (kDebugMode) {
           print('FCM 고객 목록 조회 HTTP 오류: ${response.statusCode}');
         }
-        setState(() {
-          _customersWithFcmToken = [];
-          _isLoadingCustomers = false;
-        });
+        if (mounted) {
+          setState(() {
+            _customersWithFcmToken = [];
+            _isLoadingCustomers = false;
+          });
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('FCM 고객 목록 조회 예외: $e');
       }
-      setState(() {
-        _customersWithFcmToken = [];
-        _isLoadingCustomers = false;
-      });
+      if (mounted) {
+        setState(() {
+          _customersWithFcmToken = [];
+          _isLoadingCustomers = false;
+        });
+      }
     }
   }
 
@@ -434,6 +443,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
                               );
                             }).toList(),
                             onChanged: (value) {
+                              if (!mounted) return;
                               setState(() {
                                 _selectedCustomerSeq = value;
                               });
@@ -551,6 +561,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
   /// 테스트 푸시 발송
   Future<void> _sendTestPush(String token) async {
+    if (!mounted) return;
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -595,6 +606,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
   /// 선택한 고객에게 푸시 알림 발송
   Future<void> _sendPushToSelectedCustomer() async {
+    if (!mounted) return;
     if (_selectedCustomerSeq == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -648,6 +660,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
   /// 전체 고객에게 푸시 알림 발송
   /// await로 순차 처리하여 네트워크 충돌 방지
   Future<void> _sendPushToAllCustomers() async {
+    if (!mounted) return;
     if (_customersWithFcmToken.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -674,6 +687,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
     // await로 순차 처리하여 네트워크 충돌 방지
     for (final customer in _customersWithFcmToken) {
+      if (!mounted) break; // 화면을 나갔으면 루프 중단
       final customerSeq = customer['customer_seq'] as int;
 
       final successCount = await PushNotificationService.sendToCustomer(
@@ -705,6 +719,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
   /// 예약 완료 시나리오 푸시 발송
   Future<void> _sendReservationCompleteScenario() async {
+    if (!mounted) return;
     if (_selectedCustomerSeq == null) return;
 
     if (mounted) {
@@ -750,6 +765,7 @@ class _FcmScreenState extends ConsumerState<FcmScreen> {
 
   /// 예약 취소 시나리오 푸시 발송
   Future<void> _sendReservationCancelledScenario() async {
+    if (!mounted) return;
     if (_selectedCustomerSeq == null) return;
 
     if (mounted) {
