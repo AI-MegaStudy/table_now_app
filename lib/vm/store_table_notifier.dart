@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:table_now_app/model/storetable.dart';
+import 'package:table_now_app/model/store_table.dart';
 
-class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
+class StoreTableNotifier
+    extends AsyncNotifier<List<StoreTable>> {
   // 서버 주소 (실제 서버 IP로 수정 필요)
   final String baseUrl = "http://192.168.219.103:8000";
 
@@ -15,7 +16,9 @@ class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
 
   // 1. 전체 조회 (Read)
   Future<List<StoreTable>> fetchStoreTables() async {
-    final res = await http.get(Uri.parse("$baseUrl/select_StoreTables"));
+    final res = await http.get(
+      Uri.parse("$baseUrl/select_StoreTables"),
+    );
 
     if (res.statusCode != 200) {
       throw Exception('테이블 목록 불러오기 실패: ${res.statusCode}');
@@ -38,13 +41,17 @@ class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
       url,
       body: {
         'store_seq': table.store_seq.toString(),
-        'store_table_name': table.store_table_name.toString(),
-        'store_table_capacity': table.store_table_capacity.toString(),
+        'store_table_name': table.store_table_name
+            .toString(),
+        'store_table_capacity': table.store_table_capacity
+            .toString(),
         'store_table_inuse': table.store_table_inuse,
       },
     );
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
     await refreshStoreTables(); // 성공 후 목록 새로고침
     return data['result']; // "OK" 반환
   }
@@ -57,23 +64,31 @@ class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
       body: {
         'store_table_seq': table.store_table_seq.toString(),
         'store_seq': table.store_seq.toString(),
-        'store_table_name': table.store_table_name.toString(),
-        'store_table_capacity': table.store_table_capacity.toString(),
+        'store_table_name': table.store_table_name
+            .toString(),
+        'store_table_capacity': table.store_table_capacity
+            .toString(),
         'store_table_inuse': table.store_table_inuse,
       },
     );
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
     await refreshStoreTables();
     return data['result'];
   }
 
   // 4. 삭제 (Delete)
   Future<String> deleteStoreTable(int seq) async {
-    final url = Uri.parse('$baseUrl/delete_StoreTable/$seq');
+    final url = Uri.parse(
+      '$baseUrl/delete_StoreTable/$seq',
+    );
     final response = await http.delete(url); // DELETE 방식 사용
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
     await refreshStoreTables();
     return data['result'];
   }
@@ -89,6 +104,7 @@ class StoreTableNotifier extends AsyncNotifier<List<StoreTable>> {
 
 // UI에서 접근하기 위한 전역 프로바이더
 final storeTableNotifierProvider =
-    AsyncNotifierProvider<StoreTableNotifier, List<StoreTable>>(
-      StoreTableNotifier.new,
-    );
+    AsyncNotifierProvider<
+      StoreTableNotifier,
+      List<StoreTable>
+    >(StoreTableNotifier.new);

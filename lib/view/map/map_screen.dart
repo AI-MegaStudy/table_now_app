@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:table_now_app/model/store.dart';
+import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/location_util.dart';
 import 'package:table_now_app/view/map/store_detail_sheet.dart';
-import '../../../model/store.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final List<Store> storeList;
@@ -12,7 +13,8 @@ class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({required this.storeList, super.key});
 
   @override
-  ConsumerState<MapScreen> createState() => _MapScreenState();
+  ConsumerState<MapScreen> createState() =>
+      _MapScreenState();
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
@@ -39,6 +41,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final storeList = widget.storeList;
 
     return Scaffold(
@@ -57,8 +60,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         zoomControlsEnabled: true,
         onMapCreated: (controller) {
           _mapController = controller;
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            await Future.delayed(const Duration(milliseconds: 300));
+          WidgetsBinding.instance.addPostFrameCallback((
+            _,
+          ) async {
+            await Future.delayed(
+              const Duration(milliseconds: 300),
+            );
             _applyBounds(storeList);
           });
         },
@@ -130,20 +137,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       return;
     }
 
-    final latitudes = points.map((e) => e.latitude).toList();
-    final longitudes = points.map((e) => e.longitude).toList();
+    final latitudes = points
+        .map((e) => e.latitude)
+        .toList();
+    final longitudes = points
+        .map((e) => e.longitude)
+        .toList();
 
-    double minLat = latitudes.reduce((a, b) => a < b ? a : b);
-    double maxLat = latitudes.reduce((a, b) => a > b ? a : b);
-    double minLng = longitudes.reduce((a, b) => a < b ? a : b);
-    double maxLng = longitudes.reduce((a, b) => a > b ? a : b);
+    double minLat = latitudes.reduce(
+      (a, b) => a < b ? a : b,
+    );
+    double maxLat = latitudes.reduce(
+      (a, b) => a > b ? a : b,
+    );
+    double minLng = longitudes.reduce(
+      (a, b) => a < b ? a : b,
+    );
+    double maxLng = longitudes.reduce(
+      (a, b) => a > b ? a : b,
+    );
 
     final bounds = LatLngBounds(
       southwest: LatLng(minLat, minLng),
       northeast: LatLng(maxLat, maxLng),
     );
 
-    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 70),
+    );
 
     _boundsApplied = true;
   }

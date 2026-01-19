@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../model/store.dart'; // 경로 상황에 맞게 수정
+import 'package:table_now_app/model/store.dart';
+import 'package:table_now_app/theme/palette_context.dart';
 
 class StoreBookingInfoScreen extends ConsumerWidget {
   final Store store;
@@ -8,13 +9,18 @@ class StoreBookingInfoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.palette;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.orange,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -28,7 +34,13 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text('예약 정보', style: TextStyle(color: Colors.white, fontSize: 12)),
+            Text(
+              '예약 정보',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),
@@ -36,9 +48,13 @@ class StoreBookingInfoScreen extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+            padding: const EdgeInsets.symmetric(
+              vertical: 20,
+              horizontal: 30,
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
               children: [
                 _buildStep(1, '정보', isActive: true),
                 _buildLine(),
@@ -61,29 +77,40 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                 elevation: 4,
                 shadowColor: Colors.black,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
+                      borderRadius:
+                          const BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
                       child: Image.network(
                         store.store_image ??
                             'https://via.placeholder.com/400x200',
+                        //'https://cheng80.myqnapcloud.com/tablenow/${menus[widget.menu_seq].menu_image}'
                         height: 220,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 220,
-                          color: Colors.grey,
-                          child: Icon(Icons.image_not_supported),
-                        ),
+                        errorBuilder:
+                            (
+                              context,
+                              error,
+                              stackTrace,
+                            ) => Container(
+                              height: 220,
+                              color: Colors.grey,
+                              child: Icon(
+                                Icons.image_not_supported,
+                              ),
+                            ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
@@ -94,16 +121,19 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                store.store_description ?? "",
+                                store.store_description ??
+                                    "",
                                 style: TextStyle(
                                   fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
                             children: [
                               Icon(
                                 Icons.location_on,
@@ -114,7 +144,9 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   store.store_address ?? "",
-                                  style: TextStyle(fontSize: 15),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                  ),
                                 ),
                               ),
                             ],
@@ -131,7 +163,8 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               Text(
                                 '영업시간: ${store.store_open_time ?? ""} - ${store.store_close_time ?? ""}',
                                 style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color:
+                                      Colors.grey.shade700,
                                   fontSize: 14,
                                 ),
                               ),
@@ -147,7 +180,12 @@ class StoreBookingInfoScreen extends ConsumerWidget {
           ),
 
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              24,
+            ),
             child: SizedBox(
               width: double.infinity,
               height: 56,
@@ -162,7 +200,8 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                   elevation: 0,
                 ),
                 child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
                     Text(
                       '다음',
@@ -183,12 +222,18 @@ class StoreBookingInfoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStep(int number, String title, {bool isActive = false}) {
+  Widget _buildStep(
+    int number,
+    String title, {
+    bool isActive = false,
+  }) {
     return Column(
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: isActive ? Colors.green : Colors.grey,
+          backgroundColor: isActive
+              ? Colors.green
+              : Colors.grey,
           child: Text(
             '$number',
             style: TextStyle(
@@ -203,7 +248,9 @@ class StoreBookingInfoScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 12,
             color: isActive ? Colors.green : Colors.grey,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isActive
+                ? FontWeight.bold
+                : FontWeight.normal,
           ),
         ),
       ],
