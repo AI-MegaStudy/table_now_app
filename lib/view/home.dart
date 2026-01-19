@@ -11,6 +11,9 @@ import 'package:table_now_app/view/Dev/dev_05.dart';
 import 'package:table_now_app/view/Dev/dev_06.dart';
 import 'package:table_now_app/view/Dev/dev_07.dart';
 import 'package:table_now_app/view/Dev/dev_firebase_test.dart';
+import 'package:table_now_app/view/auth/auth_screen.dart';
+import 'package:table_now_app/view/map/region_list_screen.dart';
+import 'package:table_now_app/vm/auth_notifier.dart';
 import 'package:table_now_app/vm/theme_notifier.dart';
 import 'package:table_now_app/utils/current_screen_tracker.dart';
 
@@ -246,6 +249,23 @@ class _HomeState extends ConsumerState<Home> {
           ),
         ),
       ),
+      Center(
+        child: SizedBox(
+          width: mainButtonMaxWidth,
+          height: mainButtonHeight,
+          child: ElevatedButton(
+            onPressed: () => _navigateToAuthOrMap(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: p.primary,
+              foregroundColor: p.textOnPrimary,
+            ),
+            child: Text(
+              '첫화면 가기',
+              style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+            ),
+          ),
+        ),
+      ),
     ];
   }
 
@@ -259,6 +279,20 @@ class _HomeState extends ConsumerState<Home> {
   /// Firebase 테스트 페이지로 이동
   void _navigateToFirebaseTest() async {
     await CustomNavigationUtil.to(context, const DevFirebaseTest());
+  }
+
+  /// 자동 로그인 여부에 따라 AuthScreen으로 갈지 RegionListScreen으로 결정 하는 함수
+  void _navigateToAuthOrMap() async {
+    // 현재 로그인 상태 확인
+    final authState = ref.read(authNotifierProvider);
+
+    if (authState.isLoggedIn) {
+      // 로그인되어 있으면 RegionListScreen으로 이동
+      await CustomNavigationUtil.to(context, const RegionListScreen());
+    } else {
+      // 로그인되어 있지 않으면 AuthScreen으로 이동
+      await CustomNavigationUtil.to(context, const AuthScreen());
+    }
   }
 
   //------------------------------
