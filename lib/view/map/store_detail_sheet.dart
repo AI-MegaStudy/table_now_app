@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:table_now_app/model/store.dart';
-import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/view/map/storebooking.dart';
 
 class StoreDetailSheet extends StatelessWidget {
   final Store store;
-  const StoreDetailSheet(this.store, {super.key});
+  final String? distance;
+
+  const StoreDetailSheet(
+    this.store, {
+    super.key,
+    this.distance,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 20,
@@ -26,7 +29,6 @@ class StoreDetailSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 제목/매장 이름
           Text(
             store.store_description ?? "매장 이름 없음",
             style: TextStyle(
@@ -37,27 +39,44 @@ class StoreDetailSheet extends StatelessWidget {
 
           SizedBox(height: 12),
 
-          // 매장 주소
+          if (distance != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.near_me,
+                    size: 18,
+                    color: Colors.orange,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    "내 위치에서 $distance",
+                    style: TextStyle(
+                      color: Colors.orange,
+                      // color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           _buildInfoRow(
             Icons.location_on_outlined,
             store.store_address ?? "주소 정보 없음",
           ),
-
-          // 전화번호
           _buildInfoRow(
             Icons.phone_outlined,
             store.store_phone ?? "전화 정보 없음",
           ),
-
-          // 영업시간
           _buildInfoRow(
             Icons.access_time_outlined,
             "${store.store_open_time ?? "-"} ~ ${store.store_close_time ?? "-"}",
           ),
-
           SizedBox(height: 20),
 
-          // 예약 버튼
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -76,36 +95,39 @@ class StoreDetailSheet extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
               child: Text(
                 "매장 예약",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-
           SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  // 세로 정렬 정보 Row
   Widget _buildInfoRow(IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[700]),
+          Icon(icon, size: 20, color: Colors.grey[600]),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 15),
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],
@@ -113,8 +135,3 @@ class StoreDetailSheet extends StatelessWidget {
     );
   }
 }
-
-/*
-변화없음-stateless
-수동 단순 전달
- */
