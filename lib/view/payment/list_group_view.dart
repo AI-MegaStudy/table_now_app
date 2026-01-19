@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/utils_core.dart';
+import 'package:table_now_app/main.dart';
+import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/view/payment/purchase/toss_home.dart';
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
+import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
 import 'package:table_now_app/vm/payment_notifier.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
@@ -10,108 +13,235 @@ import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
 class PaymentListGroupView extends ConsumerWidget {
   const PaymentListGroupView({super.key});
   final int reserve_seq = 1;
+  final double cardBoxHeight = 80;
+  final double detailBoxHeight = 170;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // reseve_seq로 초기 로딩.
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     paymentValue.fetchData(reserve_seq);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
+    final p = context.palette;
     return Scaffold(
+      backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
       body: Center(
-        child: paymentState.when(
-          data: (data) => data.length > 0
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: paymentState.when(
+            data: (data) => data.length > 0
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
 
-                  children: [
-                    Text('Toatal Payment: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}', style: TextStyle(fontSize: 20)),
 
-                    Container(
-                      height: 250,
-                      child: Column(
-                        children: [
-                          paymentCardType(context, 'image', '토스 페이', paymentValue.total_payment),
-                          paymentCardType(context, 'image', '신용 첵크카드', paymentValue.total_payment),
-                          paymentCardType(context, 'image', '카카오 페이', paymentValue.total_payment),
-                          paymentCardType(context, 'image', '네이버 페이', paymentValue.total_payment),
-                          // SizedBox(
-                          //   width: 350,
-                          //   child: ElevatedButton.icon(
-                          //     onPressed: () {
-                          //       //
-                          //     },
-
-                          //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
-                          //     // icon: Icon(Icons.card_giftcard),
-                          //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('토스 페이')]),
-                          //   ),
-                          // ),
-                          // SizedBox(
-                          //   width: 350,
-                          //   child: ElevatedButton.icon(
-                          //     onPressed: () {
-                          //       //
-                          //     },
-                          //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
-                          //     // icon: Icon(Icons.card_giftcard),
-                          //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('신용 첵크카드')]),
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: data.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            child: Row(
-                              spacing: 10,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-
-                              children: [
-                                // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
-                                Image.network(
-                                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
-                                  height: 50,
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                                  children: [
-                                    // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
-                                    // Text('예약번호: ${data[index].reserve_seq}'),
-                                    // Text("전체갯수: ${data[index].total_count}"),
-                                    Text('${data[index].menu_name}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                                    Text(
-                                      "${data[index].option_name != null ? data[index].option_name : ''}",
-                                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                                    ),
-                                  ],
-                                ),
-                                Text("${data[index].total_count}개"),
-                                Text("${CustomCommonUtil.formatPrice(data[index].total_pay)}"),
-                              ],
+                      // 메뉴정보및 주문 정보 박스
+                      SizedBox(
+                        
+                        height:
+                            MediaQuery.of(context).size.height -
+                            detailBoxHeight,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          
+                          children: [
+                            // subOrderInfoBox(data[0].store_description),
+                            textSubTitle('주문 정보'),
+                            
+                            Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: Column(
+                                spacing: 3,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('예약 번호: $reserve_seq'),
+                                   Text('예약 날짜: 예약된 날짜'),
+                              Text('총 인원: '),
+                              Text('테이블 번호: '),
+                              Text('상점: ${data[0].store_description}'),
+                                ],
+                              ),
                             ),
-                          );
-                        },
+                           
+
+                            textSubTitle('주문 메뉴 정보'),
+
+                            SingleChildScrollView(
+                              child: Container(
+                                color: p.background,
+                                height: 400,
+                                child: ListView.builder(
+                                  itemCount: data.length,
+                                  itemBuilder: (context, index) {
+                                    return Card(
+                                      
+                                      child: Row(
+                                        spacing: 10,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+
+                                        children: [
+                                          // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
+                                          Image.network(
+                                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                            height: 50,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+
+                                            children: [
+                                              // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
+                                              // Text('예약번호: ${data[index].reserve_seq}'),
+                                              // Text("전체갯수: ${data[index].total_count}"),
+                                              Text(
+                                                '${data[index].menu_name}',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                "${data[index].option_name != null ? data[index].option_name : ''}",
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          
+                                          SizedBox(
+                                            width: MediaQuery.of(context).size.width/1.8,
+                                          
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              Text("${data[index].total_count}개"),
+                                               Text(
+                                            "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
+                                          ),
+                                            ],
+                                          )),
+                                         
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              : Text('no data'),
-          error: (error, stackTrace) => Text('ERROR: $error'),
-          loading: () => const CircularProgressIndicator(),
+
+                      // 맨 밑에 메뉴 박스
+                      Container(
+                        height: cardBoxHeight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '결제금액: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}',
+                              style: TextStyle(fontSize: 20),
+                            ),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width / 4,
+                            ),
+                            paymentCardType(
+                              context,
+                              'image', // https://en.komoju.com/wp-content/uploads/2023/09/Toss-logo-1.png
+                              '결제 하기',
+                              paymentValue.total_payment,
+                              p,
+                            ),
+
+                            // paymentCardType(context, 'image', '신용 첵크카드', paymentValue.total_payment),
+                            // paymentCardType(context, 'image', '카카오 페이', paymentValue.total_payment),
+                            // paymentCardType(context, 'image', '네이버 페이', paymentValue.total_payment),
+
+                            // // SizedBox(
+                            //   width: 350,
+                            //   child: ElevatedButton.icon(
+                            //     onPressed: () {
+                            //       //
+                            //     },
+
+                            //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
+                            //     // icon: Icon(Icons.card_giftcard),
+                            //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('토스 페이')]),
+                            //   ),
+                            // ),
+                            // SizedBox(
+                            //   width: 350,
+                            //   child: ElevatedButton.icon(
+                            //     onPressed: () {
+                            //       //
+                            //     },
+                            //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
+                            //     // icon: Icon(Icons.card_giftcard),
+                            //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('신용 첵크카드')]),
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const CircularProgressIndicator(),
+            error: (error, stackTrace) => Text('ERROR: $error'),
+            loading: () => const CircularProgressIndicator(),
+          ),
         ),
       ),
     );
   }
 
   // == widget
-  Widget paymentCardType(BuildContext context, String imgUrl, String cardName, int totalPayment) {
+  Widget textSubTitle(String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          //
+        ),
+      ),
+    );
+  }
+
+  Widget subOrderInfoBox(String storeName){
+    return Container(
+      padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          textSubTitle('주문 정보'),
+                            Text('예약 번호: $reserve_seq'),
+                            Text('예약 날짜: 예약된 날짜'),
+                            Text('총 인원: '),
+                            Text('테이블 번호: '),
+                            Text('상점: ${storeName}'),
+        ],
+      )
+
+    );
+  }
+
+  Widget paymentCardType(
+    BuildContext context,
+    String imgUrl,
+    String cardName,
+    int totalPayment,
+    p,
+  ) {
     PaymentData data = PaymentData(
       paymentMethod: '카드',
       orderId: 'tosspaymentsFlutter_1768742871169',
@@ -122,15 +252,34 @@ class PaymentListGroupView extends ConsumerWidget {
       successUrl: Constants.success,
       failUrl: Constants.fail,
     );
-    return SizedBox(
-      width: 350,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          CustomNavigationUtil.to(context, TossPayment(data: data));
-        },
-        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
-        // icon: Icon(Icons.card_giftcard),
-        label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text(cardName)]),
+    return ElevatedButton.icon(
+      onPressed: () {
+        CustomNavigationUtil.to(context, TossPayment(data: data)).then((
+          result,
+        ) {
+          if (result != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => TossResultPage(result: result),
+              ),
+            );
+          }
+        });
+
+      },
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        backgroundColor: p.background,
+      ),
+      // icon: Icon(Icons.card_giftcard),
+      label: Row(
+        spacing: 5,
+        children: [
+          imgUrl == 'image'
+              ? Icon(Icons.card_giftcard, size: 25)
+              : Image.network(imgUrl, width: 25),
+          Text(cardName),
+        ],
       ),
     );
   }
