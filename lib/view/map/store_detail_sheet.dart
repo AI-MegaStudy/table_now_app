@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_now_app/model/store.dart';
+import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/view/map/storebooking.dart';
 
 class StoreDetailSheet extends StatelessWidget {
@@ -8,11 +9,18 @@ class StoreDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 16,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -21,7 +29,10 @@ class StoreDetailSheet extends StatelessWidget {
           // 제목/매장 이름
           Text(
             store.store_description ?? "매장 이름 없음",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
 
           SizedBox(height: 12),
@@ -33,7 +44,10 @@ class StoreDetailSheet extends StatelessWidget {
           ),
 
           // 전화번호
-          _buildInfoRow(Icons.phone_outlined, store.store_phone ?? "전화 정보 없음"),
+          _buildInfoRow(
+            Icons.phone_outlined,
+            store.store_phone ?? "전화 정보 없음",
+          ),
 
           // 영업시간
           _buildInfoRow(
@@ -52,7 +66,8 @@ class StoreDetailSheet extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => StoreBookingInfoScreen(store),
+                    builder: (context) =>
+                        StoreBookingInfoScreen(store),
                   ),
                 );
               },
@@ -64,7 +79,10 @@ class StoreDetailSheet extends StatelessWidget {
               ),
               child: Text(
                 "매장 예약",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -84,7 +102,12 @@ class StoreDetailSheet extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: Colors.grey[700]),
           SizedBox(width: 10),
-          Expanded(child: Text(text, style: TextStyle(fontSize: 15))),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 15),
+            ),
+          ),
         ],
       ),
     );

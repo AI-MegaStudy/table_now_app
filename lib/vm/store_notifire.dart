@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:table_now_app/model/store.dart';
 
 class StoreNotifier extends AsyncNotifier<List<Store>> {
-  final String baseUrl = "http://192.168.219.103:8000/api/store";
+  final String baseUrl =
+      "http://172.16.251.221:8000/api/store";
 
   @override
   FutureOr<List<Store>> build() async {
@@ -14,7 +15,9 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
 
   Future<List<Store>> fetchStores() async {
     try {
-      final res = await http.get(Uri.parse("$baseUrl/select_stores/"));
+      final res = await http.get(
+        Uri.parse("$baseUrl/select_stores/"),
+      );
 
       if (res.statusCode != 200) {
         throw Exception('스토어 불러오기 실패: ${res.statusCode}');
@@ -24,11 +27,15 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
 
       // API 결과 구조에 맞게 수정
       if (data is Map && data.containsKey('results')) {
-        return (data['results'] as List).map((e) => Store.fromJson(e)).toList();
+        return (data['results'] as List)
+            .map((e) => Store.fromJson(e))
+            .toList();
       }
 
       // fallback
-      return (data as List).map((e) => Store.fromJson(e)).toList();
+      return (data as List)
+          .map((e) => Store.fromJson(e))
+          .toList();
     } catch (e) {
       // 에러가 날 경우 상태를 error로 바꿔줌
       throw Exception("스토어 로딩 에러: $e");
@@ -44,7 +51,9 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
       body: json.encode(s.toJson()),
     );
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
 
     await refreshStores(); // 갱신
     return data['result'].toString();
@@ -59,7 +68,9 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
       body: json.encode(s.toJson()),
     );
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
 
     await refreshStores();
     return data['result'].toString();
@@ -74,7 +85,9 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
       body: json.encode({'store_seq': seq}),
     );
 
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    final data = json.decode(
+      utf8.decode(response.bodyBytes),
+    );
 
     await refreshStores();
     return data['result'].toString();
@@ -90,6 +103,7 @@ class StoreNotifier extends AsyncNotifier<List<Store>> {
 }
 
 // provider 선언
-final storeNotifierProvider = AsyncNotifierProvider<StoreNotifier, List<Store>>(
-  StoreNotifier.new,
-);
+final storeNotifierProvider =
+    AsyncNotifierProvider<StoreNotifier, List<Store>>(
+      StoreNotifier.new,
+    );
