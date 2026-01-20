@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/config.dart';
+import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/reserve.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/model/store_table.dart';
@@ -13,14 +14,44 @@ class ReservePage01State {
   final List<String> reservedDates;
   final List<String> reservedTimes;
   final List<String> reservedTables;
+  final String name;
+  final String phone;
+
+  final DateTime focusedDay;
+  final DateTime? selectedDay;
+  final String? selectedTime;
 
   ReservePage01State({
     required this.store,
     required this.times,
     required this.reservedDates,
     required this.reservedTimes,
-    required this.reservedTables
+    required this.reservedTables,
+    required this.name,
+    required this.phone,
+    required this.focusedDay,
+    this.selectedDay,
+    this.selectedTime
   });
+
+  ReservePage01State copyWith({
+    DateTime? focusedDay,
+    DateTime? selectedDay,
+    String? selectedTime,
+  }) {
+    return ReservePage01State(
+      store: store,
+      times: times,
+      reservedDates: reservedDates,
+      reservedTimes: reservedTimes,
+      reservedTables: reservedTables,
+      name: name,
+      phone: phone,
+      focusedDay: focusedDay ?? this.focusedDay,
+      selectedDay: selectedDay ?? this.selectedDay,
+      selectedTime: selectedTime ?? this.selectedTime,
+    );
+  }
 }
 
 class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
@@ -28,10 +59,19 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
 
   @override
   Future<ReservePage01State> build() async {
-    return fetchData(1, "2026-01-15 00:00:00");
+    return ReservePage01State(
+    store: Store(store_seq: 0, store_address: "", store_lat: 0, store_lng: 0, store_phone: "", store_image: "coco_hapjeong.jpg", store_description: "", store_placement: "", created_at: DateTime.now()),
+    times: [],
+    name: "",
+    phone: "",
+    focusedDay: DateTime.now(),
+    reservedDates: [],
+    reservedTimes: [],
+    reservedTables: [],
+  );
   }
 
-  Future<ReservePage01State> fetchData(int seq, String date) async {
+  Future<void> fetchData(int seq, int cseq, String date) async {
     //가게 정보 받아오기
     try {
       final res = await http.get(Uri.parse("$baseUrl/store/select_store/$seq"));
@@ -43,6 +83,17 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
       final data = json.decode(utf8.decode(res.bodyBytes));
 
       Store storeData = Store.fromJson(data['result']);
+
+      //고객 정보 받아오기
+      final res1 = await http.get(Uri.parse("$baseUrl/customer/$cseq"));
+
+      if (res1.statusCode != 200) {
+        throw Exception('고객 불러오기 실패: ${res1.statusCode}');
+      }
+
+      final data1 = json.decode(utf8.decode(res1.bodyBytes));
+
+      Customer customerData = Customer.fromJson(data1['result']);
 
       //시간 테이블 만들기
       List<String> openStr = storeData.store_open_time!.split(":");
@@ -107,18 +158,50 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         }
       }
 
-      // 막혀있는 날짜, 시간, 테이블 리스트 만들기
+      // // 막혀있는 날짜, 시간, 테이블 리스트 만들기
+      // List list = map.values.toList();
+      // for (var l in list){
+        
+      // }
       
-      
+      //state 변경
+      state = AsyncValue.data(
+        ReservePage01State(
+          store: storeData,
+          times: timesData,
+          reservedDates: [],
+          reservedTimes: [],
+          reservedTables: [],
+          name: customerData.customerName,
+          phone: customerData.customerPhone!,
+          focusedDay: DateTime.now()
+        ),
+      );
 
-
-      return ReservePage01State(store: storeData, times: timesData, reservedDates: [], reservedTimes: [], reservedTables: []);
+      //return ReservePage01State(store: storeData, times: timesData, reservedDates: [], reservedTimes: [], reservedTables: []);
     } catch (e, stack) {
       // 에러가 날 경우 상태를 error로 바꿔줌
       print("🔥 ERROR: $e");
       print(stack);
       throw Exception("스토어 로딩 에러: $e");
     }
+  }
+
+  /// 날짜 선택
+  void selectDay(DateTime selected, DateTime focused) {
+    state = AsyncValue.data(
+      state.value!.copyWith(
+        selectedDay: selected,
+        focusedDay: focused,
+      ),
+    );
+  }
+
+  /// 시간 선택
+  void selectTime(String time) {
+    state = AsyncValue.data(
+      state.value!.copyWith(selectedTime: time),
+    );
   }
 
 }

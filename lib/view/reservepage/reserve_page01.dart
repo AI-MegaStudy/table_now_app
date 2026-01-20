@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/vm/reserve_page01_notifier.dart';
 
 class ReservePage01 extends ConsumerStatefulWidget {
-  const ReservePage01({super.key});
+  const ReservePage01({super.key,});
 
   @override
   ConsumerState<ReservePage01> createState() => _ReservePage01State();
@@ -14,13 +15,40 @@ class ReservePage01 extends ConsumerStatefulWidget {
 
 class _ReservePage01State extends ConsumerState<ReservePage01> {
 
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  String? _selectedTime;
+  late TextEditingController nameController;
+  late TextEditingController phoneController;
+  late TextEditingController numberController;
+
+  late bool loading;
+  int store_seq = 2;
+  int customer_seq = 1;
+  String date = DateTime.now().toString();
+
+  final box = GetStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    loading = true;
+    nameController = TextEditingController();
+    phoneController = TextEditingController();
+    numberController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    numberController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final reserveAsync = ref.watch(reservePage01NotifierProvider);
+    final reserveValue = ref.read(reservePage01NotifierProvider.notifier);
+    if(loading == true) reserveValue.fetchData(store_seq, customer_seq, date);
+    loading = false;
     final p = context.palette;
 
     return Scaffold(
@@ -41,6 +69,8 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
         data: (data){
           Store store = data.store;
           List<String> times = data.times;
+          nameController.text = data.name;
+          phoneController.text = data.phone;
           return Column(
             children: [
               /// STEP INDICATOR
@@ -128,6 +158,55 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                           ],
                         ),
                       ),
+                      
+                      /// TextField Card
+                      const SizedBox(height: 12),
+                      const Text(
+                        '예약자 정보',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      Card(
+                        elevation: 0,
+                        color: p.cardBackground,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  buildTextField(
+                                    label: '이름 *',
+                                    controller: nameController,
+                                    hint: '',
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  buildTextField(
+                                    label: '연락처 *',
+                                    controller: phoneController,
+                                    hint: '',
+                                    keyboardType: TextInputType.phone,
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  buildTextField(
+                                    label: '인원 *',
+                                    controller: numberController,
+                                    hint: '',
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                       const SizedBox(height: 24),
 
@@ -141,14 +220,11 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                       TableCalendar(
                         firstDay: DateTime.now(),
                         lastDay: DateTime.now().add(const Duration(days: 7)),
-                        focusedDay: _focusedDay,
+                        focusedDay: data.focusedDay,
                         selectedDayPredicate: (day) =>
-                            isSameDay(_selectedDay, day),
-                        onDaySelected: (selectedDay, focusedDay) {
-                          setState(() {
-                            _selectedDay = selectedDay;
-                            _focusedDay = focusedDay;
-                          });
+                            isSameDay(data.selectedDay, day),
+                        onDaySelected: (selected, focused) {
+                          ref.read(reservePage01NotifierProvider.notifier).selectDay(selected, focused);
                         },
                         headerStyle: const HeaderStyle(
                           formatButtonVisible: false,
@@ -188,11 +264,12 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         ),
                         itemBuilder: (context, index) {
                           final time = times[index];
-                          final selected = _selectedTime == time;
+                          final selected = data.selectedTime == time;
 
                           return GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedTime = time),
+                            onTap: () {
+                              ref.read(reservePage01NotifierProvider.notifier).selectTime(time);
+                            },
                             child: Container(
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
@@ -236,7 +313,15 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      final reserve = {
+                        'store_seq' : store_seq,
+                        'customer_seq': customer_seq,
+                        'reserve_capacity': numberController.text,
+                        'reserve_date': "${data.selectedDay.toString().substring(0,10)}T${data.selectedTime}:00"
+                      };
+                      box.write('reserve', reserve);
+                    },
                     child: Text(
                       '다음',
                       style: TextStyle(
@@ -255,5 +340,45 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
       )
       
     );
+  } // build
+
+  //-----Widgets------
+  Widget buildTextField({
+    required String label,
+    required TextEditingController controller,
+    String? hint,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: const Color(0xFFF5F5F5),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      ],
+    );
   }
-}
+
+} // class
