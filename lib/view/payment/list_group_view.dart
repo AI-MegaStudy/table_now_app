@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_now_app/custom/utils_core.dart';
-
+import 'package:table_now_app/custom/custom.dart';
 import 'package:table_now_app/theme/app_colors.dart';
+
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
@@ -14,12 +14,16 @@ class PaymentListGroupView extends ConsumerWidget {
   final double cardBoxHeight = 80;
   final double detailBoxHeight = 170;
 
+
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // reseve_seq로 초기 로딩.
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     paymentValue.fetchData(reserve_seq);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
+   
+    
     final p = context.palette;
     return Scaffold(
       backgroundColor: p.background,
@@ -246,10 +250,11 @@ class PaymentListGroupView extends ConsumerWidget {
     int totalPayment,
     p,
   ) {
+    final prefix = 'toss-$reserve_seq';
     PaymentData data = PaymentData(
       paymentMethod: '카드',
-      orderId: 'tosspaymentsFlutter_1768742871169',
-      orderName: '예약번호11',
+      orderId: prefix,//'tosspaymentsFlutter_1768742871169',
+      orderName: '예약번호: ${prefix}',
       amount: totalPayment,
       // customerName: customerName,
       // customerEmail: customerEmail,
@@ -263,12 +268,10 @@ class PaymentListGroupView extends ConsumerWidget {
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
           ) {
-            if (result != null) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => TossResultPage(result: result),
-                ),
-              );
+            if (result == -1){
+              CustomSnackBar.show(context, message: "에러가 발생했습니다. 에러코드($result)");
+            }else if(result != null) {
+              CustomNavigationUtil.to(context, TossResultPage(result: result));
             }
           });
         },
