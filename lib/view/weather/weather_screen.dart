@@ -22,6 +22,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   List<Store> _storeList = [];
   Store? _selectedStore;
   bool _isLoadingStores = false;
+  
+  // 날짜 지정 저장을 위한 상태 변수
+  DateTime? _selectedDate;
+  bool _overwrite = true;
 
   @override
   void initState() {
@@ -107,6 +111,75 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           message: errorMsg ?? '오늘 날씨 저장에 실패했습니다.',
         );
       }
+    }
+  }
+
+  /// 날짜를 지정하여 날씨를 OpenWeatherMap API에서 가져와서 DB에 저장
+  Future<void> _saveWeatherWithDate() async {
+    if (!mounted) return;
+    if (_selectedStore == null) {
+      CustomCommonUtil.showErrorSnackbar(
+        context: context,
+        message: '지점을 선택해주세요.',
+      );
+      return;
+    }
+
+    if (_selectedDate == null) {
+      CustomCommonUtil.showErrorSnackbar(
+        context: context,
+        message: '날짜를 선택해주세요.',
+      );
+      return;
+    }
+
+    final success = await ref
+        .read(weatherNotifierProvider.notifier)
+        .fetchWeatherFromApi(
+          storeSeq: _selectedStore!.store_seq,
+          targetDate: _selectedDate,
+          overwrite: _overwrite,
+        );
+
+    if (mounted) {
+      if (success) {
+        final dateStr =
+            '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+        CustomCommonUtil.showSuccessSnackbar(
+          context: context,
+          title: '날씨 데이터 저장',
+          message: '$dateStr 날씨가 성공적으로 저장되었습니다.',
+        );
+      } else {
+        final errorMsg = ref.read(weatherNotifierProvider).errorMessage;
+        CustomCommonUtil.showErrorSnackbar(
+          context: context,
+          message: errorMsg ?? '날씨 저장에 실패했습니다.',
+        );
+      }
+    }
+  }
+
+  /// 날짜 선택 다이얼로그 표시
+  Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final firstDate = now;
+    final lastDate = now.add(const Duration(days: 7)); // 최대 8일 (오늘 포함)
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: '날짜 선택',
+      cancelText: '취소',
+      confirmText: '확인',
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedDate = picked;
+      });
     }
   }
 
@@ -198,6 +271,90 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
               onCallBack: (weatherState.isLoading || _selectedStore == null)
                   ? null
                   : _saveTodayWeather,
+              buttonType: ButtonType.outlined,
+            ),
+
+            // 구분선
+            Divider(color: p.divider, thickness: 1),
+
+            // 날짜 지정 저장 섹션
+            Text(
+              '날짜 지정 저장',
+              style: mainTitleStyle.copyWith(color: p.textPrimary),
+            ),
+            
+            // 날짜 선택 버튼
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: mainDefaultSpacing),
+              decoration: BoxDecoration(
+                color: p.cardBackground,
+                borderRadius: mainSmallBorderRadius,
+                border: Border.all(color: p.divider),
+              ),
+              child: InkWell(
+                onTap: _selectDate,
+                borderRadius: mainSmallBorderRadius,
+                child: Padding(
+                  padding: mainDefaultPadding,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate == null
+                            ? '날짜를 선택하세요'
+                            : '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
+                        style: mainBodyTextStyle.copyWith(
+                          color: _selectedDate == null
+                              ? p.textSecondary
+                              : p.textPrimary,
+                        ),
+                      ),
+                      Icon(Icons.calendar_today,
+                          size: 20, color: p.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Overwrite 옵션
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: mainDefaultSpacing),
+              decoration: BoxDecoration(
+                color: p.cardBackground,
+                borderRadius: mainSmallBorderRadius,
+                border: Border.all(color: p.divider),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '기존 데이터 덮어쓰기',
+                      style: mainBodyTextStyle.copyWith(color: p.textPrimary),
+                    ),
+                  ),
+                  Switch(
+                    value: _overwrite,
+                    onChanged: (value) {
+                      setState(() {
+                        _overwrite = value;
+                      });
+                    },
+                    activeColor: p.primary,
+                  ),
+                ],
+              ),
+            ),
+
+            // 날짜 지정 저장 버튼
+            CustomButton(
+              btnText: '날짜 지정 저장',
+              onCallBack: (weatherState.isLoading ||
+                      _selectedStore == null ||
+                      _selectedDate == null)
+                  ? null
+                  : _saveWeatherWithDate,
               buttonType: ButtonType.outlined,
             ),
 

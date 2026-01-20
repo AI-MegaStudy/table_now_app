@@ -165,8 +165,10 @@ class WeatherNotifier extends Notifier<WeatherState> {
   ///
   /// 백엔드에서 OpenWeatherMap API를 호출하여 데이터를 가져오고 저장합니다.
   /// [storeSeq]를 받아서 해당 식당의 store_lat, store_lng를 사용합니다.
+  /// [targetDate]가 null이면 오늘 날씨를 저장하고, 지정되면 해당 날짜의 날씨를 저장합니다.
   Future<bool> fetchWeatherFromApi({
     required int storeSeq,
+    DateTime? targetDate,
     bool overwrite = true,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -178,6 +180,13 @@ class WeatherNotifier extends Notifier<WeatherState> {
         'store_seq': storeSeq.toString(),
         'overwrite': overwrite.toString(),
       };
+
+      // target_date가 있으면 추가
+      if (targetDate != null) {
+        final dateStr =
+            '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}';
+        requestBody['target_date'] = dateStr;
+      }
 
       final response = await http
           .post(
