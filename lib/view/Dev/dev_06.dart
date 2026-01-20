@@ -3,6 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 import '../../vm/provider_examples.dart';
@@ -15,6 +17,7 @@ class Dev_06 extends ConsumerStatefulWidget {
 }
 
 class _Dev_06State extends ConsumerState<Dev_06> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); //<<<< 드로워 호출용 글로벌키
   @override
   void initState() {
     super.initState();
@@ -35,15 +38,26 @@ class _Dev_06State extends ConsumerState<Dev_06> {
       builder: (context) {
         final p = context.palette;
         return Scaffold(
+          key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
           backgroundColor: p.background,
-          appBar: AppBar(
+          // drawer: const AppDrawer(), 
+          drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+          appBar: CommonAppBar(
             title: Text(
               '김택권 페이지 - Provider 예제',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
             ),
-            centerTitle: mainAppBarCenterTitle,
-            backgroundColor: p.background,
-            foregroundColor: p.textPrimary,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.account_circle,
+                  color: p.textOnPrimary,
+                ),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             child: Padding(

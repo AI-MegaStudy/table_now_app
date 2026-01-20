@@ -58,7 +58,7 @@ class _Dev_07State extends ConsumerState<Dev_07> {
           appBar: CommonAppBar(
             title: Text(
               '프로젝트 관리자 페이지',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
             ),
             actions: [
               IconButton(

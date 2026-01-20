@@ -123,7 +123,7 @@ class _HomeState extends ConsumerState<Home> {
           appBar: CommonAppBar(
             title: Text(
               '홈',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
             ),
             actions: [
               // 테마 스위치
@@ -352,7 +352,7 @@ class _HomeState extends ConsumerState<Home> {
 
     if (authState.isLoggedIn) {
       // 로그인되어 있으면 RegionListScreen으로 이동
-      await CustomNavigationUtil.to(context, const RegionListScreen());
+      await CustomNavigationUtil.to(context, RegionListScreen());
     } else {
       // 로그인되어 있지 않으면 AuthScreen으로 이동
       await CustomNavigationUtil.to(context, const AuthScreen());

@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/store_table.dart';
 
 class StoreTableNotifier
     extends AsyncNotifier<List<StoreTable>> {
-  final String baseUrl = "http://192.168.219.103:8000";
+  //final String baseUrl = "http://192.168.219.103:8000";
+  String get baseUrl => "${getApiBaseUrl()}/api/storetable";
 
   @override
   FutureOr<List<StoreTable>> build() async {

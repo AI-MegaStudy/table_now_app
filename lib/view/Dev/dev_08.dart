@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
-import 'package:table_now_app/view/drawer/drawer.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 
 import '../../config/ui_config.dart';
@@ -40,12 +39,12 @@ class _Dev_05State extends ConsumerState<Dev_08> {
         return Scaffold(
           key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
           backgroundColor: p.background,
-          drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
-          // drawer: const ProfileDrawer(), 
+          // drawer: const AppDrawer(), 
+          drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
           appBar: CommonAppBar(
             title: Text(
               '공용앱바 & 드로워',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
             ),
             actions: [
               IconButton(
