@@ -323,12 +323,20 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         'reserve_capacity': numberController.text,
                         'reserve_date': "${data.selectedDay.toString().substring(0,10)}T${data.selectedTime}:00"
                       };
+                      print(reserve);
                       box.write('reserve', reserve);
                       //다음 페이지로
                       CustomNavigationUtil.to(
                         context,
-                        const ReservePage02(),
-                        settings: RouteSettings(arguments: {'tables': data.tablesData}),
+                        ReservePage02(),
+                        settings: RouteSettings(
+                          arguments: {
+                            'tablesData': data.tablesData,
+                            'store_seq': store_seq,
+                            'selectedDate': data.selectedDay,
+                            'selectedTime': data.selectedTime
+                          }
+                        ),
                       );
                     },
                     child: Text(

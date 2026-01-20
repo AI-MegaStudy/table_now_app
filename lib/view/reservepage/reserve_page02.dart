@@ -1,37 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
+import 'package:table_now_app/model/store_table.dart';
 import 'package:table_now_app/vm/reserve_page01_notifier.dart';
+import 'package:table_now_app/vm/reserve_page02_notifier.dart';
 
 class ReservePage02 extends ConsumerWidget {
-  const ReservePage02({super.key});
+  bool loading = true;
+
+  int store_seq = 1;
+  String selectedDay = "";
+  String selectedTime = "";
+  Map tablesData = {};
+
+  ReservePage02({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stateAsync = ref.watch(reservePage01NotifierProvider);
-    final tableCount = 15;
+    final args = CustomNavigationUtil.arguments<Map<String, dynamic>>(context);
+      if (args != null) {
+      store_seq = args['store_seq'] as int;
+      final selectedDateTime = args['selectedDate'] as DateTime;
+      selectedDay = selectedDateTime.toString().substring(0,10);
+      selectedTime = args['selectedTime'] as String;
+      tablesData = args['tablesData'] as Map;
+    }
+
+    final reserveAsync = ref.watch(reservePage02NotifierProvider);
+    final reserveValue = ref.read(reservePage02NotifierProvider.notifier);
+    if(loading == true) reserveValue.fetchData(store_seq);
+    loading = false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('테이블 선택')),
-      body: stateAsync.when(
+      body: reserveAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
         data: (state) {
-          if (state.selectedDay == null || state.selectedTime == null) {
+          if (selectedDay == "" || selectedTime == "") {
             return const Center(child: Text('날짜와 시간을 선택해주세요'));
           }
 
           final dateKey =
-              state.selectedDay!.toString().substring(0, 10);
-          final timeKey = state.selectedTime!;
+              selectedDay!.toString().substring(0, 10);
+          final timeKey = selectedTime!;
 
           // 예약된 테이블 맵
           final Map<String, dynamic> reservedTables =
-              state.tablesData[dateKey]?[timeKey] ?? {};
+              tablesData[dateKey]?[timeKey] ?? {};
 
           return Padding(
             padding: const EdgeInsets.all(16),
             child: GridView.builder(
-              itemCount: tableCount ?? 0, // 매장 테이블 수
+              itemCount: state.tableModelList.length ?? 0, // 매장 테이블 수
               gridDelegate:
                   const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 5, // 최대 15개 → 5 x 3
@@ -41,14 +62,24 @@ class ReservePage02 extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final tableSeq = (index + 1).toString();
 
+                //평범한 테이블들
                 final bool isReserved =
                     reservedTables.containsKey(tableSeq);
 
-                final tableInfo = reservedTables[tableSeq];
-                final String tableName =
-                    tableInfo != null ? tableInfo[0] : 'T$tableSeq';
+                final StoreTable tableInfo = state.tableModelList[index];
+                final String tableName = "T${tableInfo.store_table_name}";
                 final int capacity =
-                    tableInfo != null ? int.parse(tableInfo[1]) : 4;
+                    tableInfo != null ? tableInfo.store_table_capacity : 4;
+
+                // //예약된 테이블들
+                // final bool isReserved =
+                //     reservedTables.containsKey(tableSeq);
+
+                // final tableInfo = reservedTables[tableSeq];
+                // final String tableName =
+                //     tableInfo != null ? tableInfo[0] : 'T$tableSeq';
+                // final int capacity =
+                //     tableInfo != null ? int.parse(tableInfo[1]) : 4;
 
                 return TableItem(
                   name: tableName,
@@ -91,7 +122,9 @@ class TableItem extends StatelessWidget {
     final double size = 48 + (capacity * 6); // 인원수 → 크기
 
     return GestureDetector(
-      onTap: isReserved ? null : onTap,
+      onTap: isReserved ? null : (){
+
+      },
       child: Container(
         width: size,
         height: size,
