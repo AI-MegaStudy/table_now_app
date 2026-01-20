@@ -61,6 +61,8 @@ dependencies:
   # 결제관련 Toss SDK
   tosspayments_widget_sdk_flutter: ^2.1.2
 
+  encrypt: ^5.0.3 # 데이터 암호화 패키지
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
