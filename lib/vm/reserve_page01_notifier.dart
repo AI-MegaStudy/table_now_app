@@ -14,6 +14,7 @@ class ReservePage01State {
   final List<String> reservedDates;
   final List<String> reservedTimes;
   final List<String> reservedTables;
+  final Map<String, dynamic> tablesData;
   final String name;
   final String phone;
 
@@ -27,6 +28,7 @@ class ReservePage01State {
     required this.reservedDates,
     required this.reservedTimes,
     required this.reservedTables,
+    required this.tablesData,
     required this.name,
     required this.phone,
     required this.focusedDay,
@@ -45,6 +47,7 @@ class ReservePage01State {
       reservedDates: reservedDates,
       reservedTimes: reservedTimes,
       reservedTables: reservedTables,
+      tablesData: tablesData,
       name: name,
       phone: phone,
       focusedDay: focusedDay ?? this.focusedDay,
@@ -68,6 +71,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
     reservedDates: [],
     reservedTimes: [],
     reservedTables: [],
+    tablesData: {}
   );
   }
 
@@ -172,6 +176,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
           reservedDates: [],
           reservedTimes: [],
           reservedTables: [],
+          tablesData: map,
           name: customerData.customerName,
           phone: customerData.customerPhone!,
           focusedDay: DateTime.now()

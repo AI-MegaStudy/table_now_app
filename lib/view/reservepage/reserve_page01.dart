@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/view/reservepage/reserve_page02.dart';
 import 'package:table_now_app/vm/reserve_page01_notifier.dart';
 
 class ReservePage01 extends ConsumerStatefulWidget {
@@ -314,6 +316,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                       ),
                     ),
                     onPressed: () {
+                      //스토리지에 예약 정보 저장
                       final reserve = {
                         'store_seq' : store_seq,
                         'customer_seq': customer_seq,
@@ -321,6 +324,12 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         'reserve_date': "${data.selectedDay.toString().substring(0,10)}T${data.selectedTime}:00"
                       };
                       box.write('reserve', reserve);
+                      //다음 페이지로
+                      CustomNavigationUtil.to(
+                        context,
+                        const ReservePage02(),
+                        settings: RouteSettings(arguments: {'tables': data.tablesData}),
+                      );
                     },
                     child: Text(
                       '다음',
