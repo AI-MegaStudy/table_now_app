@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/store.dart'; // Store 모델 임포트 확인
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/location_util.dart';
+import 'package:table_now_app/view/drawer/drawer.dart';
 
 class NavigationScreen extends ConsumerStatefulWidget {
   final Store store;
@@ -19,8 +22,9 @@ class NavigationScreen extends ConsumerStatefulWidget {
 class _NavigationScreenState
     extends ConsumerState<NavigationScreen> {
   GoogleMapController? _mapController;
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>(); //
 
-  // 실시간 경로 추적 관련 상태
   StreamSubscription<Position>? _positionStream;
   bool _isTracking = false;
   final List<LatLng> _routePoints = [];
@@ -28,39 +32,32 @@ class _NavigationScreenState
 
   @override
   void dispose() {
-    // 페이지를 나갈 때 위치 구독을 반드시 해제합니다.
     _positionStream?.cancel();
     _mapController?.dispose();
     super.dispose();
   }
 
-  // 경로 추적 토글 (시작/중지)
   Future<void> _toggleTracking() async {
     if (_isTracking) {
-      // 추적 중지
       await _positionStream?.cancel();
       setState(() {
         _isTracking = false;
       });
     } else {
-      // 추적 시작
       try {
-        // 1. 권한 체크 (기존 작성하신 LocationUtil 활용)
         await LocationUtil.getCurrentLocation();
 
-        // 2. 초기화
         setState(() {
           _routePoints.clear();
           _polylines.clear();
           _isTracking = true;
         });
 
-        // 3. 실시간 위치 스트림 구독 시작
         _positionStream =
             Geolocator.getPositionStream(
               locationSettings: const LocationSettings(
                 accuracy: LocationAccuracy.high,
-                distanceFilter: 5, // 5미터 이동 시마다 호출
+                distanceFilter: 5,
               ),
             ).listen((Position position) {
               final newPos = LatLng(
@@ -76,9 +73,7 @@ class _NavigationScreenState
                       polylineId: const PolylineId(
                         "user_route",
                       ),
-                      points: List.of(
-                        _routePoints,
-                      ), // 안정적인 리스트 복사
+                      points: List.of(_routePoints),
                       color: Colors.blueAccent,
                       width: 6,
                       jointType: JointType.round,
@@ -88,7 +83,6 @@ class _NavigationScreenState
                   );
                 });
 
-                // 카메라를 사용자 위치로 부드럽게 이동
                 _mapController?.animateCamera(
                   CameraUpdate.newLatLng(newPos),
                 );
@@ -110,26 +104,31 @@ class _NavigationScreenState
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final store = widget.store; // widget을 통해 store 접근
+    final store = widget.store;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "실시간 경로 추적",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
+      // drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '실시간 경로 추적',
+          style: mainAppBarTitleStyle.copyWith(
+            color: p.textPrimary,
           ),
         ),
-        backgroundColor: p.primary,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        ],
       ),
       body: Column(
         children: [
@@ -140,7 +139,7 @@ class _NavigationScreenState
                 target: LatLng(
                   store.store_lat,
                   store.store_lng,
-                ), // 매장 위치를 초기값으로 설정
+                ),
                 zoom: 16,
               ),
               myLocationEnabled: true,
@@ -190,14 +189,14 @@ class _NavigationScreenState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Text(
-                  //  // store.store_description, // 매장 이름 표시
+                  //    store.store_description, // 매장 이름 표시
                   //   style: TextStyle(
                   //     fontSize: 18,
                   //     fontWeight: FontWeight.bold,
                   //     color: p.primary,
                   //   ),
                   // ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     _isTracking
                         ? "경로를 실시간으로 기록 중입니다..."
@@ -207,7 +206,7 @@ class _NavigationScreenState
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   SizedBox(
                     width: 220,
                     height: 55,
@@ -220,7 +219,7 @@ class _NavigationScreenState
                       ),
                       label: Text(
                         _isTracking ? '기록 중지' : '기록 시작',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),

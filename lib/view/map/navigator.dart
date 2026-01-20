@@ -164,7 +164,7 @@ class _BookingLocationScreenState
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                       ),
-                      child: Text("위치 확인 및 다음 단계"),
+                      child: Text("실시간 경로 추적"),
                     ),
                   ),
                 ],
