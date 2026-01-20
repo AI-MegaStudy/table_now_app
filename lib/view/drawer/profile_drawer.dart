@@ -27,6 +27,7 @@ class ProfileDrawer extends ConsumerStatefulWidget {
 class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
   List<Reserve>? _reserves;
   Map<int, String> _storeNames = {};
+  Map<int, int> _reserveCapacities = {}; // reserve_seq -> capacity 매핑
   bool _isLoading = true;
 
   @override
@@ -63,10 +64,21 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
         final results = data['results'] as List;
 
         // 현재 사용자의 예약만 필터링
-        final userReserves = results
+        final userReservesData = results
             .where((r) => r['customer_seq'] == user.customerSeq)
+            .toList();
+        
+        final userReserves = userReservesData
             .map((r) => Reserve.fromJson(r))
             .toList();
+
+        // capacity 정보 저장 (reserve_seq -> capacity)
+        final capacitiesMap = <int, int>{};
+        for (final r in userReservesData) {
+          final reserveSeq = r['reserve_seq'] as int? ?? 0;
+          final capacity = r['reserve_capacity'] as int? ?? 0;
+          capacitiesMap[reserveSeq] = capacity;
+        }
 
         // 매장 정보 가져오기
         final storeSeqs = userReserves.map((r) => r.store_seq).toSet();
@@ -75,6 +87,7 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
         if (mounted) {
           setState(() {
             _reserves = userReserves;
+            _reserveCapacities = capacitiesMap;
             _isLoading = false;
           });
         }
@@ -113,24 +126,8 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
           final data = json.decode(utf8.decode(response.bodyBytes));
           final store = Store.fromJson(data['result']);
           
-          // 주소에서 지역명 추출 (예: "서울 마포구 홍익로 25" -> "마포점")
-          final addressParts = store.store_address.split(' ');
-          String regionName = '매장';
-          
-          // "구"가 포함된 부분 찾기
-          for (final part in addressParts) {
-            if (part.contains('구')) {
-              regionName = part.replaceAll('구', '');
-              break;
-            }
-          }
-          
-          // "구"가 없으면 첫 번째 의미있는 부분 사용
-          if (regionName == '매장' && addressParts.isNotEmpty) {
-            regionName = addressParts.first;
-          }
-          
-          storeNamesMap[storeSeq] = '$regionName점';
+          // 주소를 그대로 저장
+          storeNamesMap[storeSeq] = store.store_address;
         } else {
           storeNamesMap[storeSeq] = '매장 $storeSeq';
         }
@@ -332,11 +329,18 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
     final reserveDate = DateTime.parse(reserve.reserve_date);
     final weekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
     final weekday = weekdayNames[reserveDate.weekday - 1];
+
     final formattedDate =
         '${reserveDate.month}월 ${reserveDate.day}일 ($weekday) '
         '${reserveDate.hour.toString().padLeft(2, '0')}:'
         '${reserveDate.minute.toString().padLeft(2, '0')}';
-    final reservationNumber = 'RES${reserve.reserve_seq}';
+    // final reservationNumber = 'RES${reserve.reserve_seq}';
+    final mm = reserveDate.month.toString().padLeft(2, '0');
+    final dd = reserveDate.day.toString().padLeft(2, '0');
+    final capacity = _reserveCapacities[reserve.reserve_seq] ?? 0;
+    final capacityStr = capacity.toString().padLeft(2, '0');
+    final reservationNumber = 'CUR${reserve.reserve_seq}${reserve.store_seq}${reserve.customer_seq}$mm$dd$capacityStr';
+    
     final storeName = _storeNames[reserve.store_seq] ?? '매장 ${reserve.store_seq}';
 
     return Container(
@@ -351,6 +355,7 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
@@ -361,11 +366,13 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
                   color: p.textPrimary,
                 ),
               ),
+              const SizedBox(width: 8),
               _statusBadge('예약중', p),
             ],
           ),
           const SizedBox(height: 12),
           CustomText(
+            
             '예약번호: $reservationNumber',
             fontSize: 14,
             color: p.textSecondary,

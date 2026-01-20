@@ -40,8 +40,8 @@ class _Dev_05State extends ConsumerState<Dev_08> {
         return Scaffold(
           key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
           backgroundColor: p.background,
-          drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
-          // drawer: const ProfileDrawer(), 
+          // drawer: const AppDrawer(), 
+          drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
           appBar: CommonAppBar(
             title: Text(
               '공용앱바 & 드로워',
