@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/vm/order_state_notifier.dart';
 import 'package:table_now_app/vm/reservation_notifier.dart';
 
 class ReservationCompleteScreen extends ConsumerStatefulWidget {
@@ -17,12 +18,22 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
     final p = context.palette;
     final reservationAsync = ref.watch(reservationNotifierProvider);
 
+    final orderState = ref.watch(orderNotifierProvider);
+    print(orderState.menus);
+
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(
         centerTitle: mainAppBarCenterTitle,
         backgroundColor: p.background,
         foregroundColor: p.textPrimary,
+      ),
+      body: Center(
+        child: Column(
+          children: [
+            // Text('${orderState.menus}'),
+          ],
+        ),
       ),
     );
   }
