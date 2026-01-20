@@ -56,6 +56,35 @@ class PaymentResponse {
   }
 }
 
+
+Map<String, dynamic> reserveData = {
+  "reserve": {
+    "store_seq" : 1,
+    "customer_seq": 1,
+    "reserve_capacity": "4",
+    "reserve_date": "2026-22-16T00:00:00"
+  }
+};
+
+Map<String, dynamic> menuData = {
+  "menus": {
+   "1": {
+    "count":2,
+    "options":{
+      "1": 1,
+      "2": 3
+    },
+    "2": {
+      "count": 1,
+      "options": {}
+    }
+   }
+  }
+};
+
+
+
+
 class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   late final String url = getApiBaseUrl();
   final String error = '';
