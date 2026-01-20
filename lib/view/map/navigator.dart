@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/drawer.dart';
+import 'package:table_now_app/view/map/web_view.dart';
 import 'package:url_launcher/url_launcher.dart'; // 길찾기 외부 앱 호출용
 import 'package:table_now_app/model/store.dart';
 
@@ -16,6 +20,8 @@ class NavigatorScreen extends ConsumerStatefulWidget {
 
 class _BookingLocationScreenState
     extends ConsumerState<NavigatorScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>(); //
   GoogleMapController? _mapController;
 
   Future<void> _openMapDirections() async {
@@ -41,24 +47,28 @@ class _BookingLocationScreenState
     final storeLocation = LatLng(s.store_lat, s.store_lng);
 
     return Scaffold(
-      appBar: AppBar(
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
+      // drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
         title: Text(
-          "매장 위치 확인",
-          style: TextStyle(
-            // color: Colors.white,
-            fontWeight: FontWeight.bold,
+          '매장 위치 확인',
+          style: mainAppBarTitleStyle.copyWith(
+            color: p.textPrimary,
           ),
         ),
-
-        backgroundColor: p.primary,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        ],
       ),
       body: Column(
         children: [
@@ -99,23 +109,25 @@ class _BookingLocationScreenState
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
+                  SizedBox(height: 18),
                   Text(
                     s.store_description ?? "매장 정보",
                     style: TextStyle(
-                      color: p.background,
+                      color: p.primary,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 18),
                   Text(
                     s.store_address ?? "주소 정보 없음",
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: p.primary,
                       fontSize: 14,
                     ),
                   ),
                   // const spacer(),
+                  SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -140,13 +152,19 @@ class _BookingLocationScreenState
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        //
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                NavigationScreen(store: s),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                       ),
-                      child: Text("위치 확인 및 다음 단계"),
+                      child: Text("실시간 경로 추적"),
                     ),
                   ),
                 ],
