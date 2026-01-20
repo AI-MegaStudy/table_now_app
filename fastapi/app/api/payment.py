@@ -73,39 +73,50 @@ async def select_pays():
         return {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
 
 
-
-@router.get("/get_toss_client_key")
-async def select_pay_toss_key():
-
-
+def _encrypt_pay_toss_key():
     try:
-        # private key
+        # todo: need to get the KEY and IV from database
         privateKey:bytes = base64.b16encode(b'\xfa\xf9\x8c\x06\xefL9XIdu\x0c-\xe6p\x06')
-        #get_random_bytes(16)
-        print(privateKey)
-    
-        text = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq'
-        cipher = AES.new(privateKey, AES.MODE_CBC,'This is an IV456'.encode('utf8'))
+        # get_random_bytes(16)
+        iv = 'This is an IV456'
+
+
+        # encrypt을 위한 chiper생성 
+        cipher = AES.new(privateKey, AES.MODE_CBC,iv.encode('utf8'))
         
-        textBytes =  bytes(text,'utf-8')
-       
-        ciphertext =  base64.b64encode(cipher.encrypt(pad(textBytes,AES.block_size)))
-        print(f"Original key: {base64.b16decode(privateKey)}")
-        print(f"Original Data: {text}")
-        print(f"Ciphertext: {ciphertext}")
-        # print(f"Ciphertext decode: {base64.b64decode(ciphertext)}")
-        print(cipher.iv)
+        # =========================================
+        # todo: this part must hided from here
+        # original text to bytes
+        # ==========================================
+        textBytes =  bytes('test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq','utf-8')
+
+        # encryption 
+        ciphertext =  base64.b64encode(cipher.encrypt(pad(textBytes,AES.block_size)))       
+        return ciphertext
+    except Exception as e:
+        print(f'ERROR: {e}')
+        return ''
+
+def _decrypt_toss_pay_key(key,iv,encrtypedData):
+    try:
+        decipher = AES.new(key, AES.MODE_CBC, iv)
+        decrypted_data = unpad(decipher.decrypt(
+            base64.b64decode(encrtypedData)
+        ),AES.block_size) 
+        return decrypted_data
+    except Exception as e:
+        print(f'ERROR: {e}')
+        return ''
 
 
-        # decipher = AES.new(b'FAF98C06EF4C39584964750C2DE67006', AES.MODE_CBC, cipher.iv)
-        # decrypted_data = unpad(decipher.decrypt(
-        #     base64.b64decode(ciphertext)
-        # ),AES.block_size) # 복호화 후 패딩 제거
+@router.post("/get_toss_client_key")
+async def select_pay_toss_key():
+    try:
+        # todo: need to get the KEY and IV from database
+        privateKey:bytes = base64.b16encode(b'\xfa\xf9\x8c\x06\xefL9XIdu\x0c-\xe6p\x06')
+        iv = 'This is an IV456'
 
-        # print(f"Decrypted Data: {decrypted_data}")
-
-        # todo: GT - need to encrypt key
-        return {'result':ciphertext}
+        return {'result':{'k':privateKey,'iv':base64.b16encode(iv.encode('utf8'))}}
     except Exception as e:
         import traceback
         error_msg = str(e)
@@ -286,3 +297,24 @@ async def delete_pay(id: int):
         "message": f"Example item {id} deleted",
         "status": "success"
     }
+
+# ============================================================
+# 생성 이력
+# ============================================================
+# 작성일: 2026-01-15
+# 작성자: 이광태
+# 설명: Pay table CRUD + ecrypt toss client key
+#
+# ============================================================
+# 수정 이력
+# ============================================================
+# 2026-01-15 이광태: 초기 생성
+#   - 기본 CRUD
+#   - 에러 처리 및 응답 형식 정의
+# 2026-01-17 이광태: ecrypt decrypt 펑션 생성. 
+#   - 중복 초기화 코드 제거
+#   - application에서 ecrypt된 키를 풀기 위한 decrypt요청 작성
+# 2026-01-20
+#   - ecrypt/decrypt 관련 소스 정리
+#   - flutter에 키/IV를 통해 decrypt되게 설정. 
+#   - db에서 값들을 받아아야 하나 현재는 하드코딩으로 처리
