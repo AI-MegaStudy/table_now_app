@@ -7,6 +7,7 @@ import 'package:table_now_app/view/auth/auth_screen.dart';
 import '../../../custom/custom_text.dart';
 import '../../../vm/auth_notifier.dart';
 import '../../../utils/customer_storage.dart';
+import '../../../utils/reservation_number.dart';
 import '../../../theme/app_colors.dart';
 import '../../../config.dart';
 import '../../../model/reserve.dart';
@@ -334,12 +335,15 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
         '${reserveDate.month}월 ${reserveDate.day}일 ($weekday) '
         '${reserveDate.hour.toString().padLeft(2, '0')}:'
         '${reserveDate.minute.toString().padLeft(2, '0')}';
-    // final reservationNumber = 'RES${reserve.reserve_seq}';
-    final mm = reserveDate.month.toString().padLeft(2, '0');
-    final dd = reserveDate.day.toString().padLeft(2, '0');
+    
     final capacity = _reserveCapacities[reserve.reserve_seq] ?? 0;
-    final capacityStr = capacity.toString().padLeft(2, '0');
-    final reservationNumber = 'CUR${reserve.reserve_seq}${reserve.store_seq}${reserve.customer_seq}$mm$dd$capacityStr';
+    final reservationNumber = generateReservationNumber(
+      reserveSeq: reserve.reserve_seq,
+      storeSeq: reserve.store_seq,
+      customerSeq: reserve.customer_seq,
+      capacity: capacity,
+      dateTime: reserveDate,
+    );
     
     final storeName = _storeNames[reserve.store_seq] ?? '매장 ${reserve.store_seq}';
 

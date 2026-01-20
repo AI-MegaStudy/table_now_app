@@ -123,7 +123,7 @@ class _HomeState extends ConsumerState<Home> {
           appBar: CommonAppBar(
             title: Text(
               '홈',
-              style: mainAppBarTitleStyle.copyWith(color: p.textPrimary),
+              style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
             ),
             actions: [
               // 테마 스위치
