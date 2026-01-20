@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/weather.dart';
 import 'package:table_now_app/theme/app_colors.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/vm/weather_notifier.dart';
 
 /// 날씨 예보 화면
@@ -69,12 +70,19 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
       // 위치 권한 확인
       LocationPermission permission = await Geolocator.checkPermission();
 
-      // 권한이 이미 허용된 경우 (whileInUse 또는 always) - 요청하지 않음
+      // 권한이 이미 허용된 경우 (whileInUse 또는 always) - 요청하지 않고 바로 위치 가져오기 진행
       if (permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always) {
-        // 권한이 이미 허용되어 있으므로 위치 가져오기 진행
-      } else if (permission == LocationPermission.deniedForever) {
-        // 영구적으로 거부된 경우 - 요청하지 않고 기본 위치 사용
+        // 권한이 이미 허용되어 있으므로 위치 가져오기 진행 (아래 코드 계속 실행)
+        if (kDebugMode) {
+          print('✅ 위치 권한이 이미 허용되어 있습니다. (${permission.toString()})');
+        }
+      } 
+      // 영구적으로 거부된 경우 - 요청하지 않고 기본 위치 사용
+      else if (permission == LocationPermission.deniedForever) {
+        if (kDebugMode) {
+          print('⚠️ 위치 권한이 영구적으로 거부되었습니다.');
+        }
         if (mounted) {
           setState(() {
             _locationError = '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.';
@@ -87,13 +95,21 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
           });
         }
         return;
-      } else if (permission == LocationPermission.denied) {
+      } 
+      // 권한이 거부된 경우에만 요청 (최초 1회만)
+      else if (permission == LocationPermission.denied) {
+        if (kDebugMode) {
+          print('🔔 위치 권한 요청 중...');
+        }
         // 권한이 거부된 경우에만 요청
         permission = await Geolocator.requestPermission();
 
         // 요청 후 다시 확인
         if (permission == LocationPermission.denied ||
             permission == LocationPermission.deniedForever) {
+          if (kDebugMode) {
+            print('❌ 위치 권한이 거부되었습니다. (${permission.toString()})');
+          }
           if (mounted) {
             setState(() {
               _locationError = permission == LocationPermission.deniedForever
@@ -108,6 +124,10 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
             });
           }
           return;
+        } else {
+          if (kDebugMode) {
+            print('✅ 위치 권한이 허용되었습니다. (${permission.toString()})');
+          }
         }
       }
 
@@ -235,14 +255,18 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: AppBar(
-        title: const Text('날씨 예보'),
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
+      appBar: CommonAppBar(
+        title: Text(
+          '날씨 예보',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
         actions: [
           // 새로고침 버튼
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              Icons.refresh,
+              color: p.textOnPrimary,
+            ),
             onPressed: (weatherState.isLoading || _isLoadingLocation)
                 ? null
                 : () {
