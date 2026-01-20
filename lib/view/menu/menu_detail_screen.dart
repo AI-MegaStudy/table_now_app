@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/model/menu.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
@@ -8,15 +9,15 @@ import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
 
 class MenuDetailScreen extends ConsumerStatefulWidget {
-  const MenuDetailScreen({super.key, required this.menu_seq});
-  final int menu_seq;
+  const MenuDetailScreen({super.key, required this.menu, required this.index});
+  final Menu menu;
+  final int index;
 
   @override
   ConsumerState<MenuDetailScreen> createState() => _MenuDetailScreenState();
 }
 
 class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
-
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
@@ -24,11 +25,10 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     final optionAsync = ref.watch(optionNotifierProvider);
     final orderState = ref.watch(orderNotifierProvider);
 
-
     final menuTotalPrice = menuAsync.maybeWhen(
       data: (menu) {
-        final count = orderState.menus[widget.menu_seq]?.count ?? 1;
-        return menu[widget.menu_seq].menu_price * count;
+        final count = orderState.menus[widget.menu.menu_seq]?.count ?? 1;
+        return menu[widget.index].menu_price * count;
       },
       orElse: () => 0,
     );
@@ -37,9 +37,8 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
       data: (options) {
         int total = 0;
         for (final o in options) {
-          final menuCount = orderState.menus[widget.menu_seq]?.count ?? 1;
-          final optionCount =
-              orderState.menus[widget.menu_seq]?.options[o.option_seq] ?? 0;
+          final menuCount = orderState.menus[widget.menu.menu_seq]?.count ?? 1;
+          final optionCount = orderState.menus[widget.menu.menu_seq]?.options[o.option_seq]?.count ?? 0;
           total += o.option_price * optionCount * menuCount;
         }
         return total;
@@ -49,172 +48,166 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: AppBar(
-        centerTitle: mainAppBarCenterTitle,
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 4,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: menuAsync.maybeWhen(
+                data: (menu) => Image.network(
+                  'https://cheng80.myqnapcloud.com/tablenow/${menu[widget.index].menu_image}',
+                  fit: BoxFit.cover,
+                ),
+                orElse: () => Container(color: Colors.grey[200]),
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
             child: menuAsync.when(
               data: (menu) {
-                final menuCount = orderState.menus[widget.menu_seq]?.count ?? 1;
-                return menu.isEmpty
-                    ? const Center(child: Text('점검 중'))
-                    : Center(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Align(
-                              alignment: Alignment.center,
-                              child: Image.network(
-                                'https://cheng80.myqnapcloud.com/tablenow/${menu[widget.menu_seq].menu_image}',
-                              ),
-                            ),
-                            Text(menu[widget.menu_seq].menu_name),
-                            Text(menu[widget.menu_seq].menu_description),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  CustomCommonUtil.formatCurrency(
-                                    menuCount == 0
-                                        ? menu[widget.menu_seq].menu_price
-                                        : menu[widget.menu_seq].menu_price *
-                                              menuCount,
-                                  ),
-                                ),
-                                cartButton(
-                                  '+',
-                                  () => ref
-                                      .read(orderNotifierProvider.notifier)
-                                      .addOrIncrementMenu(widget.menu_seq),
-                                ),
-                                Text('$menuCount'),
-                                cartButton(
-                                  '-',
-                                  () => ref
-                                      .read(orderNotifierProvider.notifier)
-                                      .decrementMenu(widget.menu_seq),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
+                final menuCount = orderState.menus[widget.index]?.count ?? 1;
+                final m = menu[widget.index];
+                return Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(m.menu_name, style: mainLargeTitleStyle),
+                      const SizedBox(height: 8),
+                      Text(m.menu_description, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CustomCommonUtil.formatCurrency(m.menu_price),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                          ),
+                          _buildQuantityControl(
+                            count: menuCount,
+                            onAdd: () => ref.read(orderNotifierProvider.notifier).addOrIncrementMenu(widget.menu.menu_seq, m.menu_price),
+                            onRemove: () => ref.read(orderNotifierProvider.notifier).decrementMenu(widget.menu.menu_seq),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 40),
+                      const Text("추가 옵션", style: mainTitleStyle),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                );
               },
-              error: (error, stackTrace) =>
-                  Center(child: Text('Error: $error')),
-              loading: () => Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const Center(child: CircularProgressIndicator()),
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: optionAsync.when(
-              data: (options) {
-                return options.isEmpty
-                    ? const Center(child: Text('점검 중'))
-                    : ListView.builder(
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final o = options[index];
-                          final optionCount =
-                              orderState.menus[widget.menu_seq]?.options[o
-                                  .option_seq] ??
-                              0;
-                          return Card(
-                            color: p.background,
-                            shadowColor: Colors.transparent,
+
+          optionAsync.when(
+            data: (options) => SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final o = options[index];
+                  final optionCount = orderState.menus[widget.menu.menu_seq]?.options[o.option_seq]?.count ?? 0;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[200]!),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        o.option_name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      CustomCommonUtil.formatCurrency(
-                                        optionCount == 0
-                                            ? o.option_price
-                                            : o.option_price * optionCount,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    cartButton(
-                                      '+',
-                                      () => ref
-                                          .read(orderNotifierProvider.notifier)
-                                          .incrementOption(
-                                            widget.menu_seq,
-                                            o.option_seq,
-                                          ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    SizedBox(
-                                      width: 24,
-                                      child: Center(
-                                        child: Text('$optionCount'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    cartButton(
-                                      '-',
-                                      () => ref
-                                          .read(orderNotifierProvider.notifier)
-                                          .decrementOption(
-                                            widget.menu_seq,
-                                            o.option_seq,
-                                          ),
-                                    ),
-                                  ],
-                                ),
+                                Text(o.option_name, style: mainMediumTextStyle),
+                                Text("+ ${CustomCommonUtil.formatCurrency(o.option_price)}",
+                                    style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                               ],
                             ),
-                          );
-                        },
-                      );
-              },
-              error: (error, stackTrace) =>
-                  Center(child: Text('Error: $error')),
-              loading: () => Center(child: CircularProgressIndicator()),
+                          ),
+                          _buildQuantityControl(
+                            count: optionCount,
+                            onAdd: () => ref.read(orderNotifierProvider.notifier).incrementOption(widget.menu.menu_seq, o.option_seq, o.option_price),
+                            onRemove: () => ref.read(orderNotifierProvider.notifier).decrementOption(widget.menu.menu_seq, o.option_seq),
+                            isSmall: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                childCount: options.length,
+              ),
             ),
+            error: (e, _) => const SliverToBoxAdapter(child: SizedBox()),
+            loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              '${CustomCommonUtil.formatCurrency(menuTotalPrice + optionTotalPrice)} · 담기',
-            ), // 추후 가격 표시 예정
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
+      
+      bottomSheet: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: p.background,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+        ),
+        child: ElevatedButton(
+          onPressed: () {
+            ref.read(orderNotifierProvider.notifier).confirmMenu(widget.menu.menu_seq);
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
+          child: Text(
+            '${CustomCommonUtil.formatCurrency(menuTotalPrice + optionTotalPrice)} 담기',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuantityControl({
+    required int count,
+    required VoidCallback onAdd,
+    required VoidCallback onRemove,
+    bool isSmall = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _circleButton(Icons.remove, onRemove, isSmall),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text('$count', style: TextStyle(fontSize: isSmall ? 14 : 16, fontWeight: FontWeight.bold)),
+          ),
+          _circleButton(Icons.add, onAdd, isSmall),
         ],
       ),
     );
-  } // build
-
-  // ---- widgets ----
-  Widget cartButton(String text, VoidCallback onpressed) {
-    return ElevatedButton(onPressed: onpressed, child: Text(text));
   }
 
-  // ---- functions ----
+  Widget _circleButton(IconData icon, VoidCallback onPressed, bool isSmall) {
+    return IconButton(
+      constraints: BoxConstraints(minWidth: isSmall ? 32 : 40, minHeight: isSmall ? 32 : 40),
+      padding: EdgeInsets.zero,
+      icon: Icon(icon, size: isSmall ? 18 : 22, color: Colors.black87),
+      onPressed: onPressed,
+    );
+  }
 }
-
-// ============================================================
-// 생성 이력
-// ============================================================
-// 작성일: 2026-01-16
-// 작성자: 임소연
-// 설명: 사용자가 특정 메뉴의 옵션 사항을 선택하는 페이지
-//
-// ============================================================
-// 수정 이력
-// ============================================================
-// 2026-01-16 임소연: 초기 생성
-// 2026-01-19 임소연: +, - 버튼 클릭 시 전체 가격 자동으로 계산
-// 2026-01-20 임소연: 메뉴, 옵션 state 하나의 provider에 저장하여 적용
