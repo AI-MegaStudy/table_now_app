@@ -62,16 +62,29 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
   int _reserve_seq = 0;
   int _total_payment = 0;
+  
+  // decrypt key
+  late String _k = '';
+  // iv 
+  late String _iv = '';
+
+  // customer seq
   late final int? _customerSeq;
+
+  // 
+  int get total_payment => _total_payment;
+  String get k => _k;
+  String get iv => _iv;
 
   @override
   FutureOr<List<PaymentResponse>> build() async {
-    // Get Customer ID
+    // Get CustomerSeq from Storage
     final Customer? customer = CustomerStorage.getCustomer();
     if (customer != null) {
       _customerSeq = customer.customerSeq;
     }
-    // Get Reservation OBJ
+    await getKey();
+    // Get Reservation OBJ  
 
     // Need MenuList picked
     // 메뉴리스트를 받는다. 어떤 형식?
@@ -79,7 +92,19 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
     return [];
   }
 
-  int get total_payment => _total_payment;
+  // decrypt key, iv를 가져오기 위한 부분.
+  Future<void> getKey() async{
+    final uri = Uri.parse('$url/api/pay/get_toss_client_key');
+    final response = await http.post(uri); 
+    if (response.statusCode != 200) {
+      throw Exception("데이터 로딩 실패: ${response.statusCode}");
+    }
+    final jsonData = json.decode(utf8.decode(response.bodyBytes));
+    final  result = jsonData["result"];
+    _k = result["k"]!;
+    _iv = result["iv"]!;
+  }
+
 
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
@@ -90,7 +115,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
         _total_payment = 0;
         _reserve_seq = id;
 
-        await Future.delayed(Duration(seconds: 1));
+        
         final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
         final response = await http.get(uri);
         if (response.statusCode != 200) {

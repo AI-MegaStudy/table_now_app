@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_now_app/custom/utils_core.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/tosspayments_result.dart';
 
 /// Reverve, Selected Menu list
@@ -131,7 +132,8 @@ class TossResultPage extends StatelessWidget {
                 const SizedBox(height: 40),
                 ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    CustomNavigationUtil.back(context);
+                   
                   },
                   icon: const Icon(Icons.home,size: 30,),
                   label: const Text(
