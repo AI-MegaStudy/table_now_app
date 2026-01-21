@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
@@ -18,8 +19,14 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
     final p = context.palette;
     final reservationAsync = ref.watch(reservationNotifierProvider);
 
-    final orderState = ref.watch(orderNotifierProvider);
-    print(orderState.menus);
+    final box = GetStorage();
+    final data = box.read('order'); // Map<String, dynamic>
+
+final orderState = ref.watch(orderNotifierProvider);
+
+    orderState.menus.forEach((menuSeq, orderMenu) {
+  print('메뉴 $menuSeq: ${orderMenu.count}개');
+});
 
     return Scaffold(
       backgroundColor: p.background,
