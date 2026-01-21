@@ -625,12 +625,10 @@ class _LoginTabState extends ConsumerState<LoginTab> {
                 ],
               ),
 
-              // 소셜 로그인 버튼
-              CustomButton(
-                btnText: 'Google로 로그인',
-                onCallBack: () => _handleSocialLogin('google'),
-                buttonType: ButtonType.outlined,
-                // TODO: 소셜 로그인 버튼 스타일 적용 필요
+              // 소셜 로그인 버튼 (Google 브랜드 가이드라인 준수)
+              _GoogleSignInButton(
+                onPressed: _isLoading ? null : () => _handleSocialLogin('google'),
+                isLoading: _isLoading,
               ),
             ],
           ),
@@ -667,3 +665,96 @@ class _LoginTabState extends ConsumerState<LoginTab> {
 // 2026-01-15 김택권: UI 일관성 개선
 //   - 하드코딩된 padding 값을 ui_config.dart의 상수로 변경
 //   - mainDefaultSpacing 상수 사용
+//
+// 2026-01-15: Google 브랜드 가이드라인 준수
+//   - Google 소셜 로그인 버튼을 Google 브랜드 가이드라인에 맞춰 구현
+//   - 공식 브랜드 색상 및 스타일 적용
+//   참고: https://developers.google.com/identity/branding-guidelines
+
+/// Google 브랜드 가이드라인에 맞춘 Google 로그인 버튼
+///
+/// Google 브랜드 가이드라인을 준수하여 디자인된 버튼입니다.
+/// 참고: https://developers.google.com/identity/branding-guidelines
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _GoogleSignInButton({
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  // Google 브랜드 색상 (공식 가이드라인)
+  static const Color _googleWhite = Color(0xFFFFFFFF);
+  static const Color _googleBlack = Color(0xFF1A1A1A);
+  static const Color _googleGray = Color(0xFF757575);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 테마에 따른 색상 결정
+    final backgroundColor = isDark ? _googleBlack : _googleWhite;
+    final textColor = isDark ? _googleWhite : _googleBlack;
+    final borderColor = isDark ? _googleGray : const Color(0xFFDADCE0);
+
+    return SizedBox(
+      width: double.infinity,
+      height: mainButtonHeight,
+      child: OutlinedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          side: BorderSide(
+            color: isLoading ? borderColor.withOpacity(0.5) : borderColor,
+            width: 1,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4), // Google 가이드라인: 직사각형 모서리
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          elevation: 0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 로딩 중일 때 인디케이터, 아닐 때 Google 아이콘
+            if (isLoading) ...[
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ] else ...[
+              // 테마에 맞는 Google 아이콘 표시
+              Image.asset(
+                isDark 
+                  ? 'images/android_dark_rd_na@3x.png' 
+                  : 'images/android_light_rd_na@3x.png',
+                width: 18,
+                height: 18,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 12),
+            ],
+            // 버튼 텍스트
+            Text(
+              isLoading ? '로그인 중...' : 'Google로 로그인',
+              style: mainBodyTextStyle.copyWith(
+                color: isLoading ? textColor.withOpacity(0.6) : textColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -2,7 +2,6 @@ class Reserve {
   final int reserve_seq;
   final int store_seq;
   final int customer_seq;
-  final String? weather_datetime;
   final String reserve_tables;
   final String reserve_date;
   final String created_at;
@@ -13,7 +12,6 @@ class Reserve {
     required this.reserve_seq,
     required this.store_seq,
     required this.customer_seq,
-    this.weather_datetime,
     required this.reserve_tables,
     required this.reserve_date,
     required this.created_at,
@@ -27,7 +25,6 @@ class Reserve {
       reserve_seq: json['reserve_seq'] ?? 0,
       store_seq: json['store_seq'] ?? 0,
       customer_seq: json['customer_seq'] ?? 0,
-      weather_datetime: json['weather_datetime'],
       reserve_tables: json['reserve_tables'] ?? '',
       reserve_date: json['reserve_date'] ?? '',
       created_at: json['created_at'] ?? '',
@@ -42,7 +39,6 @@ class Reserve {
       'reserve_seq': reserve_seq,
       'store_seq': store_seq,
       'customer_seq': customer_seq,
-      'weather_datetime': weather_datetime,
       'reserve_tables': reserve_tables,
       'reserve_date': reserve_date,
       'created_at': created_at,
@@ -63,3 +59,4 @@ class Reserve {
 // 수정 이력
 // ============================================================
 // 2026-01-16 유다원: 최초 생성
+// 2026-01-21 김택권: weather_datetime 필드 제거 (weather 테이블 마이그레이션)

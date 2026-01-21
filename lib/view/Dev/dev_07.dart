@@ -9,7 +9,6 @@ import '../../theme/app_colors.dart';
 import '../../custom/util/navigation/custom_navigation_util.dart';
 import '../auth/auth_screen.dart';
 import '../auth/profile_edit_screen.dart';
-import '../weather/weather_screen.dart';
 import '../weather/weather_forecast_screen.dart';
 import '../fcm/fcm_screen.dart';
 import '../home.dart';
@@ -279,47 +278,24 @@ class _Dev_07State extends ConsumerState<Dev_07> {
                     '날씨 관련',
                     style: mainTitleStyle.copyWith(color: p.textPrimary),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: mainDefaultSpacing,
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: mainButtonHeight,
-                          child: ElevatedButton(
-                            onPressed: () => _navigateToWeatherScreen(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: p.primary,
-                              foregroundColor: p.textOnPrimary,
-                            ),
-                            child: Text(
-                              '지점 날씨',
-                              style: mainMediumTitleStyle.copyWith(
-                                color: p.textOnPrimary,
-                              ),
-                            ),
+                  Center(
+                    child: SizedBox(
+                      width: mainButtonMaxWidth,
+                      height: mainButtonHeight,
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToWeatherForecastScreen(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
+                        ),
+                        child: Text(
+                          '날씨 예보',
+                          style: mainMediumTitleStyle.copyWith(
+                            color: p.textOnPrimary,
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: SizedBox(
-                          height: mainButtonHeight,
-                          child: ElevatedButton(
-                            onPressed: () => _navigateToWeatherForecastScreen(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: p.primary,
-                              foregroundColor: p.textOnPrimary,
-                            ),
-                            child: Text(
-                              '날씨 예보',
-                              style: mainMediumTitleStyle.copyWith(
-                                color: p.textOnPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
 
                   // FCM 테스트 페이지
@@ -385,11 +361,6 @@ class _Dev_07State extends ConsumerState<Dev_07> {
   /// 로그인/회원가입 화면으로 이동
   void _navigateToAuthScreen() async {
     await CustomNavigationUtil.to(context, const AuthScreen());
-  }
-
-  /// 날씨 화면으로 이동
-  void _navigateToWeatherScreen() async {
-    await CustomNavigationUtil.to(context, const WeatherScreen());
   }
 
   /// 날씨 예보 화면으로 이동
