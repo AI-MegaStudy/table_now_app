@@ -13,6 +13,7 @@ import '../../../config.dart';
 import '../../../model/reserve.dart';
 import '../../../model/store.dart';
 import '../auth/profile_edit_screen.dart';
+import '../weather/weather_forecast_screen.dart';
 import '../../custom/util/navigation/custom_navigation_util.dart';
 
 /// 프로필 드로워
@@ -159,6 +160,7 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
         children: [
           _buildTopHeader(context, user, p),
           _buildProfileEditButton(context, ref, p),
+          _buildWeatherButton(context, p),
           Expanded(child: _buildReservationSection(p)),
           _buildLogoutButton(context, ref, p),
         ],
@@ -256,6 +258,36 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
           icon: Icon(Icons.edit, color: p.primary),
           label: CustomText(
             '프로필 수정',
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: p.primary,
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: p.primary),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 주간 날씨 보기 버튼
+  Widget _buildWeatherButton(BuildContext context, dynamic p) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop();
+            CustomNavigationUtil.to(context, const WeatherForecastScreen());
+          },
+          icon: Icon(Icons.wb_sunny, color: p.primary),
+          label: CustomText(
+            '주간 날씨 보기',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: p.primary,

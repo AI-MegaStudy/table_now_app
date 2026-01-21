@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/view/menu/menu_detail_screen.dart';
 import 'package:table_now_app/theme/palette_context.dart';
@@ -14,19 +15,22 @@ class MenuListScreen extends ConsumerStatefulWidget {
   ConsumerState<MenuListScreen> createState() => _MenuListScreenState();
 }
 
-
 class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
 
+    
+
     return Scaffold(
-      backgroundColor: Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
+        title: const Text("메뉴 선택", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: mainAppBarCenterTitle,
         backgroundColor: p.background,
         foregroundColor: p.textPrimary,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -34,56 +38,108 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
             child: menuAsync.when(
               data: (menus) {
                 return menus.isEmpty
-                ? const Center(child: Text('점검 중'),)
-                : ListView.builder(
-                  itemCount: menus.length,
-                  itemBuilder: (context, index) {
-                    final m = menus[index];
-                    return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MenuDetailScreen(menu_seq: index))),
-                      child: Card(
-                        color: Colors.white,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(
-                            color: Colors.grey[300]!, // 테두리 색상
-                            width: 1.0,               // 테두리 두께
-                          ),
-                          borderRadius: BorderRadius.circular(12.0), // 모서리 곡률
-                        ),
-                        child: Column(
-                          children: [
-                            Text(m.menu_name,),
-                            Text(CustomCommonUtil.formatCurrency(m.menu_price)),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                );
-              }, 
+                    ? const Center(child: Text('등록된 메뉴가 없습니다.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16.0),
+                        itemCount: menus.length,
+                        itemBuilder: (context, index) {
+                          final m = menus[index];
+                          return GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MenuDetailScreen(menu: m, index: index),
+                              ),
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      'https://cheng80.myqnapcloud.com/tablenow/${m.menu_image}',
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(width: 80, height: 80, color: Colors.grey[200]),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          m.menu_name,
+                                          style: mainTitleStyle
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          CustomCommonUtil.formatCurrency(m.menu_price),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[800],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+              },
               error: (error, stackTrace) => Center(child: Text('Error: $error')),
-              loading: () => Center(child: CircularProgressIndicator(),)
+              loading: () => const Center(child: CircularProgressIndicator()),
             ),
           ),
-          ElevatedButton(
-            onPressed: () => ReservationCompleteScreen(), 
-            child: Text('다음')
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                debugPrintOrderStorage();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ReservationCompleteScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black, // 메인 테마색
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: const Text('예약 진행하기', style: mainTitleStyle),
+            ),
           )
         ],
-      )
+      ),
     );
+  } // build
+
+  // ---- functions ----
+  void debugPrintOrderStorage() {
+    final box = GetStorage();
+    final data = box.read('order');
+    print('📦 order in GetStorage = $data');
   }
 }
-
-// ============================================================
-// 생성 이력
-// ============================================================
-// 작성일: 2026-01-16
-// 작성자: 임소연
-// 설명: 사용자가 메뉴 리스트에서 주문할 메뉴를 선택하는 페이지
-//
-// ============================================================
-// 수정 이력
-// ============================================================
-// 2026-01-16 임소연: 초기 생성

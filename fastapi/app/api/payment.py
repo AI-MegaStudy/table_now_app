@@ -26,6 +26,163 @@ class Payment(BaseModel):
     pay_amount: int
     created_at: datetime
 
+###
+# {
+#   "reserve": {
+#     "store_seq" : 1,
+#     "customer_seq": 1,
+#     "reserve_capacity": "4",
+#     "reserve_tables" : "1,2,3",
+#     "weather_datetime": "2026-01-19 00:00:00",
+#     "reserve_date": "2026-01-16 00:00:00",
+#     "payment_key" : "payment_key",
+#     "payment_status" : "완료"
+#   },
+#   "items": {
+   
+# "menus": {
+# "1": {
+#           "count": 2,
+#           "options": {"1": {"count":1,"price":3000}, "2": {"count":1,"price":500}},
+#           "price": 10000,
+#           "date": "2026-01-20 02:00:00"
+#         },
+#         "2": {
+#           "count": 2,
+#           "options": {"1": {"count":1,"price":3000}, "2": {"count":3,"price":500}},
+#           "price": 20000,
+#           "date": "2026-01-20 02:00:20"
+#         },
+#         "3": {
+#           "count": 1, 
+#           "options": {}, 
+#           "price": 8000,
+#           "date": "2026-01-20 02:00:30"
+#         }
+        
+#       }
+#     }
+  
+# }
+###
+@router.post("/purchase")
+async def create_purchase(reserve:dict,items: dict):
+
+    created_at =  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(items['menus'])
+    print('=========')
+    print(reserve)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    returnData = {"results":"Error"}
+    if reserve == None or items == None or 'store_seq' not in reserve:
+        return returnData
+    
+    data = []
+    reserveData = (
+        reserve['store_seq'],
+        reserve['customer_seq'],
+        reserve['weather_datetime'],
+        reserve['reserve_tables'],
+        reserve['reserve_capacity'],
+        reserve['reserve_date'],
+        created_at,
+        reserve['payment_key'],
+        reserve['payment_status']
+       
+    )
+    #  store_table_capacity, store_table_inuse,created_at
+    storeTableData=[]
+    for v in reserve['reserve_tables'].split(','):
+        storeTableData.append((
+        reserve['store_seq'],
+        v,
+        reserve['reserve_capacity'],
+        0,
+        created_at
+    ))
+    print(storeTableData)
+
+  
+       
+    
+    ## Reserve를 넣어야 함.
+    # reserveQuery = """
+    #     insert into reserve(
+    #         store_seq,customer_seq,
+    #         weather_datetime, reserve_tables,
+    #         reserve_capacity,reserve_date,created_at
+    #         payment_key,payment_status
+    #     ) values(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    # """
+
+
+    # for m_id, value in items['menus'].items():        
+    #     data.append((2,reserve['store_seq'],m_id,None,value['count'],value['price'],value['date']))
+    #     if len(value['options']) > 0:
+    #         for k, v in value['options'].items():
+    #             data.append((2,reserve['store_seq'],m_id,k,v['count'],v['price'],value['date']))
+
+    
+
+
+    # print(q)
+    # print('=================')
+    # print(reserveData)
+    # print('=================')
+    # print(data)
+
+
+    conn = connect_db()
+    try:
+        curs = conn.cursor()
+
+        curs.execute("""
+        insert into reserve(
+            store_seq,customer_seq,
+            weather_datetime, reserve_tables,
+            reserve_capacity,reserve_date,created_at,
+            payment_key,payment_status
+        ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """,reserveData)
+        inserted_id = curs.lastrowid
+        print(inserted_id)
+        
+        for m_id, value in items['menus'].items():        
+            data.append((inserted_id,reserve['store_seq'],m_id,None,value['count'],value['price'],value['date']))
+            if len(value['options']) > 0:
+                for k, v in value['options'].items():
+                    data.append((inserted_id,reserve['store_seq'],m_id,k,v['count'],v['price'],value['date']))
+
+
+    
+        curs.executemany("""
+            insert into store_table(
+                store_seq,store_table_name,
+                store_table_capacity, store_table_inuse,
+                created_at
+            ) values (%s,%s,%s,%s,%s)
+        """,storeTableData)
+
+       
+
+        curs.executemany("""
+           insert into pay(reserve_seq,store_seq,menu_seq,option_seq,pay_quantity,pay_amount,created_at) 
+                    values (%s,%s,%s,%s,%s,%s,%s)
+        """,data)
+        conn.commit()
+        returnData = {'results':'ok'}
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        returnData = {"results": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+    finally:
+        conn.close()
+    
+    return returnData
+
+   
 
 @router.get("/")
 async def select_pays():
@@ -254,6 +411,13 @@ async def get_pay_by_id(id: int):
         "message": f"Example item with id {id}",
         "status": "success"
     }
+
+
+
+
+
+
+
 
 
 @router.post("/insert")

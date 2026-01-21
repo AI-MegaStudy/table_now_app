@@ -2,6 +2,7 @@ import FirebaseMessaging
 import Flutter
 import UIKit
 import UserNotifications
+import GoogleMaps
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -9,6 +10,9 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Google Maps API 키 설정 (Firebase가 자동 생성한 iOS 키 사용)
+    GMSServices.provideAPIKey("AIzaSyDGH3b2j4ZZ5PA0_Bz-lxLRYSRrysCqBFw")
+    
     GeneratedPluginRegistrant.register(with: self)
 
     // Firebase 초기화는 FlutterFire 플러그인이 자동으로 처리합니다

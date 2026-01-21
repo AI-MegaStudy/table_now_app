@@ -14,7 +14,17 @@ class PaymentListGroupView extends ConsumerWidget {
   final double cardBoxHeight = 80;
   final double detailBoxHeight = 170;
 
+  /*
+var _selectedDate = DateTime(2026, 1, 25);
+final success = await ref
+        .read(weatherNotifierProvider.notifier)
+        .fetchWeatherFromApi(
+          storeSeq: _selectedStore!.store_seq,
+          targetDate: _selectedDate,
+          overwrite: _overwrite,
+        );
 
+  */
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,9 +32,9 @@ class PaymentListGroupView extends ConsumerWidget {
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     paymentValue.fetchData(reserve_seq);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
-   
-    
+
     final p = context.palette;
+    test();
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
@@ -253,7 +263,7 @@ class PaymentListGroupView extends ConsumerWidget {
     final prefix = 'toss-$reserve_seq';
     PaymentData data = PaymentData(
       paymentMethod: '카드',
-      orderId: prefix,//'tosspaymentsFlutter_1768742871169',
+      orderId: prefix, //'tosspaymentsFlutter_1768742871169',
       orderName: '예약번호: ${prefix}',
       amount: totalPayment,
       // customerName: customerName,
@@ -268,9 +278,12 @@ class PaymentListGroupView extends ConsumerWidget {
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
           ) {
-            if (result == -1){
-              CustomSnackBar.show(context, message: "에러가 발생했습니다. 에러코드($result)");
-            }else if(result != null) {
+            if (result == -1) {
+              CustomSnackBar.show(
+                context,
+                message: "에러가 발생했습니다. 에러코드($result)",
+              );
+            } else if (result != null) {
               CustomNavigationUtil.to(context, TossResultPage(result: result));
             }
           });
@@ -291,5 +304,107 @@ class PaymentListGroupView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // === Functions
+  void test() {
+    // Map<String, dynamic> reserveData = {
+    //   "reserve": {
+    //     "store_seq": 1,
+    //     "customer_seq": 1,
+    //     "reserve_capacity": "4",
+    //     "reserve_date": "2026-22-16T00:00:00",
+    //   },
+
+    // };
+
+    
+
+    // Map<String, dynamic> menuData = {
+    //   "menus": {
+    //     "1": {
+    //       "count": 2,
+    //       "options": {"1": 1, "2": 3},
+    //       "date": "1111"
+    //     },
+    //     "1": {
+    //       "count": 2,
+    //       "options": {"1": 1, "2": 3},
+    //       "date": "2222"
+    //     },
+    //     "2": {"count": 1, "options": {}}
+        
+    //   },
+    // };
+
+// {
+//   "reserve": {
+//     "store_seq" : 1,
+//     "customer_seq": 1,
+//     "reserve_capacity": "4",
+//     "reserve_tables" : "1,2,3",
+//     "weather_datetime": "2026-01-19 00:00:00",
+//     "reserve_date": "2026-01-16 00:00:00",
+//     "payment_key" : "payment_key",
+//     "payment_status" : "완료"
+//   },
+//   "items": {
+   
+// "menus": {
+// "1": {
+//           "count": 2,
+//           "options": {"1": {"count":1,"price":3000}, "2": {"count":1,"price":500}},
+//           "price": 10000,
+//           "date": "2026-01-20 02:00:00"
+//         },
+//         "2": {
+//           "count": 2,
+//           "options": {"1": {"count":1,"price":3000}, "2": {"count":3,"price":500}},
+//           "price": 20000,
+//           "date": "2026-01-20 02:00:20"
+//         },
+//         "3": {
+//           "count": 1, 
+//           "options": {}, 
+//           "price": 8000,
+//           "date": "2026-01-20 02:00:30"
+//         }
+        
+//       }
+//     }
+  
+// }
+
+
+    // menuData['menus'].forEach((m_id, value) {
+    //   print('${m_id},${value}');
+    // });
+
+    //  Map<String, dynamic> menuData2 = {
+    //   "menus": [
+    //     {
+    //       "menu_id": 1,
+    //         "count": 2,
+    //       "options": {"1": 1, "2": 3},
+    //       "date": '1111'
+    //     },
+    //     {
+    //       "menu_id": 1,
+    //       "count": 2,
+    //       "options": {"1": 1, "2": 3},
+    //       "date": '2222'
+    //     },
+
+    //   ]
+    // };
+      
+  
+
+    
+
+
+
+
+
   }
 }

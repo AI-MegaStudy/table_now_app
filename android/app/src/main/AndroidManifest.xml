@@ -13,9 +13,10 @@
         android:label="TableNow"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Google Maps API 키 (Firebase가 자동 생성한 iOS 키 사용) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBLa9JRNmTDkf_1yPqwPsI4uG3xBexyWLY"/>
+            android:value="AIzaSyDGH3b2j4ZZ5PA0_Bz-lxLRYSRrysCqBFw"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
