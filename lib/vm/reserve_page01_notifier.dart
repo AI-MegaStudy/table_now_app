@@ -144,7 +144,6 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         final rdate = reserve.reserve_date.split('T')[0];
         final rtime = reserve.reserve_date.split('T')[1].substring(0, 5);
         final tables = reserve.reserve_tables.split(',');
-        print(reserve.reserve_date);
 
         map.putIfAbsent(rdate, () => {});
         map[rdate]!.putIfAbsent(rtime, () => {});
@@ -163,10 +162,30 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         }
       }
 
-      // 막혀있는 날짜, 시간, 테이블 리스트 만들기
-      for(StoreTable t in tableData){
-        
-      }
+      // //날짜 리스트 만들기 //시간 리스트는 timesData
+      // final dateTimeToday = DateTime.now();
+      // final List<String> dates = [];
+      // for (int i = 0; i < 8; i++) {
+      //   final DateTime date = dateTimeToday.add(Duration(days: i));
+      //   final String formatted =
+      //       '${date.year.toString().padLeft(4, '0')}-'
+      //       '${date.month.toString().padLeft(2, '0')}-'
+      //       '${date.day.toString().padLeft(2, '0')}';
+      //   dates.add(formatted);
+      // }
+
+      // for(String d in dates){
+      //   for(String t in timesData){
+      //     final reservedTables = map[d]![t];
+      //     for(StoreTable table in tableData){
+      //       if(reservedTables == null){
+      //         return;
+      //       }else{
+      //         reservedTables.containsKey(table.store_table_seq.toString());
+      //       }
+      //     }
+      //   }
+      // }
         
       // }
       
