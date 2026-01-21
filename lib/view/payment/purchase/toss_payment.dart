@@ -37,9 +37,10 @@ class TossPayment extends ConsumerWidget {
         // Insert into Payment with menuIds
         // 업데이트 reserve 데이터
         //   //payment_key:str, payment_status:str, reserve_seq:int
-    
+        await paymentValue.purchase();
         final result = await ref.read(paymentListAsyncNotifierProvider.notifier).purchaseUpdate({'payment_key':'payment_key','payment_status':'DONE','reserve_seq':0});
         print("===================SUCCESS RESULT: $result");
+        
         CustomNavigationUtil.back(context,result: success);
       },
       fail: (Fail fail) async{
