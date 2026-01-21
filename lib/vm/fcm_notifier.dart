@@ -109,56 +109,19 @@ class FCMNotifier extends Notifier<FCMState> {
           print('📱 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
         }
 
+        // iOS: 로컬 알림 서비스 초기화 (포그라운드 알림 표시용)
+        await LocalNotificationService.initialize();
+        
         // iOS: APNs 토큰이 등록될 때까지 대기 (권한이 허용된 경우에만)
         await _waitForAPNSToken();
       } else if (Platform.isAndroid) {
-        // Android 13 (API 33) 이상에서 알림 권한 요청
-        // iOS와 동일하게 권한 상태를 먼저 확인하고, 필요할 때만 요청
-        try {
-          // 현재 알림 권한 상태 확인
-          final currentStatus = await _messaging.getNotificationSettings();
-          print('📱 Android 현재 알림 권한 상태: ${currentStatus.authorizationStatus}');
-          
-          // 권한이 없으면 요청 (notDetermined 상태일 때만)
-          if (currentStatus.authorizationStatus == AuthorizationStatus.notDetermined) {
-            print('📱 Android 알림 권한 요청 중...');
-            final permission = await _messaging.requestPermission(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
-
-            // 알림 권한 상태 로컬 저장
-            final isGranted =
-                permission.authorizationStatus ==
-                    AuthorizationStatus.authorized ||
-                permission.authorizationStatus == AuthorizationStatus.provisional;
-            await FCMStorage.saveNotificationPermissionStatus(isGranted);
-
-            print('📱 Android 알림 권한 요청 결과: ${permission.authorizationStatus}');
-          } else if (currentStatus.authorizationStatus == AuthorizationStatus.authorized ||
-                     currentStatus.authorizationStatus == AuthorizationStatus.provisional) {
-            // 이미 권한이 허용되어 있으면 요청하지 않음
-            print('📱 Android 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
-            
-            // 로컬 저장소에도 허용 상태 저장
-            await FCMStorage.saveNotificationPermissionStatus(true);
-          } else {
-            // 권한이 거부된 경우
-            print('⚠️  Android 알림 권한이 거부되어 있습니다: ${currentStatus.authorizationStatus}');
-            await FCMStorage.saveNotificationPermissionStatus(false);
-          }
-        } catch (e) {
-          print('⚠️  Android 알림 권한 확인/요청 실패: $e');
-          print('💡 Android 13 미만에서는 런타임 권한 요청이 필요 없습니다.');
-        }
+        // Android: 로컬 알림 서비스 초기화 및 권한 요청 (FCM 토큰 발급 전에 먼저!)
+        print('📱 Android: 알림 권한 요청 및 로컬 알림 서비스 초기화...');
+        await LocalNotificationService.initialize();
       }
 
-      // 초기 토큰 가져오기
+      // 초기 토큰 가져오기 (권한 허용 후)
       await _refreshToken();
-
-      // 로컬 노티피케이션 서비스 초기화 (포그라운드 알림 표시용)
-      await LocalNotificationService.initialize();
 
       // 토큰 갱신 리스너 설정
       _setupTokenRefreshListener();
