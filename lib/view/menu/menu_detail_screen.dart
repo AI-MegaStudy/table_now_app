@@ -67,7 +67,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
           SliverToBoxAdapter(
             child: menuAsync.when(
               data: (menu) {
-                final menuCount = orderState.menus[widget.index]?.count ?? 1;
+                final menuCount = orderState.menus[widget.menu.menu_seq]?.count ?? 1;
                 final m = menu[widget.index];
                 return Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -160,7 +160,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
         child: ElevatedButton(
           onPressed: () {
             ref.read(orderNotifierProvider.notifier).confirmMenu(widget.menu.menu_seq);
-            Navigator.pop(context);
+            Navigator.pop(context, menuTotalPrice + optionTotalPrice);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,

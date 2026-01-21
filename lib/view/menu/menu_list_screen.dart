@@ -21,7 +21,12 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
 
+    int totalPrice = 0;
+
     
+    
+
+    // ref.read(menuNotifierProvider.notifier).fetchMenu(2);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -44,6 +49,20 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                         itemCount: menus.length,
                         itemBuilder: (context, index) {
                           final m = menus[index];
+// Future<void> priceTotal(BuildContext context) async {
+//   final result = await Navigator.push(
+//     context,
+//     MaterialPageRoute(
+//       builder: (context) => MenuDetailScreen(menu: m, index: index),
+//     ),
+//   );
+
+//   if (result != null) {
+//     totalPrice += result as int;
+//     print(totalPrice);
+//   }
+// }
+
                           return GestureDetector(
                             onTap: () => Navigator.push(
                               context,
@@ -116,6 +135,16 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
             child: ElevatedButton(
               onPressed: () {
                 debugPrintOrderStorage();
+//   Future<void> goToPageB(BuildContext context) async {
+//     final Menu? menu = menuAsync.maybeWhen(
+//   data: (menus) => menus.firstWhere(
+//     (m) => m.menu_seq == menus.menu_seq,
+//     orElse: () => []<dynamic>,
+//   ),
+//   orElse: () => null,
+// );
+
+// }
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ReservationCompleteScreen()),
@@ -128,7 +157,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: const Text('예약 진행하기', style: mainTitleStyle),
+              child: Text('${CustomCommonUtil.formatCurrency(totalPrice)} · 예약 진행하기', style: mainTitleStyle),
             ),
           )
         ],
@@ -142,4 +171,6 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
     final data = box.read('order');
     print('📦 order in GetStorage = $data');
   }
+
+
 }

@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/menu.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
@@ -40,7 +41,7 @@ final menus = ref.watch(orderNotifierProvider).menus;
     orderState.menus.forEach((menuSeq, orderMenu) {
       print('메뉴 $menuSeq: ${orderMenu.count}개');
     });
-
+print(box.read('reserve'));
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(
@@ -50,7 +51,9 @@ final menus = ref.watch(orderNotifierProvider).menus;
       ),
       body: Center(
         child: Column(
-          children: [
+          children: [ // 날짜 시간 인원 좌석 메뉴
+            // Text('${box.read('reserve')['reserve_date']}'),
+            // Text('${box.read('reserve')['reserve_capacity']}'),
 
 Expanded(
   child: ListView(
@@ -73,7 +76,7 @@ Expanded(
           children: [
         Text(menu.first.menu_name),
         Text('수량: ${orderMenu.count}'),
-        Text('${menu.first.menu_price * orderMenu.count}원')
+        Text(CustomCommonUtil.formatCurrency(menu.first.menu_price * orderMenu.count))
 
           ],
         )
@@ -120,4 +123,4 @@ Expanded(
 // 수정 이력
 // ============================================================
 // 2026-01-16 임소연: 초기 생성
-// 2026-01-19 임소연: 
+// 2026-01-20 임소연: 사용자가 선택한 메뉴 보여주기
