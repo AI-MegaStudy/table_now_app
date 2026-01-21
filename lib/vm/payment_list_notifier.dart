@@ -7,8 +7,8 @@ import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/utils/utils.dart';
-import 'package:table_now_app/vm/purchase_notifier.dart';
-import 'package:table_now_app/vm/reservation_notifier.dart';
+
+
 
 class PaymentResponse {
   final int? pay_id;
