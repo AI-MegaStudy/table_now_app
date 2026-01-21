@@ -28,6 +28,10 @@ Future<void> main() async {
 
   // 자동 로그인 체크 (GetStorage 초기화 후)
   final storage = GetStorage();
+
+  // 앱 시작 시 'order' 데이터 삭제
+  await storage.remove('order');
+
   final autoLoginEnabled = storage.read<bool>(storageKeyAutoLogin) ?? false;
 
   if (!autoLoginEnabled) {

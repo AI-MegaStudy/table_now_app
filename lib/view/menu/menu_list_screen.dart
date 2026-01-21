@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/view/menu/menu_detail_screen.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/menu/reservation_complete_screen.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
+import 'package:table_now_app/vm/order_state_notifier.dart';
 
 class MenuListScreen extends ConsumerStatefulWidget {
   const MenuListScreen({super.key});
@@ -20,11 +20,15 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
+    final orderState = ref.watch(orderNotifierProvider);
 
     int totalPrice = 0;
-
-    
-    
+    orderState.menus.forEach((menuSeq, menu) {
+      totalPrice += menu.count * menu.price;
+      menu.options.forEach((optionSeq, option) {
+        totalPrice += option.count * option.price * menu.count;
+      });
+    });
 
     // ref.read(menuNotifierProvider.notifier).fetchMenu(2);
 
@@ -49,25 +53,12 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                         itemCount: menus.length,
                         itemBuilder: (context, index) {
                           final m = menus[index];
-// Future<void> priceTotal(BuildContext context) async {
-//   final result = await Navigator.push(
-//     context,
-//     MaterialPageRoute(
-//       builder: (context) => MenuDetailScreen(menu: m, index: index),
-//     ),
-//   );
-
-//   if (result != null) {
-//     totalPrice += result as int;
-//     print(totalPrice);
-//   }
-// }
-
                           return GestureDetector(
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => MenuDetailScreen(menu: m, index: index),
+                                builder: (context) =>
+                                    MenuDetailScreen(menu: m, index: index),
                               ),
                             ),
                             child: Container(
@@ -93,22 +84,26 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                                       width: 80,
                                       height: 80,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Container(width: 80, height: 80, color: Colors.grey[200]),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                  width: 80,
+                                                  height: 80,
+                                                  color: Colors.grey[200]),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          m.menu_name,
-                                          style: mainTitleStyle
-                                        ),
+                                        Text(m.menu_name,
+                                            style: mainTitleStyle),
                                         const SizedBox(height: 4),
                                         Text(
-                                          CustomCommonUtil.formatCurrency(m.menu_price),
+                                          CustomCommonUtil.formatCurrency(
+                                              m.menu_price),
                                           style: TextStyle(
                                             fontSize: 16,
                                             color: Colors.grey[800],
@@ -118,7 +113,8 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                                       ],
                                     ),
                                   ),
-                                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                                  Icon(Icons.arrow_forward_ios,
+                                      size: 16, color: Colors.grey[400]),
                                 ],
                               ),
                             ),
@@ -126,7 +122,8 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                         },
                       );
               },
-              error: (error, stackTrace) => Center(child: Text('Error: $error')),
+              error: (error, stackTrace) =>
+                  Center(child: Text('Error: $error')),
               loading: () => const Center(child: CircularProgressIndicator()),
             ),
           ),
@@ -134,43 +131,33 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                debugPrintOrderStorage();
-//   Future<void> goToPageB(BuildContext context) async {
-//     final Menu? menu = menuAsync.maybeWhen(
-//   data: (menus) => menus.firstWhere(
-//     (m) => m.menu_seq == menus.menu_seq,
-//     orElse: () => []<dynamic>,
-//   ),
-//   orElse: () => null,
-// );
-
-// }
+                if (totalPrice == 0) {
+                  return;
+                }
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ReservationCompleteScreen()),
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          ReservationCompleteScreen(price: totalPrice)),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black, // 메인 테마색
+                backgroundColor: totalPrice == 0 ? Colors.grey : Colors.black,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text('${CustomCommonUtil.formatCurrency(totalPrice)} · 예약 진행하기', style: mainTitleStyle),
+              child: Text(
+                  totalPrice == 0
+                      ? '메뉴를 선택하세요'
+                      : '${CustomCommonUtil.formatCurrency(totalPrice)} · 예약 진행하기',
+                  style: mainTitleStyle),
             ),
           )
         ],
       ),
     );
-  } // build
-
-  // ---- functions ----
-  void debugPrintOrderStorage() {
-    final box = GetStorage();
-    final data = box.read('order');
-    print('📦 order in GetStorage = $data');
   }
-
-
 }
