@@ -41,6 +41,7 @@ class FCMState {
 /// Firebase Cloud Messaging 토큰 관리 및 알림 권한 처리를 담당합니다.
 class FCMNotifier extends Notifier<FCMState> {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  bool _isRefreshingToken = false; // 토큰 새로고침 중복 방지 플래그
 
   @override
   FCMState build() {
@@ -228,39 +229,83 @@ class FCMNotifier extends Notifier<FCMState> {
   }
 
   /// 토큰 새로고침
+  /// 
+  /// "Too many server requests" 오류 발생 시 재시도 로직 포함
   Future<void> _refreshToken() async {
+    // 중복 호출 방지
+    if (_isRefreshingToken) {
+      print('⏸️  FCM 토큰 새로고침이 이미 진행 중입니다.');
+      return;
+    }
+    
+    _isRefreshingToken = true;
+    
     try {
-      final token = await _messaging.getToken();
+      const maxRetries = 3;
+      const baseDelay = Duration(seconds: 2);
+      
+      for (int attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // 재시도 시 지연 시간 추가 (지수 백오프)
+          if (attempt > 0) {
+            final delay = baseDelay * (attempt + 1);
+            print('⏳ FCM 토큰 요청 재시도 중... (${attempt + 1}/$maxRetries, ${delay.inSeconds}초 대기)');
+            await Future.delayed(delay);
+          }
+          
+          final token = await _messaging.getToken();
 
-      // 토큰을 로컬에 저장
-      if (token != null) {
-        await FCMStorage.saveFCMToken(token);
-      }
+          // 토큰을 로컬에 저장
+          if (token != null) {
+            await FCMStorage.saveFCMToken(token);
+          }
 
-      state = state.copyWith(token: token, removeErrorMessage: true);
+          state = state.copyWith(token: token, removeErrorMessage: true);
 
-      // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
-      if (token != null) {
-        print('🔥 FCM_TOKEN updated: $token');
-        print('💾 FCM 토큰 로컬 저장 완료');
+          // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
+          if (token != null) {
+            print('🔥 FCM_TOKEN updated: $token');
+            print('💾 FCM 토큰 로컬 저장 완료');
 
-        // 토큰이 변경되었는지 확인
-        final lastSentToken = FCMStorage.getLastSentToken();
-        if (lastSentToken != token) {
-          print('🔄 토큰이 변경되었습니다. 서버에 전송이 필요합니다.');
-        } else {
-          print('✅ 토큰이 서버와 동기화되어 있습니다.');
+            // 토큰이 변경되었는지 확인
+            final lastSentToken = FCMStorage.getLastSentToken();
+            if (lastSentToken != token) {
+              print('🔄 토큰이 변경되었습니다. 서버에 전송이 필요합니다.');
+            } else {
+              print('✅ 토큰이 서버와 동기화되어 있습니다.');
+            }
+          } else {
+            print('⚠️  FCM token is null.');
+            print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
+          }
+          
+          // 성공 시 반환
+          return;
+        } catch (e) {
+          final errorMessage = e.toString();
+          
+          // "Too many server requests" 오류인 경우 재시도
+          if (errorMessage.contains('Too many server requests') && attempt < maxRetries - 1) {
+            print('⚠️  FCM 서버 요청 제한 초과. 재시도 예정...');
+            continue;
+          }
+          
+          // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+          print('❌ Failed to get FCM token: $e');
+          if (attempt == maxRetries - 1) {
+            print('💡 최대 재시도 횟수에 도달했습니다. 잠시 후 다시 시도하세요.');
+          } else {
+            print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
+          }
+          
+          // 마지막 시도에서도 실패한 경우에만 에러 상태 설정
+          if (attempt == maxRetries - 1) {
+            state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.');
+          }
         }
-      } else {
-        print('⚠️  FCM token is null.');
-        print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e, stackTrace) {
-      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
-      print('❌ Failed to get FCM token: $e');
-      print('Stack trace: $stackTrace');
-      print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-      state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다.');
+    } finally {
+      _isRefreshingToken = false;
     }
   }
 
@@ -314,11 +359,7 @@ class FCMNotifier extends Notifier<FCMState> {
         print('   Body: ${message.notification?.body}');
         print('   Data: ${message.data}');
         print(
-          '   Platform: ${Platform.isIOS
-              ? 'iOS'
-              : Platform.isAndroid
-              ? 'Android'
-              : 'Unknown'}',
+          '   Platform: ${Platform.isIOS ? "iOS" : Platform.isAndroid ? "Android" : "Unknown"}',
         );
       }
 

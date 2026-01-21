@@ -19,7 +19,7 @@ const int dormantAccountDays = 180;
 /// null이면 플랫폼에 따라 자동 선택 (Android: 10.0.2.2, iOS: 127.0.0.1)
 // const String? customApiBaseUrl = null;
 //윈도우 사용자는 윗줄 주석 처리 하고 아래 줄 주석 해제하여 자신의 호스트 IP를 설정하세요.
-const String customApiBaseUrl = 'http://110.70.51.139:8000';
+const String customApiBaseUrl = 'http://192.168.90.7:8000';
 // const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';
 
 /// FastAPI 서버 기본 URL
