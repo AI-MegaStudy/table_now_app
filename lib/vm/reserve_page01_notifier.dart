@@ -163,9 +163,10 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         }
       }
 
-      // // 막혀있는 날짜, 시간, 테이블 리스트 만들기
-      // List list = map.values.toList();
-      // for (var l in list){
+      // 막혀있는 날짜, 시간, 테이블 리스트 만들기
+      for(StoreTable t in tableData){
+        
+      }
         
       // }
       
