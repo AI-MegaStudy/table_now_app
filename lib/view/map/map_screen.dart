@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/location_util.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/store_detail_sheet.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final List<Store> storeList;
-
   const MapScreen({required this.storeList, super.key});
 
   @override
@@ -19,9 +21,11 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>(); //
   GoogleMapController? _mapController;
+
   LatLng? _userLocation;
-  bool _boundsApplied = false;
 
   @override
   void initState() {
@@ -32,65 +36,117 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _getUserLocation() async {
     try {
       final pos = await LocationUtil.getCurrentLocation();
+      if (!mounted) return;
       setState(() {
         _userLocation = LatLng(pos.latitude, pos.longitude);
       });
+
+      _moveToCenter();
     } catch (e) {
-      debugPrint("위치 권한/위치 정보 접근 실패: $e");
+      debugPrint("위치 획득 실패: $e");
+      _moveToCenter();
     }
+  }
+
+  void _moveToCenter() {
+    if (_mapController == null) return;
+
+    List<LatLng> points = [];
+
+    if (_userLocation != null) {
+      points.add(_userLocation!);
+    }
+
+    for (var s in widget.storeList) {
+      if (s.store_lat != 0 && s.store_lng != 0) {
+        points.add(LatLng(s.store_lat, s.store_lng));
+      }
+    }
+
+    if (points.isEmpty) return;
+
+    double avgLat =
+        points
+            .map((p) => p.latitude)
+            .reduce((a, b) => a + b) /
+        points.length;
+    double avgLng =
+        points
+            .map((p) => p.longitude)
+            .reduce((a, b) => a + b) /
+        points.length;
+
+    LatLng center = LatLng(avgLat, avgLng);
+
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngZoom(center, 14.5),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final storeList = widget.storeList;
 
     return Scaffold(
-      appBar: AppBar(
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      // drawer: const AppDrawer(),
+      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      appBar: CommonAppBar(
         title: Text(
-          "지역 매장 지도",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+          '지역 매장 지도',
+          style: mainAppBarTitleStyle.copyWith(
+            color: p.textOnPrimary,
           ),
         ),
-        backgroundColor: p.primary,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        ],
       ),
       body: GoogleMap(
         initialCameraPosition: const CameraPosition(
           target: LatLng(37.5665, 126.9780),
           zoom: 12,
         ),
-        markers: _buildMarkers(storeList),
+        markers: _buildMarkers(),
         myLocationEnabled: true,
-        myLocationButtonEnabled: true,
-        zoomControlsEnabled: true,
+        myLocationButtonEnabled: false,
         onMapCreated: (controller) {
           _mapController = controller;
-          WidgetsBinding.instance.addPostFrameCallback((
-            _,
-          ) async {
-            await Future.delayed(
-              Duration(milliseconds: 300),
-            );
-            _applyBounds(storeList);
-          });
+
+          Future.delayed(
+            const Duration(milliseconds: 500),
+            () => _moveToCenter(),
+          );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await _getUserLocation();
+          _moveToCenter();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("중심 위치로 이동했습니다."),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        },
+        backgroundColor: p.primary,
+        child: Icon(Icons.my_location, color: Colors.white),
       ),
     );
   }
 
-  Set<Marker> _buildMarkers(List<Store> storeList) {
+  Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
-
     if (_userLocation != null) {
       markers.add(
         Marker(
@@ -103,7 +159,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    for (var s in storeList) {
+    for (var s in widget.storeList) {
       if (s.store_lat != 0 && s.store_lng != 0) {
         markers.add(
           Marker(
@@ -112,36 +168,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
               BitmapDescriptor.hueOrange,
             ),
-            onTap: () {
-              String? distanceString;
-
-              if (_userLocation != null) {
-                double meters = Geolocator.distanceBetween(
-                  _userLocation!.latitude,
-                  _userLocation!.longitude,
-                  s.store_lat,
-                  s.store_lng,
-                );
-
-                distanceString = meters >= 1000
-                    ? "${(meters / 1000).toStringAsFixed(1)}km"
-                    : "${meters.toInt()}m";
-              }
-
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-                builder: (_) => StoreDetailSheet(
-                  s,
-                  distance: distanceString,
-                ),
-              );
-            },
+            onTap: () => _showDetailSheet(s),
           ),
         );
       }
@@ -149,47 +176,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return markers;
   }
 
-  void _applyBounds(List<Store> storeList) async {
-    if (_mapController == null || _boundsApplied) return;
-
-    final points = <LatLng>[];
-    if (_userLocation != null) points.add(_userLocation!);
-
-    for (var s in storeList) {
-      if (s.store_lat != 0 && s.store_lng != 0) {
-        points.add(LatLng(s.store_lat, s.store_lng));
-      }
+  void _showDetailSheet(Store s) {
+    String? distanceString;
+    if (_userLocation != null) {
+      double meters = Geolocator.distanceBetween(
+        _userLocation!.latitude,
+        _userLocation!.longitude,
+        s.store_lat,
+        s.store_lng,
+      );
+      distanceString = meters >= 1000
+          ? "${(meters / 1000).toStringAsFixed(1)}km"
+          : "${meters.toInt()}m";
     }
-
-    if (points.isEmpty) return;
-
-    if (points.length == 1) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(points.first, 15),
-      );
-    } else {
-      final latitudes = points
-          .map((e) => e.latitude)
-          .toList();
-      final longitudes = points
-          .map((e) => e.longitude)
-          .toList();
-
-      final bounds = LatLngBounds(
-        southwest: LatLng(
-          latitudes.reduce((a, b) => a < b ? a : b),
-          longitudes.reduce((a, b) => a < b ? a : b),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
         ),
-        northeast: LatLng(
-          latitudes.reduce((a, b) => a > b ? a : b),
-          longitudes.reduce((a, b) => a > b ? a : b),
-        ),
-      );
-
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 70),
-      );
-    }
-    _boundsApplied = true;
+      ),
+      builder: (_) =>
+          StoreDetailSheet(s, distance: distanceString),
+    );
   }
 }
