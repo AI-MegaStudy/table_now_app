@@ -45,8 +45,7 @@ class ReservePage02 extends ConsumerWidget {
           final timeKey = selectedTime!;
 
           // 예약된 테이블 맵
-          final Map<String, dynamic> reservedTables =
-              tablesData[dateKey]?[timeKey] ?? {};
+          final Map<String, dynamic> reservedTables = tablesData[dateKey]?[timeKey] ?? {};
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -59,17 +58,14 @@ class ReservePage02 extends ConsumerWidget {
                 crossAxisSpacing: 12,
               ),
               itemBuilder: (context, index) {
-                final tableSeq = (index + 1).toString();
 
                 //평범한 테이블들
-                final bool isReserved =
-                    reservedTables.containsKey(tableSeq);
-
                 final StoreTable tableInfo = state.tableModelList[index];
                 final String tableName = "T${tableInfo.store_table_name}";
-                final int capacity =
-                    tableInfo != null ? tableInfo.store_table_capacity : 4;
+                final int capacity = tableInfo.store_table_capacity;
 
+                final int tableSeq = tableInfo.store_table_seq;
+                final bool isReserved = reservedTables.containsKey(tableSeq.toString());
                 // //예약된 테이블들
                 // final bool isReserved =
                 //     reservedTables.containsKey(tableSeq);
@@ -128,7 +124,7 @@ class TableItem extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isReserved ? Colors.grey.shade400 : Colors.orange,
+          color: isReserved ? Colors.grey.shade400 : Colors.green,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.black12),
         ),
