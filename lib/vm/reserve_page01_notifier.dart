@@ -144,6 +144,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         final rdate = reserve.reserve_date.split('T')[0];
         final rtime = reserve.reserve_date.split('T')[1].substring(0, 5);
         final tables = reserve.reserve_tables.split(',');
+        print(reserve.reserve_date);
 
         map.putIfAbsent(rdate, () => {});
         map[rdate]!.putIfAbsent(rtime, () => {});
