@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store_table.dart';
-import 'package:table_now_app/vm/reserve_page01_notifier.dart';
 import 'package:table_now_app/vm/reserve_page02_notifier.dart';
 
 class ReservePage02 extends ConsumerWidget {
