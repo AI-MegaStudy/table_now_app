@@ -64,30 +64,29 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
   final double detailBoxHeight = 170;
   final storage = GetStorage();
   late PurchaseReserve? purchaseReserve = null;
+  late Map<String,dynamic>? items;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    print('==============aaaaa');
-    print(storage.read('reserve'));
     _initialize();
   }
 
   void _initialize() async {
-    print('===111111111111111111111');
+
     final ppp = ref.read(paymentListAsyncNotifierProvider.notifier);
-    print('1010101010101');
     final data = storage.read<Map<String, dynamic>>('reserve');
-    print(data);
+    items = storage.read< Map<String, dynamic>>('order');
+
+    final data2 = storage.read<Map<String,dynamic>>('reserve2');
     try {
       if (data != null) {
         purchaseReserve = PurchaseReserve.fromJson(data);
-        print('222222222222222=====');
+        
         if (purchaseReserve != null) {
-          print('33333333333333333333');
           purchaseReserve!.reserve_tables =
-              storage.read<String>('reserve2') ?? '';
+              data2!=null? data2['reserve_tables']:'';
           await ppp.insertReserve(purchaseReserve!);
           purchaseReserve!.reserve_seq = ppp.reserve_seq;
           purchaseReserve!.payment_status = 'PROCESS';
@@ -117,7 +116,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
     paymentValue.setReserve(purchaseReserve!);
-    paymentValue.setItems({'aa':'aa'});
+    if(items != null) paymentValue.setItems(items!);
 
     return Scaffold(
       backgroundColor: p.background,

@@ -211,8 +211,9 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   }
 
   void setItems(Map<String,dynamic> items){
-    // receiveData['items'] = items;
-    receiveData['items'] = testData['items'];
+    receiveData['items'] = items;
+    print(items);
+    // receiveData['items'] = testData['items'];
   }
 
 
