@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/customer_storage.dart';
 import 'package:table_now_app/view/reservepage/reserve_page02.dart';
 import 'package:table_now_app/vm/reserve_page01_notifier.dart';
 
@@ -21,20 +22,30 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
   late TextEditingController phoneController;
   late TextEditingController numberController;
 
-  late bool loading;
   int store_seq = 1;
   int customer_seq = 1;
   String date = DateTime.now().toString();
 
+  final customer = CustomerStorage.getCustomer();
   final box = GetStorage();
 
   @override
   void initState() {
     super.initState();
-    loading = true;
+
     nameController = TextEditingController();
     phoneController = TextEditingController();
     numberController = TextEditingController();
+    customer_seq = customer == null ? 1 : customer!.customerSeq;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = CustomNavigationUtil.arguments<Map<String, dynamic>>(context);
+      if (args != null) {
+        store_seq = args['store_seq'] as int;
+      }
+
+      ref.read(reservePage01NotifierProvider.notifier).fetchData(store_seq, customer_seq, date);
+    });
   }
 
   @override
@@ -48,9 +59,6 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
   @override
   Widget build(BuildContext context) {
     final reserveAsync = ref.watch(reservePage01NotifierProvider);
-    final reserveValue = ref.read(reservePage01NotifierProvider.notifier);
-    if(loading == true) reserveValue.fetchData(store_seq, customer_seq, date);
-    loading = false;
     final p = context.palette;
 
     return Scaffold(
@@ -316,6 +324,8 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                       ),
                     ),
                     onPressed: () {
+                      if (numberController.text.isEmpty) return;
+                      if (data.selectedDay == null || data.selectedTime == null) return;
                       //스토리지에 예약 정보 저장
                       final reserve = {
                         'store_seq' : store_seq,
@@ -333,7 +343,8 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                             'tablesData': data.tablesData,
                             'store_seq': store_seq,
                             'selectedDate': data.selectedDay,
-                            'selectedTime': data.selectedTime
+                            'selectedTime': data.selectedTime,
+                            'reserve_capacity': numberController.text,
                           }
                         ),
                       );

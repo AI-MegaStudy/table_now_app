@@ -9,18 +9,22 @@ import 'package:table_now_app/model/store_table.dart';
 class ReservePage02State{
   final List tableModelList;
   final List<String>? selectedTable;
+  final int? usedCapacity;
 
   ReservePage02State({
     required this.tableModelList,
-    this.selectedTable
+    this.selectedTable,
+    this.usedCapacity
   });
 
   ReservePage02State copyWith({
-    List<String>? selectedTable
+    List<String>? selectedTable,
+    int? leftCapacity
   }){
     return ReservePage02State(
       tableModelList: tableModelList,
-      selectedTable: selectedTable ?? this.selectedTable
+      selectedTable: selectedTable ?? this.selectedTable,
+      usedCapacity: leftCapacity ?? this.usedCapacity
     );
   }
 }
@@ -31,12 +35,12 @@ class ReservePage02Notifier extends AsyncNotifier<ReservePage02State>{
   @override
   FutureOr<ReservePage02State> build() {
     return ReservePage02State(
-      tableModelList: []
+      tableModelList: [],
+      usedCapacity: 0
     );
   }
 
   Future<void> fetchData(int seq) async {
-    //테이블 정보 받아오기
     try {
       //테이블 정보 받아오기
       final res = await http.get(Uri.parse("$baseUrl/store_table/select_StoreTables_store/$seq"));
@@ -52,7 +56,9 @@ class ReservePage02Notifier extends AsyncNotifier<ReservePage02State>{
       //테이블 갯수 갱신
       state = AsyncValue.data(
         ReservePage02State(
-          tableModelList: tableData
+          tableModelList: tableData,
+          selectedTable: state.value?.selectedTable,
+          usedCapacity: state.value?.usedCapacity ?? 0,
         )
       );
     }catch (e, stack) {
@@ -67,6 +73,13 @@ class ReservePage02Notifier extends AsyncNotifier<ReservePage02State>{
     state = AsyncValue.data(
       state.value!.copyWith(selectedTable: seqList),
     );
+  }
+
+  void updateUsedCapacity(int number){
+    state = AsyncValue.data(
+      state.value!.copyWith(leftCapacity: state.value!.usedCapacity! + number),
+    );
+    print(state.value!.usedCapacity);
   }
 }
 
