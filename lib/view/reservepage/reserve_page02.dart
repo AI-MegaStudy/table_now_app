@@ -60,7 +60,18 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
     final p = context.palette;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('테이블 선택')),
+      appBar: AppBar(
+        backgroundColor: p.primary,
+        elevation: 0,
+        leading: const BackButton(),
+        title: const Text('테이블 선택'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Icon(Icons.person),
+          ),
+        ],
+      ),
       body: reserveAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
@@ -80,6 +91,42 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                /// STEP INDICATOR
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(4, (index) {
+                      final isActive = index == 1;
+                      final labels = ['정보', '좌석', '메뉴', '확인'];
+
+                      return Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor:
+                                isActive ? p.primary : Colors.grey.shade300,
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: isActive ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            labels[index],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isActive ? p.primary : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
+                ),
+
                 Expanded(
                   child: GridView.builder(
                     itemCount: state.tableModelList.length, // 매장 테이블 수

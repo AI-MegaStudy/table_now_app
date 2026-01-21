@@ -79,7 +79,6 @@ class ReservePage02Notifier extends AsyncNotifier<ReservePage02State>{
     state = AsyncValue.data(
       state.value!.copyWith(leftCapacity: state.value!.usedCapacity! + number),
     );
-    print(state.value!.usedCapacity);
   }
 }
 
