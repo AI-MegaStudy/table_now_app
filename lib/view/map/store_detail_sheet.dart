@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/view/map/storebooking.dart';
+import 'package:table_now_app/view/map/storebooking.dart'; // 클래스명 확인 필요
 
 class StoreDetailSheet extends StatelessWidget {
   final Store store;
@@ -17,9 +18,11 @@ class StoreDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 16,
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -57,7 +60,6 @@ class StoreDetailSheet extends StatelessWidget {
                     "내 위치에서 $distance",
                     style: TextStyle(
                       color: Colors.orange,
-                      // color: Colors.blue,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -78,6 +80,7 @@ class StoreDetailSheet extends StatelessWidget {
             Icons.access_time_outlined,
             "${store.store_open_time ?? "-"} ~ ${store.store_close_time ?? "-"}",
           ),
+
           SizedBox(height: 20),
 
           SizedBox(
@@ -85,16 +88,23 @@ class StoreDetailSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
+                /*
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        StoreBookingInfoScreen(store),
+                    builder: (context) => StoreBookingInfoScreen(store: store),
                   ),
+                );
+                */
+
+                CustomNavigationUtil.to(
+                  context,
+                  StoreBookingInfoScreen(store: store),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
+                foregroundColor: Colors.white, // 글자색 설정
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -103,14 +113,12 @@ class StoreDetailSheet extends StatelessWidget {
               child: Text(
                 "매장 예약",
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          SizedBox(height: 16),
         ],
       ),
     );

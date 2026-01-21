@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/model/menu.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/vm/menu_notifier.dart';
+import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
 import 'package:table_now_app/vm/reservation_notifier.dart';
 
@@ -18,15 +21,25 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
   Widget build(BuildContext context) {
     final p = context.palette;
     final reservationAsync = ref.watch(reservationNotifierProvider);
+    final optionAsync = ref.watch(optionNotifierProvider);
+    final menuAsync = ref.watch(menuNotifierProvider);
+    final orderState = ref.watch(orderNotifierProvider);
+
+//     final menu = menuAsync.maybeWhen(
+//   data: (menus) => menus,
+//   orElse: () => [], // 아직 로딩 중이면 빈 리스트
+// );
+
+final menus = ref.watch(orderNotifierProvider).menus;
+
 
     final box = GetStorage();
     final data = box.read('order'); // Map<String, dynamic>
-
-final orderState = ref.watch(orderNotifierProvider);
-
+    print(data);
+    
     orderState.menus.forEach((menuSeq, orderMenu) {
-  print('메뉴 $menuSeq: ${orderMenu.count}개');
-});
+      print('메뉴 $menuSeq: ${orderMenu.count}개');
+    });
 
     return Scaffold(
       backgroundColor: p.background,
@@ -38,7 +51,57 @@ final orderState = ref.watch(orderNotifierProvider);
       body: Center(
         child: Column(
           children: [
-            // Text('${orderState.menus}'),
+
+Expanded(
+  child: ListView(
+    children: menus.entries.map((entry) {
+      final menu_seq = entry.key;
+      final orderMenu = entry.value;
+
+      // AsyncValue에서 List<Menu> 추출
+      final allMenus = menuAsync.maybeWhen(
+        data: (menus) => menus,
+        orElse: () => [],
+      );
+
+      // menu_seq에 대응되는 메뉴 찾기 (nullable 변수 사용)
+      final menu = allMenus.where((m) => m.menu_seq == menu_seq).toList();
+      if (menu.isEmpty) return SizedBox.shrink(); // 없으면 표시 안함
+
+      return Card(
+        child: Column(
+          children: [
+        Text(menu.first.menu_name),
+        Text('수량: ${orderMenu.count}'),
+        Text('${menu.first.menu_price * orderMenu.count}원')
+
+          ],
+        )
+      );
+    }).toList(),
+  ),
+),
+
+
+
+  // menuAsync.when(
+  //   data: (menus) {
+  //     return menus.isEmpty
+  //     ? Center(child: Text('예약 내역이 없습니다.'),)
+  //     : ListView.builder(
+  //       itemCount: menus.length,
+  //       itemBuilder: (context, index) {
+  //         final m = menus[index];
+  //         return Card(
+            
+  //         );
+  //       });
+  //   }, 
+  //             error: (error, stackTrace) => Center(child: Text('Error: $error')),
+  //             loading: () => const Center(child: CircularProgressIndicator()),
+  // )
+
+  
           ],
         ),
       ),

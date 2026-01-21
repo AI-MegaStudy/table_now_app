@@ -62,7 +62,6 @@ Map<String, dynamic> receiveData = {
     "customer_seq": 1,
     "reserve_capacity": "4",
     "reserve_tables": "1,2,3",
-    "weather_datetime": "2026-01-19 00:00:00",
     "reserve_date": "2026-01-16 00:00:00",
     "payment_key": "payment_key",
     "payment_status": "PROCESS",

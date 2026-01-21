@@ -9,6 +9,7 @@ reserve API - reserve CRUD
 | 날짜 | 작성자 | 내용 |
 |———--|———---|———--|
 |2026.01.15|유다원|생성|
+|2026.01.21|김택권|weather_datetime 컬럼 제거 (weather 테이블 마이그레이션)|
 """
 
 from datetime import datetime, timedelta
@@ -47,7 +48,7 @@ async def select_all():
     
     # TODO: SQL 작성
     curs.execute("""
-        SELECT reserve_seq, store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status 
+        SELECT reserve_seq, store_seq, customer_seq, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status 
         FROM reserve 
         ORDER BY reserve_seq
     """)
@@ -60,13 +61,12 @@ async def select_all():
         'reserve_seq': row[0],
         'store_seq': row[1],
         'customer_seq': row[2],
-        'weather_datetime': row[3],
-        'reserve_tables': row[4],
-        'reserve_capacity': row[5],
-        'reserve_date': row[6],
-        'created_at': row[7],
-        'payment_key': row[8],
-        'payment_status': row[9]
+        'reserve_tables': row[3],
+        'reserve_capacity': row[4],
+        'reserve_date': row[5],
+        'created_at': row[6],
+        'payment_key': row[7],
+        'payment_status': row[8]
         # …
     } for row in rows]
     
@@ -93,7 +93,7 @@ async def select_all_8(date: str):
 
     curs.execute("""
         SELECT reserve_seq, store_seq, customer_seq,
-               weather_datetime, reserve_tables,
+               reserve_tables,
                reserve_capacity, reserve_date,
                created_at, payment_key, payment_status
         FROM reserve
@@ -110,13 +110,12 @@ async def select_all_8(date: str):
                 'reserve_seq': row[0],
                 'store_seq': row[1],
                 'customer_seq': row[2],
-                'weather_datetime': row[3],
-                'reserve_tables': row[4],
-                'reserve_capacity': row[5],
-                'reserve_date': row[6],
-                'created_at': row[7],
-                'payment_key': row[8],
-                'payment_status': row[9]
+                'reserve_tables': row[3],
+                'reserve_capacity': row[4],
+                'reserve_date': row[5],
+                'created_at': row[6],
+                'payment_key': row[7],
+                'payment_status': row[8]
             } for row in rows
         ]
     }
@@ -130,7 +129,7 @@ async def select_all_8(date: str):
 # - ORDER BY id 정렬
 
 @router.get("/select_reserves_8_store/{date}/{seq}")
-async def select_all_8(date: str, seq: int):
+async def select_all_8_store(date: str, seq: int):
     conn = connect_db()
     curs = conn.cursor()
 
@@ -142,7 +141,7 @@ async def select_all_8(date: str, seq: int):
 
     curs.execute("""
         SELECT reserve_seq, store_seq, customer_seq,
-               weather_datetime, reserve_tables,
+               reserve_tables,
                reserve_capacity, reserve_date,
                created_at, payment_key, payment_status
         FROM reserve
@@ -160,13 +159,12 @@ async def select_all_8(date: str, seq: int):
                 'reserve_seq': row[0],
                 'store_seq': row[1],
                 'customer_seq': row[2],
-                'weather_datetime': row[3],
-                'reserve_tables': row[4],
-                'reserve_capacity': row[5],
-                'reserve_date': row[6],
-                'created_at': row[7],
-                'payment_key': row[8],
-                'payment_status': row[9]
+                'reserve_tables': row[3],
+                'reserve_capacity': row[4],
+                'reserve_date': row[5],
+                'created_at': row[6],
+                'payment_key': row[7],
+                'payment_status': row[8]
             } for row in rows
         ]
     }
@@ -184,7 +182,7 @@ async def select_one(item_id: int):
     
     # TODO: SQL 작성
     curs.execute("""
-        SELECT reserve_seq, store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status 
+        SELECT reserve_seq, store_seq, customer_seq, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status 
         FROM reserve 
         WHERE reserve_seq = %s
     """, (item_id,))
@@ -200,13 +198,12 @@ async def select_one(item_id: int):
         'reserve_seq': row[0],
         'store_seq': row[1],
         'customer_seq': row[2],
-        'weather_datetime': row[3],
-        'reserve_tables': row[4],
-        'reserve_capacity': row[5],
-        'reserve_date': row[6],
-        'created_at': row[7],
-        'payment_key': row[8],
-        'payment_status': row[9]
+        'reserve_tables': row[3],
+        'reserve_capacity': row[4],
+        'reserve_date': row[5],
+        'created_at': row[6],
+        'payment_key': row[7],
+        'payment_status': row[8]
     }
     return {"result": result}
 
@@ -224,7 +221,6 @@ async def insert_one(
     # 예: columnName: str = Form(...)
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
@@ -237,10 +233,10 @@ async def insert_one(
         
         # TODO: SQL 작성
         sql = """
-            INSERT INTO reserve (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status) 
-            VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s)
+            INSERT INTO reserve (store_seq, customer_seq, reserve_tables, reserve_capacity, reserve_date, created_at, payment_key, payment_status) 
+            VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s)
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status))
+        curs.execute(sql, (store_seq, customer_seq, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status))
         
         conn.commit()
         inserted_id = curs.lastrowid
@@ -261,7 +257,6 @@ async def update_one(
     reserve_seq: int = Form(...),
     store_seq: int = Form(...),
     customer_seq: int = Form(...),
-    weather_datetime: Optional[str] = Form(None),
     reserve_tables: str = Form(...),
     reserve_capacity: int = Form(...),
     reserve_date: str = Form(...),
@@ -276,10 +271,10 @@ async def update_one(
         # TODO: SQL 작성
         sql = """
             UPDATE reserve 
-            SET store_seq=%s, customer_seq=%s, weather_datetime=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, payment_key=%s, payment_status=%s     
+            SET store_seq=%s, customer_seq=%s, reserve_tables=%s, reserve_capacity=%s, reserve_date=%s, payment_key=%s, payment_status=%s     
             WHERE reserve_seq=%s
         """
-        curs.execute(sql, (store_seq, customer_seq, weather_datetime, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status, reserve_seq))
+        curs.execute(sql, (store_seq, customer_seq, reserve_tables, reserve_capacity, reserve_date, payment_key, payment_status, reserve_seq))
         
         conn.commit()
         conn.close()

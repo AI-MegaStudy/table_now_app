@@ -22,7 +22,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
   late TextEditingController numberController;
 
   late bool loading;
-  int store_seq = 2;
+  int store_seq = 1;
   int customer_seq = 1;
   String date = DateTime.now().toString();
 
@@ -323,7 +323,6 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         'reserve_capacity': numberController.text,
                         'reserve_date': "${data.selectedDay.toString().substring(0,10)}T${data.selectedTime}:00"
                       };
-                      print(reserve);
                       box.write('reserve', reserve);
                       //다음 페이지로
                       CustomNavigationUtil.to(

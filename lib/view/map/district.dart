@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 
 class DistrictListScreen extends ConsumerWidget {
-  final String regionName; // 예: "서울" 또는 "서울특별시"
-  final List<Store> storesInRegion; // 부모로부터 받은 해당 시/도의 매장들
+  final String regionName;
+  final List<Store> storesInRegion;
 
   const DistrictListScreen({
     super.key,
@@ -16,13 +19,14 @@ class DistrictListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final GlobalKey<ScaffoldState> _scaffoldKey =
+        GlobalKey<ScaffoldState>();
     final p = context.palette;
 
-    // 1. 데이터를 "구" 단위로 그룹화 (주소의 두 번째 단어 추출)
     final Map<String, List<Store>> groupedDistricts = {};
     for (var store in storesInRegion) {
       final parts = store.store_address.split(' ');
-      // 주소가 "서울시 구로구 ..." 형태일 때 인덱스 [1]이 "구로구"가 됨
+
       final district = parts.length > 1 ? parts[1] : '기타';
 
       groupedDistricts
@@ -33,30 +37,28 @@ class DistrictListScreen extends ConsumerWidget {
     final districts = groupedDistricts.keys.toList();
 
     return Scaffold(
-      backgroundColor: p.chipSelectedText,
-      appBar: AppBar(
-        backgroundColor: p.primary,
-        foregroundColor: p.chipSelectedText,
-        elevation: 0,
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      // drawer: const AppDrawer(),
+      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      appBar: CommonAppBar(
         title: Text(
           '$regionName 세부지역',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+          style: mainAppBarTitleStyle.copyWith(
+            color: p.textOnPrimary,
           ),
         ),
-        // subtitle: Text(
-        //   '지역을 선택하세요',
-        //   style: TextStyle(color: Colors.white70, fontSize: 14),
-        // ),
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -70,7 +72,7 @@ class DistrictListScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
-              // border: Border.all(color: Colors.grey),
+
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black,
@@ -107,7 +109,6 @@ class DistrictListScreen extends ConsumerWidget {
                 size: 16,
               ),
               onTap: () {
-                // 선택한 "구"의 매장 리스트만 가지고 지도로 이동
                 Navigator.push(
                   context,
                   MaterialPageRoute(

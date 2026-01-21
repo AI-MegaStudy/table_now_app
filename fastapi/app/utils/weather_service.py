@@ -1,8 +1,9 @@
 """
 OpenWeatherMap API 서비스
-날씨 데이터를 가져와서 데이터베이스에 저장하는 서비스
+날씨 데이터를 직접 가져오는 서비스 (DB 저장 없음)
 작성일: 2026-01-15
 작성자: 김택권
+수정일: 2026-01-21 - weather 테이블 제거 마이그레이션
 """
 
 import os
@@ -10,7 +11,6 @@ import requests
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
-from ..database.connection import connect_db  # noqa: E402
 from .weather_mapping import get_weather_type_korean, get_weather_icon_url  # noqa: E402
 
 # ============================================
@@ -258,144 +258,6 @@ class WeatherService:
         
         # 첫 번째 항목만 반환 (하루치만)
         return forecast_list[0]
-    
-    def save_weather_to_db(
-        self, 
-        store_seq: int, 
-        target_date: Optional[datetime] = None,
-        overwrite: bool = True
-    ) -> Dict:
-        """
-        OpenWeatherMap API에서 날씨 데이터를 가져와서 데이터베이스에 저장 (하루치만)
-        
-        Args:
-            store_seq: 식당 번호 (store 테이블의 store_seq)
-            target_date: 저장할 날짜 (None이면 오늘 날짜, 최대 8일까지만 가능)
-            overwrite: 기존 데이터가 있으면 덮어쓸지 여부 (기본값: True)
-            
-        Returns:
-            Dict: 저장 결과
-            - success: 성공 여부
-            - inserted: 삽입 여부 (True면 INSERT, False면 UPDATE)
-            - message: 결과 메시지
-            - errors: 에러 리스트
-        """
-        conn = None
-        curs = None
-        
-        try:
-            # store 정보 조회 (store_lat, store_lng 가져오기)
-            conn = connect_db()
-            curs = conn.cursor()
-            
-            curs.execute("""
-                SELECT store_lat, store_lng FROM store WHERE store_seq = %s
-            """, (store_seq,))
-            
-            store_row = curs.fetchone()
-            if not store_row:
-                return {
-                    "success": False,
-                    "message": f"store_seq={store_seq}인 식당을 찾을 수 없습니다.",
-                    "inserted": False,
-                    "errors": []
-                }
-            
-            store_lat = str(store_row[0])
-            store_lng = str(store_row[1])
-            
-            # 날짜 파싱
-            target_date_only = None
-            if target_date:
-                if isinstance(target_date, datetime):
-                    target_date_only = target_date.date()
-                elif isinstance(target_date, str):
-                    try:
-                        target_date_only = datetime.strptime(target_date, "%Y-%m-%d").date()
-                    except ValueError:
-                        return {
-                            "success": False,
-                            "message": f"날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식 필요): {target_date}",
-                            "inserted": False,
-                            "errors": []
-                        }
-                else:
-                    target_date_only = target_date
-            else:
-                # None이면 오늘 날짜
-                target_date_only = datetime.now().date()
-            
-            # API에서 해당 날짜의 날씨 데이터 가져오기 (하루치만)
-            forecast_list = self.fetch_daily_forecast(
-                lat=store_lat,
-                lon=store_lng,
-                start_date=target_date_only
-            )
-            
-            if not forecast_list or len(forecast_list) == 0:
-                return {
-                    "success": False,
-                    "message": "가져올 날씨 데이터가 없습니다.",
-                    "inserted": False,
-                    "errors": []
-                }
-            
-            # 첫 번째 항목만 사용 (하루치만 저장)
-            forecast = forecast_list[0]
-            
-            weather_datetime = forecast["weather_datetime"]
-            weather_type = forecast["weather_type"]
-            weather_low = forecast["weather_low"]
-            weather_high = forecast["weather_high"]
-            
-            # UPSERT 패턴: 이미 있으면 업데이트, 없으면 삽입
-            curs.execute("""
-                SELECT weather_datetime FROM weather 
-                WHERE store_seq = %s AND weather_datetime = %s
-            """, (store_seq, weather_datetime))
-            existing_new = curs.fetchone()
-            
-            if not existing_new:
-                # 새로운 데이터가 없으면 삽입
-                curs.execute("""
-                    INSERT INTO weather (store_seq, weather_datetime, weather_type, weather_low, weather_high)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (store_seq, weather_datetime, weather_type, weather_low, weather_high))
-                is_inserted = True
-            else:
-                # 이미 있으면 업데이트
-                curs.execute("""
-                    UPDATE weather 
-                    SET weather_type = %s, weather_low = %s, weather_high = %s
-                    WHERE store_seq = %s AND weather_datetime = %s
-                """, (weather_type, weather_low, weather_high, store_seq, weather_datetime))
-                is_inserted = False
-            
-            conn.commit()
-            
-            action = "삽입" if is_inserted else "업데이트"
-            return {
-                "success": True,
-                "message": f"날씨 데이터 저장 완료 ({action})",
-                "inserted": is_inserted,
-                "errors": []
-            }
-            
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            return {
-                "success": False,
-                "message": f"날씨 데이터 저장 실패: {str(e)}",
-                "inserted_count": 0,
-                "updated_count": 0,
-                "errors": [{"error": str(e)}]
-            }
-        finally:
-            if curs:
-                curs.close()
-            if conn:
-                conn.close()
 
 
 # ============================================================
@@ -412,25 +274,13 @@ class WeatherService:
 #   - OpenWeatherMap OneCall API 연동 구현
 #   - 일별 날씨 데이터 가져오기 기능 (fetch_daily_weather)
 #   - 날씨 데이터를 데이터베이스에 저장하는 기능 (save_weather_to_db)
-#   - 환경변수에서 API 키 로드 (OPENWEATHER_API_KEY)
-#   - 날씨 타입 한글 변환 및 아이콘 URL 생성 기능 연동
-#
-# 2026-01-15 김택권: OpenWeatherMap API 키 환경변수 사용
-#   - .env 파일에서 OPENWEATHER_API_KEY 환경변수 로드
-#   - 보안을 위해 코드에 하드코딩하지 않고 환경변수만 사용
-#
-# 2026-01-19: OpenWeatherMap API 키 하드코딩으로 변경
-#   - .env 파일 의존성 제거
-#   - API 키를 코드에 직접 하드코딩 (다른 사람 사용 금지 주석 추가)
 #
 # 2026-01-18: OpenWeatherMap API 직접 조회 기능 추가
 #   - fetch_daily_forecast 메서드 추가 (8일치 예보)
 #   - DB 저장 없이 OpenWeatherMap API에서 직접 데이터 가져오기
-#   - 날짜 검증 로직 추가 (과거 날짜 불가, 최대 8일까지만 가능)
 #
-# 2026-01-18: 함수 구조 명확화
-#   - fetch_today_weather() 메서드 제거
-#   - fetch_daily_forecast() 수정: start_date 파라미터로 변경
-#     - start_date 없으면: 오늘 포함 8일치 모두 반환
-#     - start_date 있으면: 해당 날짜부터 남은 날짜만 반환
-#   - save_weather_to_db() 수정: 날짜 지정해서 하루만 저장하는 함수로 명확히 분리
+# 2026-01-21 김택권: weather 테이블 제거 마이그레이션
+#   - connect_db import 제거
+#   - save_weather_to_db() 메서드 삭제
+#   - fetch_daily_forecast(), fetch_single_day_weather()만 유지
+#   - OpenWeatherMap API 직접 호출만 지원

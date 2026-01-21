@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/drawer.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/district.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 import 'package:table_now_app/vm/store_notifier.dart';
@@ -11,34 +15,34 @@ class RegionListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final GlobalKey<ScaffoldState> _scaffoldKey =
+        GlobalKey<ScaffoldState>(); //
     final asyncStore = ref.watch(storeNotifierProvider);
     final p = context.palette;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: p.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      // drawer: const AppDrawer(),
+      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      appBar: CommonAppBar(
         title: Text(
           '카레하우스',
-          style: TextStyle(
-            color: p.chipSelectedText,
-            fontWeight: FontWeight.bold,
+          style: mainAppBarTitleStyle.copyWith(
+            color: p.textOnPrimary,
           ),
         ),
-        // subtitle: Text(
-        //   '지역을 선택하세요',
-        //   style: TextStyle(color: Colors.white70, fontSize: 14),
-        // ),
-        // centerTitle: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        ],
       ),
       body: asyncStore.when(
         data: (storeList) {
@@ -46,7 +50,7 @@ class RegionListScreen extends ConsumerWidget {
           for (var store in storeList) {
             final region = store.store_address.split(
               ' ',
-            )[0]; // 첫 단어 추출
+            )[0];
             groupedStores
                 .putIfAbsent(region, () => [])
                 .add(store);
@@ -138,7 +142,7 @@ class RegionListScreen extends ConsumerWidget {
             Center(child: Text("데이터 로드 실패: $err")),
       ),
     );
-  } //
+  }
 
   void _navigateToMap(
     BuildContext context,
