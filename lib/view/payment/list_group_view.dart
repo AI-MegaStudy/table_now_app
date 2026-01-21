@@ -25,14 +25,13 @@ final success = await ref
         );
 
   */
-
+  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // reseve_seq로 초기 로딩.
-    final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
-    paymentValue.fetchData(reserve_seq);
+    final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);  
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
-
+paymentValue.fetchData(reserve_seq);
     final p = context.palette;
     return Scaffold(
       backgroundColor: p.background,

@@ -7,7 +7,7 @@ import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/utils/utils.dart';
-import 'package:table_now_app/vm/reservation_notifier.dart';
+
 
 class PaymentResponse {
   final int? pay_id;
@@ -97,7 +97,7 @@ Map<String, dynamic> receiveData = {
   },
 };
 
-class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
+class PurchaseNotifier extends AsyncNotifier<List<PaymentResponse>> {
   late final String url = getApiBaseUrl();
   final String error = '';
 
@@ -148,35 +148,35 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
     _iv = result["iv"]!;
   }
 
-  // id가 있다면 특정 payment만 가져온다.
-  // 유저의 payments를 전부 가져온다.
-  Future<void> fetchData(int id) async {
-    // Get Data from Backend
-    if (_reserve_seq != id) {
-      try {
-        // _total_payment = 0;
-        // _reserve_seq = id;
+  // // id가 있다면 특정 payment만 가져온다.
+  // // 유저의 payments를 전부 가져온다.
+  // Future<void> fetchData(int id) async {
+  //   // Get Data from Backend
+  //   if (_reserve_seq != id) {
+  //     try {
+  //       // _total_payment = 0;
+  //       // _reserve_seq = id;
 
-        final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
-        final response = await http.get(uri);
-        if (response.statusCode != 200) {
-          throw Exception("데이터 로딩 실패: ${response.statusCode}");
-        }
-        final jsonData = json.decode(utf8.decode(response.bodyBytes));
-        final List results = jsonData["results"];
+  //       final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
+  //       final response = await http.get(uri);
+  //       if (response.statusCode != 200) {
+  //         throw Exception("데이터 로딩 실패: ${response.statusCode}");
+  //       }
+  //       final jsonData = json.decode(utf8.decode(response.bodyBytes));
+  //       final List results = jsonData["results"];
 
-        // 총 가격을 뽑는다.
-        for (final pay in results) _total_payment += pay['total_pay'] as int;
+  //       // 총 가격을 뽑는다.
+  //       for (final pay in results) _total_payment += pay['total_pay'] as int;
 
-        state = AsyncValue.data(
-          results.map((data) => PaymentResponse.fromJson(data)).toList(),
-        );
-      } catch (error, stackTrace) {
-        state = AsyncValue.error(error, stackTrace);
-      }
+  //       state = AsyncValue.data(
+  //         results.map((data) => PaymentResponse.fromJson(data)).toList(),
+  //       );
+  //     } catch (error, stackTrace) {
+  //       state = AsyncValue.error(error, stackTrace);
+  //     }
   
-    }
-  }
+  //   }
+  // }
 
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
@@ -341,8 +341,8 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
 //    final r = ref.watch(authNotifierProvider);
 
-final paymentListAsyncNotifierProvider =
+final purchaseAsyncNotifierProvider =
     AsyncNotifierProvider.autoDispose<
-      PaymentListAsyncNotifier,
+      PurchaseNotifier,
       List<PaymentResponse>
-    >(PaymentListAsyncNotifier.new);
+    >(PurchaseNotifier.new);
