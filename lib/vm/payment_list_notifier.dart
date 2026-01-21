@@ -7,7 +7,8 @@ import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_now_app/utils/utils.dart';
-import 'package:table_now_app/vm/reservation_notifier.dart';
+
+
 
 class PaymentResponse {
   final int? pay_id;
@@ -56,20 +57,73 @@ class PaymentResponse {
   }
 }
 
-Map<String, dynamic> receiveData = {
+
+
+class PurchaseReserve {
+  int? reserve_seq;
+  final int store_seq;
+  final int customer_seq;
+  final String reserve_capacity;
+  String? reserve_tables;
+  final String reserve_date;
+  String? payment_key;
+  String? payment_status;
+
+  PurchaseReserve({
+    this.reserve_seq,
+    required this.store_seq,
+    required this.customer_seq,
+    required this.reserve_capacity,
+    this.reserve_tables,
+    required this.reserve_date,
+    this.payment_key,
+    this.payment_status,
+  });
+
+  factory PurchaseReserve.fromJson(Map<String, dynamic> json) {
+    return PurchaseReserve(
+      reserve_seq: json['reserve_seq'],
+      store_seq: json['store_seq'],
+      customer_seq: json['customer_seq'],
+      reserve_capacity: json['reserve_capacity'],
+      reserve_tables: json['reserve_tables'],
+      reserve_date: json['reserve_date'],
+      payment_key: json['payment_key'],
+      payment_status: json['payment_status'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "reserve_seq": reserve_seq,
+      "store_seq": store_seq,
+      "customer_seq": customer_seq,
+      "reserve_capacity": reserve_capacity,
+      "reserve_tables": reserve_tables,
+      "reserve_date": reserve_date,
+      "payment_key": payment_key,
+      "payment_status": payment_status,
+    };
+  }
+}
+
+
+
+Map<String, dynamic> testData = {
   "reserve": {
-    "store_seq": 1,
-    "customer_seq": 1,
-    "reserve_capacity": "4",
-    "reserve_tables": "1,2,3",
-    "reserve_date": "2026-01-16 00:00:00",
+    "store_seq": 1,                                  // reserve
+    "customer_seq": 1,                               // reserve
+    "reserve_capacity": "4",                         // reserve
+    "reserve_tables": "1,2,3",                       // reserve2
+    // "weather_datetime": "2026-01-19 00:00:00",
+    "reserve_date": "2026-01-16 00:00:00",           // reserve
     "payment_key": "payment_key",
     "payment_status": "PROCESS",
   },
   "items": {
     "menus": {
       "1": {
-        "count": 2,
+        "count": 2, 
         "options": {
           "1": {"count": 1, "price": 3000},
           "2": {"count": 1, "price": 500},
@@ -99,9 +153,12 @@ Map<String, dynamic> receiveData = {
 class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   late final String url = getApiBaseUrl();
   final String error = '';
+  final Map<String,dynamic> receiveData = {'reserve':'','items':''};
 
   int _reserve_seq = 0;
   int _total_payment = 0;
+  
+  // todo: 확인용 -> 삭제 할것.
   bool _isPurchaseInsertSuccess = false;
 
   // decrypt key
@@ -117,6 +174,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   String get k => _k;
   String get iv => _iv;
   int get reserve_seq => _reserve_seq;
+  bool get isPurchaseInsertSuccess => _isPurchaseInsertSuccess;
 
   @override
   FutureOr<List<PaymentResponse>> build() async {
@@ -131,7 +189,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
     // Need MenuList picked
     // 메뉴리스트를 받는다. 어떤 형식?
 
-    return [];
+    return fetchData();
   }
 
   // decrypt key, iv를 가져오기 위한 부분.
@@ -147,16 +205,30 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
     _iv = result["iv"]!;
   }
 
+  void setReserve(PurchaseReserve purchaseReserve){
+    receiveData['reserve'] = purchaseReserve;
+    print(purchaseReserve.toJson());
+  }
+
+  void setItems(Map<String,dynamic> items){
+    // receiveData['items'] = items;
+    receiveData['items'] = testData['items'];
+  }
+
+
+
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
-  Future<void> fetchData(int id) async {
+  Future<List<PaymentResponse>> fetchData() async {
     // Get Data from Backend
-    // if (_reserve_seq != id) {
+ 
       try {
+        // 스토리지에서 불러온다. 
+
         // _total_payment = 0;
         // _reserve_seq = id;
 
-        final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
+        final uri = Uri.parse('$url/api/pay/select_group_by_reserve/1');
         final response = await http.get(uri);
         if (response.statusCode != 200) {
           throw Exception("데이터 로딩 실패: ${response.statusCode}");
@@ -167,13 +239,15 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
         // 총 가격을 뽑는다.
         for (final pay in results) _total_payment += pay['total_pay'] as int;
 
-        state = AsyncValue.data(
-          results.map((data) => PaymentResponse.fromJson(data)).toList(),
-        );
+        
+        return results.map((data) => PaymentResponse.fromJson(data)).toList();
+        
       } catch (error, stackTrace) {
-        state = AsyncValue.error(error, stackTrace);
+        print(error);
+        return [];
       }
-    // }
+  
+    
   }
 
   // id가 있다면 특정 payment만 가져온다.
@@ -245,6 +319,37 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
       return false;
     }
   }
+
+  Future<void> insertReserve(PurchaseReserve purchaseReserve)async{
+    try{
+      final response = await http.post(
+        Uri.parse("$url/api/pay/insert_reserve"),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(purchaseReserve.toJson()),
+        );
+      if (response.statusCode != 200) {
+         throw Exception("R 업데이트 실패(1): ${response.statusCode}");
+      }
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      final result = data['result'];
+      if(result == 'Error')  throw Exception("R 업데이트 실패(2): ${response.statusCode}");
+      _reserve_seq = result['reserve_seq'];
+      
+    }catch(error,stackTrace){
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+
+
+
+  void clearPurchase() {
+    _isPurchaseInsertSuccess = false;
+    _reserve_seq = 0;
+    _total_payment = 0;
+  }
+
+
 
   // 유저의 Payment를 추가 한다.
   Future<void> addData(PaymentResponse payment) async {

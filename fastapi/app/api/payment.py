@@ -51,7 +51,45 @@ async def update_one(data:dict):
     except Exception as e:
         return {"result": "Error", "errorMsg": str(e)}
 
+@router.post("/insert_reserve")
+async def create_reserve(reserve:dict) :
+    created_at =  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    reserveData = (
+        reserve['store_seq'],
+        reserve['customer_seq'],
+        reserve['reserve_tables'],
+        reserve['reserve_capacity'],
+        reserve['reserve_date'],
+        created_at,
+        reserve['payment_key'],
+        reserve['payment_status']   
+    )
+    returnData = {"result": "Error"}
+    conn = connect_db()
+    try:
+        curs = conn.cursor()
 
+        ### Reserve 추가하기
+        curs.execute("""
+        insert into reserve(
+            store_seq,customer_seq,
+            reserve_tables,
+            reserve_capacity,reserve_date,created_at,
+            payment_key,payment_status
+        ) values (%s,%s,%s,%s,%s,%s,%s,%s)
+    """,reserveData)
+        inserted_id = curs.lastrowid
+        conn.commit()
+        returnData = {"result": {"reserve_seq":inserted_id}}
+    except Exception as err:
+        import traceback
+        error_msg = str(err)
+        traceback.print_exc()
+        returnData = {"result": "Error", "errorMsg": error_msg, "traceback": traceback.format_exc()}
+    finally:
+        conn.close()
+
+    return returnData
 
 @router.post("/purchase")
 async def create_purchase(reserve:dict,items: dict):
@@ -66,10 +104,11 @@ async def create_purchase(reserve:dict,items: dict):
         return returnData
     
     data = []
+     
     reserveData = (
+        reserve['reserve_seq'],
         reserve['store_seq'],
         reserve['customer_seq'],
-        reserve['weather_datetime'],
         reserve['reserve_tables'],
         reserve['reserve_capacity'],
         reserve['reserve_date'],
@@ -80,31 +119,33 @@ async def create_purchase(reserve:dict,items: dict):
     )
     #  store_table_capacity, store_table_inuse,created_at
     storeTableData=[]
-    for v in reserve['reserve_tables'].split(','):
-        storeTableData.append((
-        reserve['store_seq'],
-        v,
-        reserve['reserve_capacity'],
-        0,
-        created_at
-    ))
+    if reserve['reserve_tables'] != None and reserve['reserve_tables'] != '':
+        for v in reserve['reserve_tables'].split(','):
+            storeTableData.append((
+            reserve['store_seq'],
+            v,
+            reserve['reserve_capacity'],
+            0,
+            created_at
+        ))
 
     conn = connect_db()
     try:
         curs = conn.cursor()
 
         ### Reserve 추가하기
-        curs.execute("""
-        insert into reserve(
-            store_seq,customer_seq,
-            weather_datetime, reserve_tables,
-            reserve_capacity,reserve_date,created_at,
-            payment_key,payment_status
-        ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """,reserveData)
-        inserted_id = curs.lastrowid
+    #     curs.execute("""
+    #     insert into reserve(
+    #         store_seq,customer_seq,
+    #         reserve_tables,
+    #         reserve_capacity,reserve_date,created_at,
+    #         payment_key,payment_status
+    #     ) values (%s,%s,%s,%s,%s,%s,%s,%s)
+    # """,reserveData)
+    #     inserted_id = curs.lastrowid
         
         ### menu 추가하기전 데이터 만들기
+        inserted_id = reserveData[0]
         for m_id, value in items['menus'].items():        
             data.append((inserted_id,reserve['store_seq'],m_id,None,value['count'],value['price'],value['date']))
             if len(value['options']) > 0:
@@ -113,13 +154,14 @@ async def create_purchase(reserve:dict,items: dict):
 
 
         ### store table 추가
-        curs.executemany("""
-            insert into store_table(
-                store_seq,store_table_name,
-                store_table_capacity, store_table_inuse,
-                created_at
-            ) values (%s,%s,%s,%s,%s)
-        """,storeTableData)
+        if len(storeTableData) > 0 :
+            curs.executemany("""
+                insert into store_table(
+                    store_seq,store_table_name,
+                    store_table_capacity, store_table_inuse,
+                    created_at
+                ) values (%s,%s,%s,%s,%s)
+            """,storeTableData)
 
         ### pay table 추가
         curs.executemany("""

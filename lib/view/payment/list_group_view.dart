@@ -1,39 +1,124 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/custom/custom.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
+
 import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
 
-class PaymentListGroupView extends ConsumerWidget {
+final Map<String, dynamic> receiveData = {
+  "reserve": {
+    "store_seq": 1,
+    "customer_seq": 1,
+    "reserve_capacity": "4",
+    "reserve_tables": "1,2,3",
+    "weather_datetime": "2026-01-19 00:00:00",
+    "reserve_date": "2026-01-16 00:00:00",
+    "payment_key": "payment_key",
+    "payment_status": "PROCESS",
+  },
+  "items": {
+    "menus": {
+      "1": {
+        "count": 2,
+        "options": {
+          "1": {"count": 1, "price": 3000},
+          "2": {"count": 1, "price": 500},
+        },
+        "price": 10000,
+        "date": "2026-01-20 02:00:00",
+      },
+      "2": {
+        "count": 2,
+        "options": {
+          "1": {"count": 1, "price": 3000},
+          "2": {"count": 3, "price": 500},
+        },
+        "price": 20000,
+        "date": "2026-01-20 02:00:20",
+      },
+      "3": {
+        "count": 1,
+        "options": {},
+        "price": 8000,
+        "date": "2026-01-20 02:00:30",
+      },
+    },
+  },
+};
+
+class PaymentListGroupView extends ConsumerStatefulWidget {
   const PaymentListGroupView({super.key});
-  final int reserve_seq = 1;
-  final double cardBoxHeight = 80;
-  final double detailBoxHeight = 170;
-
-  /*
-var _selectedDate = DateTime(2026, 1, 25);
-final success = await ref
-        .read(weatherNotifierProvider.notifier)
-        .fetchWeatherFromApi(
-          storeSeq: _selectedStore!.store_seq,
-          targetDate: _selectedDate,
-          overwrite: _overwrite,
-        );
-
-  */
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // reseve_seq로 초기 로딩.
-    final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
-    paymentValue.fetchData(reserve_seq);
-    final paymentState = ref.watch(paymentListAsyncNotifierProvider);
+  ConsumerState<PaymentListGroupView> createState() =>
+      _PaymentListGroupViewState();
+}
 
+class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
+  final double cardBoxHeight = 80;
+  final double detailBoxHeight = 170;
+  final storage = GetStorage();
+  late PurchaseReserve? purchaseReserve = null;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    print('==============aaaaa');
+    print(storage.read('reserve'));
+    _initialize();
+  }
+
+  void _initialize() async {
+    print('===111111111111111111111');
+    final ppp = ref.read(paymentListAsyncNotifierProvider.notifier);
+    print('1010101010101');
+    final data = storage.read<Map<String, dynamic>>('reserve');
+    print(data);
+    try {
+      if (data != null) {
+        purchaseReserve = PurchaseReserve.fromJson(data);
+        print('222222222222222=====');
+        if (purchaseReserve != null) {
+          print('33333333333333333333');
+          purchaseReserve!.reserve_tables =
+              storage.read<String>('reserve2') ?? '';
+          await ppp.insertReserve(purchaseReserve!);
+          purchaseReserve!.reserve_seq = ppp.reserve_seq;
+          purchaseReserve!.payment_status = 'PROCESS';
+        }
+      }
+    } catch (error) {
+      print('====== $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final p = context.palette;
+    if (purchaseReserve == null) {
+      CustomNavigationUtil.back(context);
+      return Scaffold(
+        backgroundColor: p.background,
+        appBar: AppBar(title: Text('결제 하기')),
+        body: Center(child: Text('Reserve is empty')),
+      );
+    }
+    final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
+    final paymentState = ref.watch(paymentListAsyncNotifierProvider);
+    paymentValue.setReserve(purchaseReserve!);
+    paymentValue.setItems({'aa':'aa'});
+
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
@@ -65,11 +150,19 @@ final success = await ref
                                 spacing: 3,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('예약 번호: $reserve_seq'),
-                                  Text('예약 날짜: 예약된 날짜'),
-                                  Text('총 인원: '),
-                                  Text('테이블 번호: '),
-                                  Text('상점: ${data[0].store_description}'),
+                                  Text(
+                                    '예약 번호: ${purchaseReserve!.reserve_seq}',
+                                  ),
+                                  Text(
+                                    '예약 날짜: ${purchaseReserve!.reserve_date}',
+                                  ),
+                                  Text(
+                                    '총 인원: ${purchaseReserve!.reserve_capacity}',
+                                  ),
+                                  Text(
+                                    '테이블 번호: ${purchaseReserve!.reserve_tables}',
+                                  ),
+                                  Text('상점: 상점 이름'),
                                 ],
                               ),
                             ),
@@ -177,7 +270,6 @@ final success = await ref
                               paymentValue,
                               p,
                             ),
-
                           ],
                         ),
                       ),
@@ -207,23 +299,23 @@ final success = await ref
     );
   }
 
-  Widget subOrderInfoBox(String storeName) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          textSubTitle('주문 정보'),
-          Text('예약 번호: $reserve_seq'),
-          Text('예약 날짜: 예약된 날짜'),
-          Text('총 인원: '),
-          Text('테이블 번호: '),
-          Text('상점: ${storeName}'),
-        ],
-      ),
-    );
-  }
+  // Widget subOrderInfoBox(String storeName) {
+  //   return Container(
+  //     padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.start,
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         textSubTitle('주문 정보'),
+  //         Text('예약 번호: ${paymentValue.reserve_seq}'),
+  //         Text('예약 날짜: 예약된 날짜'),
+  //         Text('총 인원: '),
+  //         Text('테이블 번호: '),
+  //         Text('상점: ${storeName}'),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget paymentCardType(
     BuildContext context,
@@ -232,7 +324,7 @@ final success = await ref
     PaymentListAsyncNotifier paymentValue,
     p,
   ) {
-    final prefix = 'toss-$reserve_seq';
+    final prefix = 'toss-${purchaseReserve!.reserve_seq}';
     PaymentData data = PaymentData(
       paymentMethod: '카드',
       orderId: prefix, //'tosspaymentsFlutter_1768742871169',
@@ -247,9 +339,8 @@ final success = await ref
       padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
       child: ElevatedButton.icon(
         onPressed: () async {
-
           /// 카드 결제 전 Data를 추가한다.
-          await paymentValue.purchase();
+          // await paymentValue.purchase();
 
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
@@ -281,5 +372,4 @@ final success = await ref
       ),
     );
   }
-
 }
