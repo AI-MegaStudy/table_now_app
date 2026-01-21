@@ -6,27 +6,28 @@ Table Now 프로젝트의 MySQL 데이터베이스 스키마 및 관련 파일�
 
 ```
 mysql/
-├── DATABASE_GUIDE.md          # 이 파일
-├── table_now_db_init_v1.sql     # 데이터베이스 초기화 스키마 (DDL)
-├── table_now_db_seed_v2.sql     # 시드 데이터 (DML)
-├── table_now_db_schema.dbml     # DBML 스키마 파일 (dbdiagram.io 등에서 사용)
-└── Workbench/                   # MySQL Workbench 관련 파일 (현재 비어있음)
+├── DATABASE_GUIDE.md                 # 이 파일
+├── table_now_db_init_v2.sql          # 데이터베이스 초기화 스키마 (DDL)
+├── table_now_db_current_data_v2.sql  # 시드 데이터 (DML)
+├── table_now_db_schema.dbml          # DBML 스키마 파일 (dbdiagram.io 등에서 사용)
+└── Workbench/                        # MySQL Workbench 관련 파일
+    └── README.md                     # Workbench 사용 가이드
 ```
 
 ## 사용 방법
 
 ### 1. 데이터베이스 초기화
 
-`table_now_db_init_v1.sql` 파일을 실행하여 데이터베이스 스키마를 생성합니다:
+`table_now_db_init_v2.sql` 파일을 실행하여 데이터베이스 스키마를 생성합니다:
 
 ```bash
-mysql -u your_user -p < table_now_db_init_v1.sql
+mysql -u your_user -p < table_now_db_init_v2.sql
 ```
 
 또는 MySQL 클라이언트에서:
 
 ```sql
-source table_now_db_init_v1.sql;
+source table_now_db_init_v2.sql;
 ```
 
 **주의사항:**
@@ -37,31 +38,30 @@ source table_now_db_init_v1.sql;
 
 ### 2. 시드 데이터 삽입
 
-`table_now_db_seed_v2.sql` 파일을 실행하여 개발 및 테스트용 초기 데이터를 삽입합니다:
+`table_now_db_current_data_v2.sql` 파일을 실행하여 개발 및 테스트용 초기 데이터를 삽입합니다:
 
 ```bash
-mysql -u your_user -p < table_now_db_seed_v2.sql
+mysql -u your_user -p < table_now_db_current_data_v2.sql
 ```
 
 또는 MySQL 클라이언트에서:
 
 ```sql
-source table_now_db_seed_v2.sql;
+source table_now_db_current_data_v2.sql;
 ```
 
 **특징:**
 
 - `ON DUPLICATE KEY UPDATE`를 사용하여 중복 실행 시에도 안전합니다
-- 테스트용 고객, 식당, 메뉴, 옵션, 날씨, 예약, 결제 데이터가 포함되어 있습니다
+- 테스트용 고객, 식당, 메뉴, 옵션, 예약, 결제 데이터가 포함되어 있습니다
 
 ### 3. 데이터베이스 구조
 
-주요 테이블:
+주요 테이블 (9개):
 
 - `customer` - 고객 정보 (소셜 로그인 지원)
 - `store` - 식당 정보
 - `store_table` - 테이블 정보
-- `weather` - 날씨 정보 (식당별, 복합 PK, 연관 엔티티)
 - `reserve` - 예약 정보
 - `menu` - 메뉴 정보
 - `option` - 옵션 정보
@@ -73,13 +73,24 @@ source table_now_db_seed_v2.sql;
 
 ### 4. MySQL Workbench 사용 (선택사항)
 
-- `Workbench/` 폴더에 MySQL Workbench 모델 파일을 저장할 수 있습니다
-- 포워드 엔지니어링: Workbench에서 SQL 파일로 내보내기
-- 리버스 엔지니어링: 기존 데이터베이스에서 Workbench 모델 생성
+`Workbench/` 폴더에서 자세한 가이드를 참고하세요.
+
+**리버스 엔지니어링 (SQL → EER 다이어그램):**
+```
+File → Import → Reverse Engineer MySQL Create Script...
+→ table_now_db_init_v2.sql 선택
+```
+
+**포워드 엔지니어링 (EER 다이어그램 → SQL):**
+```
+File → Export → Forward Engineer SQL CREATE Script...
+```
+
+자세한 내용: `Workbench/README.md`
 
 ## 파일 설명
 
-### table_now_db_init_v1.sql
+### table_now_db_init_v2.sql
 
 - **기능**: 데이터베이스 초기화 스키마 (DDL)
 - **특징**:
@@ -91,16 +102,16 @@ source table_now_db_seed_v2.sql;
   - 비밀번호 변경 인증 (password_reset_auth 테이블)
   - FCM 푸시 알림 (device_token 테이블, device_id 포함)
 
-### table_now_db_seed_v2.sql
+### table_now_db_current_data_v2.sql
 
 - **기능**: 개발 및 테스트용 초기 데이터 삽입 (DML)
 - **포함 데이터**:
-  - 테스트 고객 3명 (local provider)
+  - 테스트 고객 10명 (local/google provider)
   - 식당 3개 (코코이찌방야, 아비꼬, 토모토 카레)
-  - 각 식당별 테이블 12개
+  - 각 식당별 테이블 12개+
   - 각 식당별 메뉴 및 옵션
-  - 날씨 데이터 (식당별)
   - 예약 및 결제 데이터
+  - FCM 토큰 데이터
 - **특징**: `ON DUPLICATE KEY UPDATE`를 사용하여 중복 실행 시에도 안전
 
 ### table_now_db_schema.dbml
@@ -116,11 +127,14 @@ source table_now_db_seed_v2.sql;
 
 - **1:N 관계**: 대부분의 테이블이 1:N 관계로 연결됨
 - **N:M 관계 해소**: `pay` 테이블이 `reserve`와 `menu`/`option`의 N:M 관계를 해소
-- **연관 엔티티**: 
-  - `pay`: N:M 관계 해소용
-  - `weather`: 독립적인 속성을 가진 관계 표현 (다른 릴레이션쉽이 직접 참조)
 
 자세한 관계 정보는 `docs/테이블_스펙시트_v_5_erd_02_반영.md`의 "테이블 간 관계" 섹션을 참고하세요.
+
+## 날씨 정보
+
+- ~~weather 테이블~~ (v2에서 삭제됨)
+- 날씨 정보는 **OpenWeatherMap API**를 통해 실시간으로 조회합니다
+- API 엔드포인트: `GET /api/weather/direct`, `GET /api/weather/direct/single`
 
 ## 주의사항
 
@@ -128,3 +142,10 @@ source table_now_db_seed_v2.sql;
 - 데이터베이스 초기화 스크립트 실행 시 기존 데이터가 모두 삭제됩니다
 - 외래키 제약조건으로 인해 테이블 삭제 순서가 중요합니다 (스크립트에 반영됨)
 - `device_token` 테이블의 `device_id`는 동일 기기에서 여러 사용자가 로그인할 수 있도록 UNIQUE 제약조건이 없습니다
+
+## 변경 이력
+
+| 날짜 | 버전 | 변경 내용 |
+|------|------|----------|
+| 2026-01-15 | v1 | 초기 생성 |
+| 2026-01-21 | v2 | weather 테이블 제거, reserve에서 weather_datetime 컬럼 삭제 |

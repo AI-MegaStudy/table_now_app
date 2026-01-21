@@ -1,11 +1,12 @@
-// Table Now Database Schema (DBML)
-// 기준: ERD_02 + 소셜 로그인 + 비밀번호 변경 인증 + FCM 토큰
-// 작성일: 2026-01-16
+// Table Now Database Schema (DBML) v2
+// 기준: ERD_02 + 소셜 로그인 + 비밀번호 변경 인증 + FCM 토큰 (weather 테이블 제거)
+// 작성일: 2026-01-21
 // 작성자: 김택권
+// 변경사항: weather 테이블 삭제, reserve에서 weather_datetime 컬럼 제거
 
 Project table_now_db {
   database_type: 'MySQL'
-  Note: 'Table Now 애플리케이션 데이터베이스 스키마'
+  Note: 'Table Now 애플리케이션 데이터베이스 스키마 v2'
 }
 
 // ============================================================
@@ -135,40 +136,15 @@ Table device_token {
 }
 
 // ============================================================
-// 6. weather (날씨)
-// ============================================================
-// 구분: 연관 엔티티(Associative Entity)
-// 설명: 식당별 특정 시점의 날씨 정보. store와 날씨 정보를 연결하며, 독립적인 속성을 보유. reserve(릴레이션쉽)가 직접 참조함
-Table weather {
-  store_seq int [pk, ref: > store.store_seq, note: '식당 번호']
-  weather_datetime datetime [pk, note: '날씨 기준 일시']
-  weather_type varchar(255) [not null, note: '날씨 상태']
-  weather_low double [not null, note: '최저 기온']
-  weather_high double [not null, note: '최고 기온']
-  
-  Indexes {
-    store_seq [name: 'idx_weather_store_seq']
-  }
-  
-  Note: '''
-    - PK는 (store_seq, weather_datetime) 복합키
-    - 각 식당별로 날씨 정보를 저장 (store : weather = 1:N)
-    - OpenWeatherMap API 호출 시 해당 식당의 store_lat, store_lng를 사용하여 날씨 정보 저장
-    - 독립적인 속성(weather_type, weather_low, weather_high)을 보유한 연관 엔티티
-    - 연관 엔티티로 분류하는 이유: N:M 관계를 해소하는 것이 아니라, 독립적인 속성을 가진 관계를 표현하며, 다른 릴레이션쉽(reserve)이 직접 참조하는 구조이기 때문
-  '''
-}
-
-// ============================================================
-// 7. reserve (예약)
+// 6. reserve (예약)
 // ============================================================
 // 구분: 릴레이션쉽(Relationship)
 // 설명: 예약 기본 정보 및 결제 상태
+// 변경사항 (v2): weather_datetime 컬럼 삭제 - 날씨는 OpenWeatherMap API로 실시간 조회
 Table reserve {
   reserve_seq int [pk, increment, note: '예약 번호']
   store_seq int [not null, ref: > store.store_seq, note: '식당 번호']
   customer_seq int [not null, ref: > customer.customer_seq, note: '고객 번호']
-  weather_datetime datetime [not null, note: '날씨 기준 일시']
   reserve_tables varchar(255) [not null, note: '테이블 번호 목록 (comma-separated)']
   reserve_capacity int [not null, note: '예약 인원']
   reserve_date datetime [not null, note: '예약 일시']
@@ -179,24 +155,17 @@ Table reserve {
   Indexes {
     store_seq [name: 'idx_reserve_store_seq']
     customer_seq [name: 'idx_reserve_customer_seq']
-    weather_datetime [name: 'idx_reserve_weather_datetime']
   }
   
   Note: '''
-    - weather_datetime: weather 테이블의 복합키 (store_seq, weather_datetime)를 참조하는 FK의 일부
-    - reserve 테이블의 FK는 (store_seq, weather_datetime) 복합키로 weather 테이블의 복합키를 참조
-    - reserve.store_seq와 weather.store_seq가 자동으로 일치해야 함 (FK 제약조건)
+    - v2 변경: weather_datetime 컬럼 삭제
+    - 날씨 정보는 OpenWeatherMap API를 통해 실시간으로 조회
+    - API: GET /api/weather/direct, GET /api/weather/direct/single
   '''
 }
 
-// reserve와 weather의 복합키 관계
-// Note: reserve 테이블의 (store_seq, weather_datetime)가 weather 테이블의 복합키 (store_seq, weather_datetime)를 참조
-// DBML에서는 복합키 관계를 명시적으로 표현하기 어려우므로, 각 컬럼별로 관계를 표현
-Ref: reserve.store_seq > weather.store_seq
-Ref: reserve.weather_datetime > weather.weather_datetime
-
 // ============================================================
-// 8. menu (메뉴)
+// 7. menu (메뉴)
 // ============================================================
 // 구분: 릴레이션쉽(Relationship)
 // 설명: 식당에 속한 메뉴 마스터 (store : menu = 1:N)
@@ -216,7 +185,7 @@ Table menu {
 }
 
 // ============================================================
-// 9. option (추가 메뉴)
+// 8. option (추가 메뉴)
 // ============================================================
 // 구분: 릴레이션쉽(Relationship)
 // 설명: 메뉴에 종속된 추가 메뉴(옵션)
@@ -236,7 +205,7 @@ Table option {
 }
 
 // ============================================================
-// 10. pay (결제)
+// 9. pay (결제)
 // ============================================================
 // 구분: 연관 엔티티(Associative Entity)
 // 설명: 예약 단위의 실제 결제 내역
@@ -257,3 +226,12 @@ Table pay {
     option_seq [name: 'idx_pay_option_seq']
   }
 }
+
+// ============================================================
+// [삭제됨] weather (날씨)
+// ============================================================
+// v2에서 삭제됨 (2026-01-21)
+// 사유: 날씨 정보를 DB에 저장하지 않고 OpenWeatherMap API를 통해 실시간으로 조회
+// API 엔드포인트:
+//   - GET /api/weather/direct (8일 예보)
+//   - GET /api/weather/direct/single (단일 날짜 예보)

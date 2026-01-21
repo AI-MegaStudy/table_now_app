@@ -30,6 +30,7 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
   double? _currentLon;
   bool _isLoadingLocation = false;
   String? _locationError;
+  bool _isPermissionDenied = false; // 권한 거부 여부 (설정 버튼 표시용)
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
     setState(() {
       _isLoadingLocation = true;
       _locationError = null;
+      _isPermissionDenied = false;
     });
 
     try {
@@ -85,7 +87,8 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
         }
         if (mounted) {
           setState(() {
-            _locationError = '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+            _locationError = '위치 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.';
+            _isPermissionDenied = true;
           });
         }
         await _fetchWeather(_defaultLat, _defaultLon);
@@ -112,9 +115,8 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
           }
           if (mounted) {
             setState(() {
-              _locationError = permission == LocationPermission.deniedForever
-                  ? '위치 권한이 영구적으로 거부되었습니다. 기본 위치(서울)를 사용합니다.'
-                  : '위치 권한이 거부되었습니다. 기본 위치(서울)를 사용합니다.';
+              _locationError = '위치 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.';
+              _isPermissionDenied = true;
             });
           }
           await _fetchWeather(_defaultLat, _defaultLon);
@@ -316,18 +318,42 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
                   borderRadius: mainSmallBorderRadius,
                   border: Border.all(color: Colors.orange.shade200),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: mainSmallSpacing,
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange.shade700),
-                    Expanded(
-                      child: Text(
-                        _locationError!,
-                        style: mainSmallTextStyle.copyWith(
-                          color: Colors.orange.shade700,
+                    Row(
+                      spacing: mainSmallSpacing,
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange.shade700),
+                        Expanded(
+                          child: Text(
+                            _locationError!,
+                            style: mainSmallTextStyle.copyWith(
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // 권한 거부 시 설정으로 이동 버튼
+                    if (_isPermissionDenied)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            await Geolocator.openAppSettings();
+                          },
+                          icon: Icon(Icons.settings, color: Colors.orange.shade700),
+                          label: Text(
+                            '설정에서 위치 권한 변경하기',
+                            style: TextStyle(color: Colors.orange.shade700),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.orange.shade700),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -556,3 +582,8 @@ class _WeatherForecastScreenState extends ConsumerState<WeatherForecastScreen> {
 //   - 상단 새로고침 버튼으로 데이터 갱신
 //   - Pull-to-refresh 기능 추가
 //   - 날씨 카드 UI 구현 (날짜, 아이콘, 온도 표시)
+//
+// 2026-01-21 김택권: 위치 권한 거부 시 설정 이동 버튼 추가
+//   - _isPermissionDenied 플래그 추가
+//   - 권한 거부 시 "설정에서 위치 권한 변경하기" 버튼 표시
+//   - Geolocator.openAppSettings() 호출로 앱 설정으로 이동

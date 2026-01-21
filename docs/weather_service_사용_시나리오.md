@@ -193,12 +193,18 @@ weather = weather_service.fetch_single_day_weather(
 ### `GET /api/weather/direct`
 - **사용 메서드**: `fetch_daily_forecast()`
 - **용도**: 8일치 예보 또는 특정 날짜부터 조회
-- **파라미터**: `lat`, `lon`, `start_date` (선택)
+- **파라미터**: 
+  - `lat` (float, 필수): 위도
+  - `lon` (float, 필수): 경도
+  - `start_date` (str, 선택): 시작 날짜 (YYYY-MM-DD 형식), 없으면 오늘 포함 8일치 모두 반환
 
 ### `GET /api/weather/direct/single`
 - **사용 메서드**: `fetch_single_day_weather()`
 - **용도**: 하루치 날씨만 조회
-- **파라미터**: `lat`, `lon`, `target_date` (선택)
+- **파라미터**: 
+  - `lat` (float, 필수): 위도
+  - `lon` (float, 필수): 경도
+  - `target_date` (str, 선택): 조회할 날짜 (YYYY-MM-DD 형식), 없으면 오늘 날짜
 
 ---
 

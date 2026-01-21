@@ -723,8 +723,8 @@ class _GoogleSignInButton extends StatelessWidget {
             // 로딩 중일 때 인디케이터, 아닐 때 Google 아이콘
             if (isLoading) ...[
               SizedBox(
-                width: 18,
-                height: 18,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(textColor),
@@ -737,8 +737,8 @@ class _GoogleSignInButton extends StatelessWidget {
                 isDark 
                   ? 'images/android_dark_rd_na@3x.png' 
                   : 'images/android_light_rd_na@3x.png',
-                width: 18,
-                height: 18,
+                width: 24,
+                height: 24,
                 fit: BoxFit.contain,
               ),
               const SizedBox(width: 12),
