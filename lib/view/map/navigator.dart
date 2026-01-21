@@ -5,6 +5,7 @@ import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/drawer.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/web_view.dart';
 import 'package:url_launcher/url_launcher.dart'; // 길찾기 외부 앱 호출용
 import 'package:table_now_app/model/store.dart';
@@ -49,13 +50,13 @@ class _BookingLocationScreenState
     return Scaffold(
       key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
       backgroundColor: p.background,
-      drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
-      // drawer: const ProfileDrawer(),
+      // drawer: const AppDrawer(),
+      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
       appBar: CommonAppBar(
         title: Text(
-          '매장 위치 확인',
+          '매장위치 확인',
           style: mainAppBarTitleStyle.copyWith(
-            color: p.textPrimary,
+            color: p.textOnPrimary,
           ),
         ),
         actions: [
@@ -109,7 +110,6 @@ class _BookingLocationScreenState
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 18),
                   Text(
                     s.store_description ?? "매장 정보",
                     style: TextStyle(
@@ -118,7 +118,7 @@ class _BookingLocationScreenState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 18),
+
                   Text(
                     s.store_address ?? "주소 정보 없음",
                     style: TextStyle(
@@ -136,11 +136,8 @@ class _BookingLocationScreenState
                       icon: Icon(Icons.near_me),
                       label: Text("Google 지도로 길찾기"),
                       style: OutlinedButton.styleFrom(
-                        //    foregroundColor: Colors.blue,
-                        //foregroundColor: Colors.orange,
                         foregroundColor: p.primary,
                         side: const BorderSide(
-                          //color: Colors.blue,
                           color: Colors.orange,
                         ),
                       ),
