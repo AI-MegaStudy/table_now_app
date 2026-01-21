@@ -34,7 +34,6 @@ final success = await ref
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
 
     final p = context.palette;
-    test();
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
@@ -175,37 +174,10 @@ final success = await ref
                               context,
                               'image', // https://en.komoju.com/wp-content/uploads/2023/09/Toss-logo-1.png
                               '결제 하기',
-                              paymentValue.total_payment,
+                              paymentValue,
                               p,
                             ),
 
-                            // paymentCardType(context, 'image', '신용 첵크카드', paymentValue.total_payment),
-                            // paymentCardType(context, 'image', '카카오 페이', paymentValue.total_payment),
-                            // paymentCardType(context, 'image', '네이버 페이', paymentValue.total_payment),
-
-                            // // SizedBox(
-                            //   width: 350,
-                            //   child: ElevatedButton.icon(
-                            //     onPressed: () {
-                            //       //
-                            //     },
-
-                            //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
-                            //     // icon: Icon(Icons.card_giftcard),
-                            //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('토스 페이')]),
-                            //   ),
-                            // ),
-                            // SizedBox(
-                            //   width: 350,
-                            //   child: ElevatedButton.icon(
-                            //     onPressed: () {
-                            //       //
-                            //     },
-                            //     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
-                            //     // icon: Icon(Icons.card_giftcard),
-                            //     label: Row(spacing: 5, children: [Icon(Icons.card_giftcard), Text('신용 첵크카드')]),
-                            //   ),
-                            // ),
                           ],
                         ),
                       ),
@@ -257,7 +229,7 @@ final success = await ref
     BuildContext context,
     String imgUrl,
     String cardName,
-    int totalPayment,
+    PaymentListAsyncNotifier paymentValue,
     p,
   ) {
     final prefix = 'toss-$reserve_seq';
@@ -265,7 +237,7 @@ final success = await ref
       paymentMethod: '카드',
       orderId: prefix, //'tosspaymentsFlutter_1768742871169',
       orderName: '예약번호: ${prefix}',
-      amount: totalPayment,
+      amount: paymentValue.total_payment,
       // customerName: customerName,
       // customerEmail: customerEmail,
       successUrl: Constants.success,
@@ -274,7 +246,11 @@ final success = await ref
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
       child: ElevatedButton.icon(
-        onPressed: () {
+        onPressed: () async {
+
+          /// 카드 결제 전 Data를 추가한다.
+          await paymentValue.purchase();
+
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
           ) {
@@ -306,105 +282,4 @@ final success = await ref
     );
   }
 
-  // === Functions
-  void test() {
-    // Map<String, dynamic> reserveData = {
-    //   "reserve": {
-    //     "store_seq": 1,
-    //     "customer_seq": 1,
-    //     "reserve_capacity": "4",
-    //     "reserve_date": "2026-22-16T00:00:00",
-    //   },
-
-    // };
-
-    
-
-    // Map<String, dynamic> menuData = {
-    //   "menus": {
-    //     "1": {
-    //       "count": 2,
-    //       "options": {"1": 1, "2": 3},
-    //       "date": "1111"
-    //     },
-    //     "1": {
-    //       "count": 2,
-    //       "options": {"1": 1, "2": 3},
-    //       "date": "2222"
-    //     },
-    //     "2": {"count": 1, "options": {}}
-        
-    //   },
-    // };
-
-// {
-//   "reserve": {
-//     "store_seq" : 1,
-//     "customer_seq": 1,
-//     "reserve_capacity": "4",
-//     "reserve_tables" : "1,2,3",
-//     "weather_datetime": "2026-01-19 00:00:00",
-//     "reserve_date": "2026-01-16 00:00:00",
-//     "payment_key" : "payment_key",
-//     "payment_status" : "완료"
-//   },
-//   "items": {
-   
-// "menus": {
-// "1": {
-//           "count": 2,
-//           "options": {"1": {"count":1,"price":3000}, "2": {"count":1,"price":500}},
-//           "price": 10000,
-//           "date": "2026-01-20 02:00:00"
-//         },
-//         "2": {
-//           "count": 2,
-//           "options": {"1": {"count":1,"price":3000}, "2": {"count":3,"price":500}},
-//           "price": 20000,
-//           "date": "2026-01-20 02:00:20"
-//         },
-//         "3": {
-//           "count": 1, 
-//           "options": {}, 
-//           "price": 8000,
-//           "date": "2026-01-20 02:00:30"
-//         }
-        
-//       }
-//     }
-  
-// }
-
-
-    // menuData['menus'].forEach((m_id, value) {
-    //   print('${m_id},${value}');
-    // });
-
-    //  Map<String, dynamic> menuData2 = {
-    //   "menus": [
-    //     {
-    //       "menu_id": 1,
-    //         "count": 2,
-    //       "options": {"1": 1, "2": 3},
-    //       "date": '1111'
-    //     },
-    //     {
-    //       "menu_id": 1,
-    //       "count": 2,
-    //       "options": {"1": 1, "2": 3},
-    //       "date": '2222'
-    //     },
-
-    //   ]
-    // };
-      
-  
-
-    
-
-
-
-
-
-  }
 }
