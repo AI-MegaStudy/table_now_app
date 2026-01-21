@@ -82,29 +82,6 @@ class _Dev_04State extends ConsumerState<Dev_04> {
                       ),
                     ),
                   ),
-                  Center(
-                    child: SizedBox(
-                      width: mainButtonMaxWidth,
-                      height: mainButtonHeight,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ReservationCompleteScreen(),
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: p.divider),
-                        ),
-                        child: Text(
-                          'Reservation Complete',
-                          style: mainMediumTitleStyle.copyWith(
-                            color: p.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
