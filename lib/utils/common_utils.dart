@@ -1,18 +1,14 @@
-import 'dart:convert';
-
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 
+// AES로 encrypt된것을 Decrypt하는 펑션. 
 class MyCrypt {
   
   static MyCrypt mycrypt = MyCrypt();
 
-
   // 복호화
-  // k: FAF98C06EF4C39584964750C2DE67006
-  // i: 5468697320697320616E204956343536
   String ase_decrypt(String k, String i) {
     
     try{
@@ -26,8 +22,5 @@ class MyCrypt {
       debugPrint('Decrypt ERROR: $error');
       return '';
     }
-   
-  }
-
-  
+  }  
 }

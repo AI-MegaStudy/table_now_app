@@ -17,7 +17,7 @@ const int dormantAccountDays = 180;
 /// Windows + Android 에뮬레이터 사용자는 자신의 호스트 IP를 설정하세요
 /// 예: 'http://192.168.1.50:8000'
 /// null이면 플랫폼에 따라 자동 선택 (Android: 10.0.2.2, iOS: 127.0.0.1)
-const String? customApiBaseUrl = null;
+const String? customApiBaseUrl = 'http://172.16.250.187:8000';
 //윈도우 사용자는 윗줄 주석 처리 하고 아래 줄 주석 해제하여 자신의 호스트 IP를 설정하세요.
 // const String customApiBaseUrl = 'http://192.168.83.7:8000';
 // const String customApiBaseUrl = 'http://cheng80.myqnapcloud.com:18000';

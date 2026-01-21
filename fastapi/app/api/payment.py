@@ -26,45 +26,33 @@ class Payment(BaseModel):
     pay_amount: int
     created_at: datetime
 
-###
-# {
-#   "reserve": {
-#     "store_seq" : 1,
-#     "customer_seq": 1,
-#     "reserve_capacity": "4",
-#     "reserve_tables" : "1,2,3",
-#     "weather_datetime": "2026-01-19 00:00:00",
-#     "reserve_date": "2026-01-16 00:00:00",
-#     "payment_key" : "payment_key",
-#     "payment_status" : "완료"
-#   },
-#   "items": {
-   
-# "menus": {
-# "1": {
-#           "count": 2,
-#           "options": {"1": {"count":1,"price":3000}, "2": {"count":1,"price":500}},
-#           "price": 10000,
-#           "date": "2026-01-20 02:00:00"
-#         },
-#         "2": {
-#           "count": 2,
-#           "options": {"1": {"count":1,"price":3000}, "2": {"count":3,"price":500}},
-#           "price": 20000,
-#           "date": "2026-01-20 02:00:20"
-#         },
-#         "3": {
-#           "count": 1, 
-#           "options": {}, 
-#           "price": 8000,
-#           "date": "2026-01-20 02:00:30"
-#         }
+
+
+# ============================================
+# Purchase 수정 (Update)
+# ============================================
+@router.post("/purchase/update")
+async def update_one(data:dict):
+    try:
+        conn = connect_db()
+        curs = conn.cursor()
         
-#       }
-#     }
-  
-# }
-###
+        sql = """
+            UPDATE reserve 
+            SET payment_key=%s, payment_status=%s     
+            WHERE reserve_seq=%s
+        """
+        curs.execute(sql, (data['payment_key'], data['payment_status'], data['reserve_seq']))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"result": "OK"}
+    except Exception as e:
+        return {"result": "Error", "errorMsg": str(e)}
+
+
+
 @router.post("/purchase")
 async def create_purchase(reserve:dict,items: dict):
 
@@ -100,42 +88,12 @@ async def create_purchase(reserve:dict,items: dict):
         0,
         created_at
     ))
-    print(storeTableData)
-
-  
-       
-    
-    ## Reserve를 넣어야 함.
-    # reserveQuery = """
-    #     insert into reserve(
-    #         store_seq,customer_seq,
-    #         weather_datetime, reserve_tables,
-    #         reserve_capacity,reserve_date,created_at
-    #         payment_key,payment_status
-    #     ) values(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    # """
-
-
-    # for m_id, value in items['menus'].items():        
-    #     data.append((2,reserve['store_seq'],m_id,None,value['count'],value['price'],value['date']))
-    #     if len(value['options']) > 0:
-    #         for k, v in value['options'].items():
-    #             data.append((2,reserve['store_seq'],m_id,k,v['count'],v['price'],value['date']))
-
-    
-
-
-    # print(q)
-    # print('=================')
-    # print(reserveData)
-    # print('=================')
-    # print(data)
-
 
     conn = connect_db()
     try:
         curs = conn.cursor()
 
+        ### Reserve 추가하기
         curs.execute("""
         insert into reserve(
             store_seq,customer_seq,
@@ -145,8 +103,8 @@ async def create_purchase(reserve:dict,items: dict):
         ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """,reserveData)
         inserted_id = curs.lastrowid
-        print(inserted_id)
         
+        ### menu 추가하기전 데이터 만들기
         for m_id, value in items['menus'].items():        
             data.append((inserted_id,reserve['store_seq'],m_id,None,value['count'],value['price'],value['date']))
             if len(value['options']) > 0:
@@ -154,7 +112,7 @@ async def create_purchase(reserve:dict,items: dict):
                     data.append((inserted_id,reserve['store_seq'],m_id,k,v['count'],v['price'],value['date']))
 
 
-    
+        ### store table 추가
         curs.executemany("""
             insert into store_table(
                 store_seq,store_table_name,
@@ -163,16 +121,19 @@ async def create_purchase(reserve:dict,items: dict):
             ) values (%s,%s,%s,%s,%s)
         """,storeTableData)
 
-       
-
+        ### pay table 추가
         curs.executemany("""
            insert into pay(reserve_seq,store_seq,menu_seq,option_seq,pay_quantity,pay_amount,created_at) 
                     values (%s,%s,%s,%s,%s,%s,%s)
         """,data)
+
         conn.commit()
-        returnData = {'results':'ok'}
+        returnData = {"results": {"reserve_seq":inserted_id}}
+    
     except Exception as e:
+        ### commit실패시 rollback
         conn.rollback()
+
         import traceback
         error_msg = str(e)
         traceback.print_exc()
@@ -181,8 +142,6 @@ async def create_purchase(reserve:dict,items: dict):
         conn.close()
     
     return returnData
-
-   
 
 @router.get("/")
 async def select_pays():
@@ -482,3 +441,4 @@ async def delete_pay(id: int):
 #   - ecrypt/decrypt 관련 소스 정리
 #   - flutter에 키/IV를 통해 decrypt되게 설정. 
 #   - db에서 값들을 받아아야 하나 현재는 하드코딩으로 처리
+#   - purchase 추가 : 데이터를 받아서 각 테이블에 insert
