@@ -22,10 +22,15 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>(); //
+      GlobalKey<ScaffoldState>();
   GoogleMapController? _mapController;
-
   LatLng? _userLocation;
+
+  // 기본 좌표: 서울 시청 (미국/프랑스행 방지용)
+  final LatLng _defaultPos = const LatLng(
+    37.5665,
+    126.9780,
+  );
 
   @override
   void initState() {
@@ -37,50 +42,77 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     try {
       final pos = await LocationUtil.getCurrentLocation();
       if (!mounted) return;
-      setState(() {
-        _userLocation = LatLng(pos.latitude, pos.longitude);
-      });
 
-      _moveToCenter();
+      // [핵심] 위경도가 정확히 한국 범위 내에 있을 때만 업데이트 (0,0 방지)
+      if (pos.latitude > 1.0 && pos.longitude > 1.0) {
+        setState(() {
+          _userLocation = LatLng(
+            pos.latitude,
+            pos.longitude,
+          );
+        });
+      }
     } catch (e) {
       debugPrint("위치 획득 실패: $e");
-      _moveToCenter();
     }
   }
 
-  void _moveToCenter() {
+  void _applyBounds() {
     if (_mapController == null) return;
 
-    List<LatLng> points = [];
+    final List<LatLng> points = [];
 
-    if (_userLocation != null) {
+    // 1. 내 위치 추가 (절대 0,0이 아닐 때만)
+    if (_userLocation != null &&
+        _userLocation!.latitude > 1.0) {
       points.add(_userLocation!);
     }
 
+    // 2. 매장 위치 추가 (0,0 제외)
     for (var s in widget.storeList) {
-      if (s.store_lat != 0 && s.store_lng != 0) {
+      if (s.store_lat > 1.0 && s.store_lng > 1.0) {
         points.add(LatLng(s.store_lat, s.store_lng));
       }
     }
 
-    if (points.isEmpty) return;
+    // 3. 좌표가 하나도 없으면 서울로 이동 후 종료
+    if (points.isEmpty) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(_defaultPos, 14),
+      );
+      return;
+    }
 
-    double avgLat =
-        points
-            .map((p) => p.latitude)
-            .reduce((a, b) => a + b) /
-        points.length;
-    double avgLng =
-        points
-            .map((p) => p.longitude)
-            .reduce((a, b) => a + b) /
-        points.length;
+    // 4. 좌표가 하나면 해당 지점으로
+    if (points.length == 1) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(points.first, 15.5),
+      );
+    }
+    // 5. 여러 개면 바운즈 계산
+    else {
+      final latitudes = points
+          .map((p) => p.latitude)
+          .toList();
+      final longitudes = points
+          .map((p) => p.longitude)
+          .toList();
 
-    LatLng center = LatLng(avgLat, avgLng);
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          latitudes.reduce((a, b) => a < b ? a : b),
+          longitudes.reduce((a, b) => a < b ? a : b),
+        ),
+        northeast: LatLng(
+          latitudes.reduce((a, b) => a > b ? a : b),
+          longitudes.reduce((a, b) => a > b ? a : b),
+        ),
+      );
 
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngZoom(center, 14.5),
-    );
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 80),
+      );
+    }
   }
 
   @override
@@ -88,10 +120,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final p = context.palette;
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
-      // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      drawer: const ProfileDrawer(),
       appBar: CommonAppBar(
         title: Text(
           '지역 매장 지도',
@@ -105,15 +136,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               Icons.account_circle,
               color: p.textOnPrimary,
             ),
-            onPressed: () {
-              _scaffoldKey.currentState?.openDrawer();
-            },
+            onPressed: () =>
+                _scaffoldKey.currentState?.openDrawer(),
           ),
         ],
       ),
       body: GoogleMap(
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(37.5665, 126.9780),
+        initialCameraPosition: CameraPosition(
+          target: _defaultPos,
           zoom: 12,
         ),
         markers: _buildMarkers(),
@@ -121,26 +151,35 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         myLocationButtonEnabled: false,
         onMapCreated: (controller) {
           _mapController = controller;
-
+          // 약간의 지연을 주어 지도가 완전히 로드된 후 이동
           Future.delayed(
-            const Duration(milliseconds: 500),
-            () => _moveToCenter(),
+            const Duration(milliseconds: 600),
+            () {
+              if (mounted) _applyBounds();
+            },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          // [해결] 위치 정보를 새로 가져올 때까지 기다림
           await _getUserLocation();
-          _moveToCenter();
+
+          // 위치를 가져온 후 즉시 applyBounds 실행
+          if (mounted) _applyBounds();
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("중심 위치로 이동했습니다."),
+              content: Text("주변 매장 위치로 화면을 맞춥니다."),
               duration: Duration(seconds: 1),
             ),
           );
         },
         backgroundColor: p.primary,
-        child: Icon(Icons.my_location, color: Colors.white),
+        child: const Icon(
+          Icons.my_location,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -160,7 +199,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
 
     for (var s in widget.storeList) {
-      if (s.store_lat != 0 && s.store_lng != 0) {
+      if (s.store_lat > 1.0 && s.store_lng > 1.0) {
         markers.add(
           Marker(
             markerId: MarkerId(s.store_seq.toString()),
