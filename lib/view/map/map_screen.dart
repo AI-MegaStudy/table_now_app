@@ -26,7 +26,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
 
-  // 기본 좌표: 서울 시청 (미국/프랑스행 방지용)
   final LatLng _defaultPos = const LatLng(
     37.5665,
     126.9780,
@@ -43,7 +42,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final pos = await LocationUtil.getCurrentLocation();
       if (!mounted) return;
 
-      // [핵심] 위경도가 정확히 한국 범위 내에 있을 때만 업데이트 (0,0 방지)
       if (pos.latitude > 1.0 && pos.longitude > 1.0) {
         setState(() {
           _userLocation = LatLng(
@@ -62,20 +60,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     final List<LatLng> points = [];
 
-    // 1. 내 위치 추가 (절대 0,0이 아닐 때만)
     if (_userLocation != null &&
         _userLocation!.latitude > 1.0) {
       points.add(_userLocation!);
     }
 
-    // 2. 매장 위치 추가 (0,0 제외)
     for (var s in widget.storeList) {
       if (s.store_lat > 1.0 && s.store_lng > 1.0) {
         points.add(LatLng(s.store_lat, s.store_lng));
       }
     }
 
-    // 3. 좌표가 하나도 없으면 서울로 이동 후 종료
     if (points.isEmpty) {
       _mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(_defaultPos, 14),
@@ -83,14 +78,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       return;
     }
 
-    // 4. 좌표가 하나면 해당 지점으로
     if (points.length == 1) {
       _mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(points.first, 15.5),
       );
-    }
-    // 5. 여러 개면 바운즈 계산
-    else {
+    } else {
       final latitudes = points
           .map((p) => p.latitude)
           .toList();
@@ -151,7 +143,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         myLocationButtonEnabled: false,
         onMapCreated: (controller) {
           _mapController = controller;
-          // 약간의 지연을 주어 지도가 완전히 로드된 후 이동
+
           Future.delayed(
             const Duration(milliseconds: 600),
             () {
@@ -162,10 +154,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // [해결] 위치 정보를 새로 가져올 때까지 기다림
           await _getUserLocation();
 
-          // 위치를 가져온 후 즉시 applyBounds 실행
           if (mounted) _applyBounds();
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -176,10 +166,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         },
         backgroundColor: p.primary,
-        child: const Icon(
-          Icons.my_location,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.my_location, color: Colors.white),
       ),
     );
   }
