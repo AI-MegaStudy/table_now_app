@@ -152,10 +152,10 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   // 유저의 payments를 전부 가져온다.
   Future<void> fetchData(int id) async {
     // Get Data from Backend
-    if (_reserve_seq != id) {
+    // if (_reserve_seq != id) {
       try {
-        _total_payment = 0;
-        _reserve_seq = id;
+        // _total_payment = 0;
+        // _reserve_seq = id;
 
         final uri = Uri.parse('$url/api/pay/select_group_by_reserve/${id}');
         final response = await http.get(uri);
@@ -174,7 +174,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
       } catch (error, stackTrace) {
         state = AsyncValue.error(error, stackTrace);
       }
-    }
+    // }
   }
 
   // id가 있다면 특정 payment만 가져온다.
@@ -203,7 +203,10 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
         if(results == "Error") {
           throw Exception("지불 실패(2): ${response.statusCode}");
         }else{
+          print('${results['reserve_seq']}');
           _reserve_seq = results['reserve_seq'];
+          print('================== xxxxx $_reserve_seq');
+
           _isPurchaseInsertSuccess = true;
         }
       
@@ -217,9 +220,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   Future<bool> purchaseUpdate(Map<String,dynamic> data) async {
     try{
       data['reserve_seq'] = _reserve_seq;
-      print(data);
-      print('============');
-      print(json.encode(data));
+      print("======================= $_reserve_seq");
       // reserve_seq를 업데이트 시켜야 함. 
       //payment_key:str, payment_status:str, reserve_seq:int
        final response = await http.post(

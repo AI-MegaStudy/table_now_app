@@ -32,7 +32,7 @@ class Payment(BaseModel):
 # Purchase 수정 (Update)
 # ============================================
 @router.post("/purchase/update")
-async def update_one(payment_key:str, payment_status:str, reserve_seq:int):
+async def update_one(data:dict):
     try:
         conn = connect_db()
         curs = conn.cursor()
@@ -42,7 +42,7 @@ async def update_one(payment_key:str, payment_status:str, reserve_seq:int):
             SET payment_key=%s, payment_status=%s     
             WHERE reserve_seq=%s
         """
-        curs.execute(sql, (payment_key, payment_status, reserve_seq))
+        curs.execute(sql, (data['payment_key'], data['payment_status'], data['reserve_seq']))
         
         conn.commit()
         conn.close()
