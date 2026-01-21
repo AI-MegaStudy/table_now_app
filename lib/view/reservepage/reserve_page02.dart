@@ -50,7 +50,7 @@ class ReservePage02 extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: GridView.builder(
-              itemCount: state.tableModelList.length ?? 0, // 매장 테이블 수
+              itemCount: state.tableModelList.length, // 매장 테이블 수
               gridDelegate:
                   const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 5, // 최대 15개 → 5 x 3
@@ -66,6 +66,7 @@ class ReservePage02 extends ConsumerWidget {
 
                 final int tableSeq = tableInfo.store_table_seq;
                 final bool isReserved = reservedTables.containsKey(tableSeq.toString());
+                final bool isSelected = tableInfo.store_table_seq.toString() == state.selectedTable;
                 // //예약된 테이블들
                 // final bool isReserved =
                 //     reservedTables.containsKey(tableSeq);
@@ -80,10 +81,11 @@ class ReservePage02 extends ConsumerWidget {
                   name: tableName,
                   capacity: capacity,
                   isReserved: isReserved,
+                  isSelected: isSelected,
                   onTap: () {
-                    if (!isReserved) {
-                      print('선택된 테이블: $tableSeq');
-                    }
+                    List<String> selectedTableList = [];
+                    selectedTableList.add(tableSeq.toString());
+                    ref.read(reservePage02NotifierProvider.notifier).selectTable(selectedTableList);
                   },
                 );
               },
@@ -102,6 +104,7 @@ class TableItem extends StatelessWidget {
   final String name;
   final int capacity;
   final bool isReserved;
+  final bool isSelected;
   final VoidCallback onTap;
 
   const TableItem({
@@ -109,6 +112,7 @@ class TableItem extends StatelessWidget {
     required this.name,
     required this.capacity,
     required this.isReserved,
+    required this.isSelected,
     required this.onTap,
   });
 
@@ -117,14 +121,12 @@ class TableItem extends StatelessWidget {
     final double size = 48 + (capacity * 6); // 인원수 → 크기
 
     return GestureDetector(
-      onTap: isReserved ? null : (){
-
-      },
+      onTap: isReserved ? null : onTap,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isReserved ? Colors.grey.shade400 : Colors.green,
+          color: isReserved ? Colors.grey.shade400 : isSelected ? Colors.orange : Colors.green,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.black12),
         ),

@@ -8,7 +8,7 @@ import 'package:table_now_app/model/store_table.dart';
 
 class ReservePage02State{
   final List tableModelList;
-  final String? selectedTable;
+  final List<String>? selectedTable;
 
   ReservePage02State({
     required this.tableModelList,
@@ -16,7 +16,7 @@ class ReservePage02State{
   });
 
   ReservePage02State copyWith({
-    String? selectedTable
+    List<String>? selectedTable
   }){
     return ReservePage02State(
       tableModelList: tableModelList,
@@ -61,6 +61,12 @@ class ReservePage02Notifier extends AsyncNotifier<ReservePage02State>{
       print(stack);
       throw Exception("스토어 로딩 에러: $e");
     }
+  }
+
+  void selectTable(List<String> seqList) {
+    state = AsyncValue.data(
+      state.value!.copyWith(selectedTable: seqList),
+    );
   }
 }
 
