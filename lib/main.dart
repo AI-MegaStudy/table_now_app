@@ -30,9 +30,30 @@ Future<void> main() async {
   final storage = GetStorage();
   final autoLoginEnabled = storage.read<bool>(storageKeyAutoLogin) ?? false;
 
+  // 자동 로그인이 비활성화되어 있으면 로그인 정보 삭제
   if (!autoLoginEnabled) {
-    // 자동 로그인이 비활성화되어 있으면 로그인 정보 삭제
-    storage.remove(storageKeyCustomer);
+    try {
+      await storage.remove(storageKeyCustomer);
+      if (kDebugMode) {
+        print('🗑️ 로그인 정보 삭제 완료 (자동 로그인 비활성화)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ 로그인 정보 삭제 실패: $e');
+      }
+    }
+  }
+
+  // 앱 시작 시 임시 주문 데이터 정리
+  try {
+    await storage.remove(storageKeyOrder);
+    if (kDebugMode) {
+      print('🗑️ order 데이터 삭제 완료');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ order 데이터 삭제 실패: $e');
+    }
   }
 
   // Get setting data One time when it is loaded
