@@ -36,12 +36,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🗺️ [MapScreen] initState - 위치 가져오기 시작');
     _getUserLocation();
   }
 
   Future<void> _getUserLocation() async {
     try {
+      debugPrint('🗺️ [MapScreen] _getUserLocation 호출됨');
       final pos = await LocationUtil.getCurrentLocation();
+      debugPrint('🗺️ [MapScreen] 위치 획득 성공: ${pos.latitude}, ${pos.longitude}');
       if (!mounted) return;
 
       if (pos.latitude > 1.0 && pos.longitude > 1.0) {
@@ -51,6 +54,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             pos.longitude,
           );
         });
+        debugPrint('🗺️ [MapScreen] _userLocation 설정 완료: $_userLocation');
       }
     } catch (e) {
       debugPrint("위치 획득 실패: $e");
@@ -263,9 +267,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return markers;
   }
 
-  void _showDetailSheet(Store s) {
+  Future<void> _showDetailSheet(Store s) async {
     String? distanceString;
     debugPrint('🗺️ [MapScreen] _userLocation: $_userLocation');
+    
+    // 위치가 없으면 다시 가져오기 시도
+    if (_userLocation == null) {
+      debugPrint('🗺️ [MapScreen] 위치가 null이므로 다시 가져오기 시도');
+      try {
+        final pos = await LocationUtil.getCurrentLocation();
+        if (mounted && pos.latitude > 1.0 && pos.longitude > 1.0) {
+          setState(() {
+            _userLocation = LatLng(pos.latitude, pos.longitude);
+          });
+          debugPrint('🗺️ [MapScreen] 위치 재획득 성공: $_userLocation');
+        }
+      } catch (e) {
+        debugPrint('🗺️ [MapScreen] 위치 재획득 실패: $e');
+      }
+    }
+    
+    // 위치가 있으면 거리 계산
     if (_userLocation != null) {
       double meters = Geolocator.distanceBetween(
         _userLocation!.latitude,
@@ -278,9 +300,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           : "${meters.toInt()}m";
       debugPrint('🗺️ [MapScreen] 거리 계산: $meters m -> $distanceString');
     } else {
-      debugPrint('🗺️ [MapScreen] _userLocation이 null이라 거리 계산 안함');
+      debugPrint('🗺️ [MapScreen] 위치를 가져올 수 없어 거리 계산 안함');
     }
+    
     debugPrint('🗺️ [MapScreen] StoreDetailSheet에 전달: distance=$distanceString');
+    if (!mounted) return;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

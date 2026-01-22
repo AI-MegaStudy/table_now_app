@@ -6,6 +6,7 @@ import 'package:table_now_app/view/auth/auth_screen.dart';
 
 import '../../../custom/custom_text.dart';
 import '../../../vm/auth_notifier.dart';
+import '../../../vm/theme_notifier.dart';
 import '../../../utils/customer_storage.dart';
 import '../../../utils/reservation_number.dart';
 import '../../../theme/app_colors.dart';
@@ -14,6 +15,7 @@ import '../../../model/reserve.dart';
 import '../../../model/store.dart';
 import '../auth/profile_edit_screen.dart';
 import '../weather/weather_forecast_screen.dart';
+import '../home.dart';
 import '../../custom/util/navigation/custom_navigation_util.dart';
 
 /// 프로필 드로워
@@ -158,18 +160,24 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
       backgroundColor: p.cardBackground,
       child: Column(
         children: [
-          _buildTopHeader(context, user, p),
+          _buildTopHeader(context, user, ref, p),
           _buildProfileEditButton(context, ref, p),
           _buildWeatherButton(context, p),
           Expanded(child: _buildReservationSection(p)),
+          _buildHomeButton(context, p),
           _buildLogoutButton(context, ref, p),
         ],
       ),
     );
   }
 
-  /// 상단 헤더 (사용자 정보)
-  Widget _buildTopHeader(BuildContext context, dynamic user, dynamic p) {
+  /// 상단 헤더 (사용자 정보 + 테마 스위치)
+  Widget _buildTopHeader(BuildContext context, dynamic user, WidgetRef ref, dynamic p) {
+    // 현재 다크모드 여부 확인
+    final isDarkMode = ref
+        .read(themeNotifierProvider.notifier)
+        .isDarkMode(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -227,6 +235,74 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
                 fontWeight: FontWeight.bold,
                 color: p.textOnPrimary,
               ),
+            const SizedBox(height: 16),
+            // 구분선
+            Divider(
+              color: p.textOnPrimary.withOpacity(0.3),
+              thickness: 1,
+            ),
+            const SizedBox(height: 12),
+            // 테마 변경 스위치 (헤더 안에)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.palette_outlined,
+                      color: p.textOnPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    CustomText(
+                      '테마 변경',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: p.textOnPrimary,
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.light_mode,
+                      size: 20,
+                      color: isDarkMode
+                          ? p.textOnPrimary.withOpacity(0.5)
+                          : const Color(0xFFFFF9C4),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: isDarkMode,
+                      onChanged: (value) async {
+                        // 드로워가 닫히기 전에 Scaffold 참조 저장
+                        final scaffoldState = Scaffold.of(context);
+                        
+                        // 테마 변경
+                        ref.read(themeNotifierProvider.notifier).toggleTheme();
+                        
+                        // 테마 변경 후 드로워가 닫히면 다시 열기
+                        await Future.delayed(const Duration(milliseconds: 150));
+                        if (mounted && !scaffoldState.isDrawerOpen) {
+                          scaffoldState.openEndDrawer();
+                        }
+                      },
+                      activeThumbColor: p.textOnPrimary,
+                      activeColor: p.textOnPrimary.withOpacity(0.3),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.dark_mode,
+                      size: 20,
+                      color: isDarkMode
+                          ? p.accent
+                          : p.textOnPrimary.withOpacity(0.5),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -288,6 +364,36 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
           icon: Icon(Icons.wb_sunny, color: p.primary),
           label: CustomText(
             '주간 날씨 보기',
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: p.primary,
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: p.primary),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Home으로 가기 버튼
+  Widget _buildHomeButton(BuildContext context, dynamic p) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop();
+            CustomNavigationUtil.to(context, const Home());
+          },
+          icon: Icon(Icons.home, color: p.primary),
+          label: CustomText(
+            'Home으로 가기',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: p.primary,
