@@ -15,6 +15,9 @@ class ReservePage01State {
   final List<String> reservedTimes;
   final List<String> reservedTables;
   final Map<String, dynamic> tablesData;
+  /// 현재 고객의 예약 정보 (날짜 -> 시간 리스트)
+  /// 동일 인물의 동일 시간 예약 방지에 사용
+  final Map<String, List<String>> customerReservations;
   final String name;
   final String phone;
 
@@ -29,6 +32,7 @@ class ReservePage01State {
     required this.reservedTimes,
     required this.reservedTables,
     required this.tablesData,
+    required this.customerReservations,
     required this.name,
     required this.phone,
     required this.focusedDay,
@@ -48,6 +52,7 @@ class ReservePage01State {
       reservedTimes: reservedTimes,
       reservedTables: reservedTables,
       tablesData: tablesData,
+      customerReservations: customerReservations,
       name: name,
       phone: phone,
       focusedDay: focusedDay ?? this.focusedDay,
@@ -71,7 +76,8 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
     reservedDates: [],
     reservedTimes: [],
     reservedTables: [],
-    tablesData: {}
+    tablesData: {},
+    customerReservations: {},
   );
   }
 
@@ -137,6 +143,10 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
 
       //{'2025-01-15': { '12:00:00': {'1': ['1','4']}} 형식으로 만들기
       Map<String, Map<String, Map<String, List<String>>>> map = {};
+      
+      // 현재 고객의 예약 정보 (동일 인물 동일 시간 예약 방지용)
+      // {'2025-01-15': ['12:00', '14:00']} 형식
+      Map<String, List<String>> customerReservationsMap = {};
 
       for (int i = 0; i < reserveData.length; i++) {
         final reserve = reserveData[i];
@@ -144,6 +154,14 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
         final rdate = reserve.reserve_date.split('T')[0];
         final rtime = reserve.reserve_date.split('T')[1].substring(0, 5);
         final tables = reserve.reserve_tables.split(',');
+
+        // 현재 고객의 예약인 경우 customerReservationsMap에 추가
+        if (reserve.customer_seq == cseq) {
+          customerReservationsMap.putIfAbsent(rdate, () => []);
+          if (!customerReservationsMap[rdate]!.contains(rtime)) {
+            customerReservationsMap[rdate]!.add(rtime);
+          }
+        }
 
         map.putIfAbsent(rdate, () => {});
         map[rdate]!.putIfAbsent(rtime, () => {});
@@ -198,6 +216,7 @@ class ReservePage01Notifier extends AsyncNotifier<ReservePage01State> {
           reservedTimes: [],
           reservedTables: [],
           tablesData: map,
+          customerReservations: customerReservationsMap,
           name: customerData.customerName,
           phone: customerData.customerPhone!,
           focusedDay: DateTime.now()

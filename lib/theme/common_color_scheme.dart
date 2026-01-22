@@ -45,6 +45,12 @@ class CommonColorScheme {
   /// Primary 색상 배경에 사용할 텍스트 색 (반전색, 기본: 흰색)
   final Color textOnPrimary;
 
+  /// 스텝 인디케이터 활성/완료 색상 (초록색 계열)
+  final Color stepActive;
+
+  /// 스텝 인디케이터 비활성 색상
+  final Color stepInactive;
+
   const CommonColorScheme({
     required this.background,
     required this.cardBackground,
@@ -58,5 +64,7 @@ class CommonColorScheme {
     required this.chipUnselectedBg,
     required this.chipUnselectedText,
     required this.textOnPrimary,
+    required this.stepActive,
+    required this.stepInactive,
   });
 }

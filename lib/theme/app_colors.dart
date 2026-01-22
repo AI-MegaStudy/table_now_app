@@ -46,6 +46,8 @@ class AppColors {
       chipUnselectedBg: Color(0xFFF5F5F5),
       chipUnselectedText: Color(0xFF424242),
       textOnPrimary: Colors.white,
+      stepActive: Color(0xFF4CAF50), // 기본 초록색
+      stepInactive: Color(0xFFE0E0E0), // 기본 회색
     ),
     tableNow: TableNowColorScheme(
       background: Color(0xFFFFF8F0), // 따뜻한 크림색 배경
@@ -60,6 +62,8 @@ class AppColors {
       chipUnselectedBg: Color(0xFFFFF3E0), // 연한 주황색 배경
       chipUnselectedText: Color(0xFF6B4E3D), // 갈색 텍스트
       textOnPrimary: Colors.white, // Primary 배경에 사용할 흰색 텍스트
+      stepActive: Color(0xFF2E7D32), // 진한 초록색 (커리 허브 느낌)
+      stepInactive: Color(0xFFE8D5C4), // 연한 베이지 (테마 조화)
     ),
   );
 
@@ -79,6 +83,8 @@ class AppColors {
       chipUnselectedBg: Color(0xFF2C2C2C),
       chipUnselectedText: Color(0xFFB0B0B0),
       textOnPrimary: Color(0xFF212121),
+      stepActive: Color(0xFF81C784), // 밝은 초록색 (다크 모드용)
+      stepInactive: Color(0xFF424242), // 다크 회색
     ),
     tableNow: TableNowColorScheme(
       background: Color(0xFF1A1612), // 따뜻한 다크 갈색 배경
@@ -93,6 +99,8 @@ class AppColors {
       chipUnselectedBg: Color(0xFF3A2E20), // 약간 밝은 다크 갈색 배경
       chipUnselectedText: Color(0xFFD4C4B0), // 밝은 베이지색 텍스트
       textOnPrimary: Colors.white, // Primary 배경에 사용할 흰색 텍스트
+      stepActive: Color(0xFF66BB6A), // 밝은 초록색 (다크 모드용)
+      stepInactive: Color(0xFF4A3A2A), // 다크 갈색
     ),
   );
 }

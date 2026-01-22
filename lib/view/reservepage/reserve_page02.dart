@@ -9,7 +9,6 @@ import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/menu/menu_list_screen.dart';
-import 'package:table_now_app/view/reservepage/reserve_page01.dart';
 import 'package:table_now_app/vm/reserve_page02_notifier.dart';
 
 class ReservePage02 extends ConsumerStatefulWidget {
@@ -158,7 +157,13 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                           final int left = reserve_capacity - state.usedCapacity!;
 
                           // 선택하려는데 인원 부족하면 차단
-                          if (!isSelected && left <= 0) return;
+                          if (!isSelected && left <= 0) {
+                            CustomCommonUtil.showErrorSnackbar(
+                              context: context,
+                              message: '선택 가능한 인원을 초과했습니다.',
+                            );
+                            return;
+                          }
 
                           final List<String> selectedTableList = List<String>.from(state.selectedTable ?? []);
                           
@@ -173,7 +178,12 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
 
                           reserveValue.selectTable(selectedTableList);
                         },
-                        
+                        onReservedTap: () {
+                          CustomCommonUtil.showErrorSnackbar(
+                            context: context,
+                            message: '이미 예약된 테이블입니다.',
+                          );
+                        },
                       );
                     },
                   ),
@@ -253,14 +263,14 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: isActive || isCompleted 
-                        ? p.primary 
-                        : p.divider,
+                        ? p.stepActive 
+                        : p.stepInactive,
                     child: Text(
                       '${index + 1}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isActive || isCompleted 
-                            ? p.textOnPrimary 
+                            ? Colors.white 
                             : p.textSecondary,
                       ),
                     ),
@@ -269,7 +279,7 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                   Text(
                     labels[index],
                     style: mainSmallTextStyle.copyWith(
-                      color: isActive ? p.primary : p.textSecondary,
+                      color: isActive ? p.stepActive : p.textSecondary,
                       fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -280,7 +290,7 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                   width: 30,
                   height: 1,
                   margin: const EdgeInsets.only(bottom: 16),
-                  color: isCompleted ? p.primary : p.divider,
+                  color: isCompleted ? p.stepActive : p.stepInactive,
                 ),
             ],
           );
@@ -299,6 +309,8 @@ class TableItem extends StatelessWidget {
   final bool isReserved;
   final bool isSelected;
   final VoidCallback onTap;
+  /// 예약된 테이블 클릭 시 호출되는 콜백 (피드백 제공용)
+  final VoidCallback? onReservedTap;
 
   const TableItem({
     super.key,
@@ -307,6 +319,7 @@ class TableItem extends StatelessWidget {
     required this.isReserved,
     required this.isSelected,
     required this.onTap,
+    this.onReservedTap,
   });
 
   @override
@@ -315,7 +328,7 @@ class TableItem extends StatelessWidget {
     final double size = 48 + (capacity * 6); // 인원수 → 크기
 
     return GestureDetector(
-      onTap: isReserved ? null : onTap,
+      onTap: isReserved ? onReservedTap : onTap,
       child: Container(
         width: size,
         height: size,
@@ -334,15 +347,15 @@ class TableItem extends StatelessWidget {
             Text(
               name,
               style: mainSmallTitleStyle.copyWith(
-                color: Colors.white,
+                color: isReserved ? Colors.grey.shade600 : Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              '$capacity인',
+              isReserved ? '예약됨' : '$capacity인',
               style: mainSmallTextStyle.copyWith(
-                color: Colors.white,
+                color: isReserved ? Colors.grey.shade600 : Colors.white,
               ),
             ),
           ],
