@@ -89,7 +89,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                     _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate, p),
                     _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}', p),
                     _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명', p),
-                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_tables'] ?? 'T4'}', p),
+                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${box.read('reserve2')['reserve_tables'] ?? 'T4'}', p),
                     
                     // 메뉴 섹션
                     Row(
@@ -149,7 +149,13 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
               height: mainButtonHeight,
               child: ElevatedButton(
                 onPressed: () {
-                  CustomNavigationUtil.to(context, PaymentListGroupView());
+                  Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    PaymentListGroupView(totalPrice: widget.price),
+                              ),
+                            );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: p.primary,
