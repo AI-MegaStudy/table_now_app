@@ -179,17 +179,16 @@ class OrderNotifier extends Notifier<OrderState> {
 
   /// 메뉴 수량 증가
   void addOrIncrementMenu(int menuSeq, String menuName, int menuPrice) {
-    final menu = state.menus[menuSeq];
+    final currentMenu = state.menus[menuSeq];
 
     state = OrderState(
       menus: {
         ...state.menus,
-        menuSeq: menu == null
+        menuSeq: currentMenu == null
             ? OrderMenu(name: menuName, count: 1, price: menuPrice)
-            : menu.copyWith(count: menu.count + 1),
+            : currentMenu.copyWith(count: currentMenu.count + 1),
       },
     );
-
     saveOrder(state);
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/menu/menu_detail_screen.dart';
@@ -19,6 +20,23 @@ class MenuListScreen extends ConsumerStatefulWidget {
 
 class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int store_seq = 1;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = CustomNavigationUtil.arguments<Map<String, dynamic>>(context);
+      if (args != null) {
+        store_seq = args['store_seq'] as int;
+      }
+
+      ref.read(menuNotifierProvider.notifier).fetchMenu(store_seq);
+    });
+    
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +52,6 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
         totalPrice += option.count * option.price * menu.count;
       });
     });
-
-    // ref.read(menuNotifierProvider.notifier).fetchMenu(2);
 
     return Scaffold(
       key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
@@ -158,6 +174,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                       builder: (context) =>
                           ReservationCompleteScreen(price: totalPrice)),
                 );
+                ref.read(orderNotifierProvider.notifier).reset();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: totalPrice == 0 ? Colors.grey : Colors.orange,
