@@ -92,16 +92,16 @@ dev_dependencies:
 
 #Flutter Native Splash 세팅 <<<<<<<<<<<<
 
-# flutter_native_splash:
-#   color: "#ffffff"
-#   image: images/Shoes_Shop_AppLogo.png
-#   # android: true
-#   # ios: true
-#   # web: false
+flutter_native_splash:
+  color: "#ffffff"
+  image: images/AppLogo.png
+  # android: true
+  # ios: true
+  # web: false
 
-#   android_12:
-#     image: images/Shoes_Shop_AppLogo.png
-#     color: "#ffffff"
+  android_12:
+    image: images/AppLogo.png
+    color: "#ffffff"
 
 #Flutter Native Splash 세팅 끝 >>>>>>>>>>
 
