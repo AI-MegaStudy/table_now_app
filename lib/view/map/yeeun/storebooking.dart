@@ -5,7 +5,7 @@ import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
-import 'package:table_now_app/view/map/navigator.dart';
+import 'package:table_now_app/view/map/yeeun/navigator.dart';
 
 class StoreBookingInfoScreen extends ConsumerWidget {
   final Store store;

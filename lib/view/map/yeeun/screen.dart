@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_now_app/view/map/notification_service.dart';
-import 'package:table_now_app/view/map_google/map_screen.dart';
+import 'package:table_now_app/view/map/yeeun/notification_service.dart';
+import 'package:table_now_app/view/map/map_google/map_screen.dart';
 
 class Screen extends ConsumerStatefulWidget {
   const Screen({super.key});

@@ -36,15 +36,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🗺️ [MapScreen] initState - 위치 가져오기 시작');
+    debugPrint(' [MapScreen] initState - 위치 가져오기 시작');
     _getUserLocation();
   }
 
   Future<void> _getUserLocation() async {
     try {
-      debugPrint('🗺️ [MapScreen] _getUserLocation 호출됨');
+      debugPrint('[MapScreen] _getUserLocation 호출됨');
       final pos = await LocationUtil.getCurrentLocation();
-      debugPrint('🗺️ [MapScreen] 위치 획득 성공: ${pos.latitude}, ${pos.longitude}');
+      debugPrint(
+        ' [MapScreen] 위치 획득 성공: ${pos.latitude}, ${pos.longitude}',
+      );
       if (!mounted) return;
 
       if (pos.latitude > 1.0 && pos.longitude > 1.0) {
@@ -54,14 +56,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             pos.longitude,
           );
         });
-        debugPrint('🗺️ [MapScreen] _userLocation 설정 완료: $_userLocation');
+        debugPrint(
+          ' [MapScreen] _userLocation 설정 완료: $_userLocation',
+        );
       }
     } catch (e) {
       debugPrint("위치 획득 실패: $e");
       if (!mounted) return;
-      
+
       String message = '위치 정보를 가져올 수 없습니다.';
-      
+
       if (e.toString().contains('비활성화')) {
         message = '위치 서비스를 켜주세요.';
       } else if (e.toString().contains('영구 거부')) {
@@ -69,7 +73,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       } else if (e.toString().contains('권한 없음')) {
         message = '위치 권한이 필요합니다.';
       }
-      
+
       CustomCommonUtil.showErrorSnackbar(
         context: context,
         message: message,
@@ -176,7 +180,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         );
                       }
                     } finally {
-                      if (mounted) setState(() => _isLocating = false);
+                      if (mounted)
+                        setState(() => _isLocating = false);
                     }
                   },
           ),
@@ -210,31 +215,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         },
       ),
-      /* floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _getUserLocation();
-
-          if (mounted) _applyBounds();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("주변 매장 위치로 화면을 맞춥니다."),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        },
-
-        backgroundColor: p.primary,
-        child: Icon(Icons.my_location, color: Colors.white),
-      ),*/
     );
   }
-
-  /* CustomCommonUtil.showSuccessSnackbar(
-              context: context,
-              title: '로그인 성공',
-              message: '$customerName님, 환영합니다!',
-            ); */
 
   Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
@@ -249,7 +231,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
       );
     }
-
     for (var s in widget.storeList) {
       if (s.store_lat > 1.0 && s.store_lng > 1.0) {
         markers.add(
@@ -269,25 +250,32 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _showDetailSheet(Store s) async {
     String? distanceString;
-    debugPrint('🗺️ [MapScreen] _userLocation: $_userLocation');
-    
-    // 위치가 없으면 다시 가져오기 시도
+    debugPrint(
+      ' [MapScreen] _userLocation: $_userLocation',
+    );
+
     if (_userLocation == null) {
-      debugPrint('🗺️ [MapScreen] 위치가 null이므로 다시 가져오기 시도');
+      debugPrint(' [MapScreen] 위치가 null이므로 다시 가져오기 시도');
       try {
         final pos = await LocationUtil.getCurrentLocation();
-        if (mounted && pos.latitude > 1.0 && pos.longitude > 1.0) {
+        if (mounted &&
+            pos.latitude > 1.0 &&
+            pos.longitude > 1.0) {
           setState(() {
-            _userLocation = LatLng(pos.latitude, pos.longitude);
+            _userLocation = LatLng(
+              pos.latitude,
+              pos.longitude,
+            );
           });
-          debugPrint('🗺️ [MapScreen] 위치 재획득 성공: $_userLocation');
+          debugPrint(
+            '[MapScreen] 위치 재획득 성공: $_userLocation',
+          );
         }
       } catch (e) {
-        debugPrint('🗺️ [MapScreen] 위치 재획득 실패: $e');
+        debugPrint('[MapScreen] 위치 재획득 실패: $e');
       }
     }
-    
-    // 위치가 있으면 거리 계산
+
     if (_userLocation != null) {
       double meters = Geolocator.distanceBetween(
         _userLocation!.latitude,
@@ -298,14 +286,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       distanceString = meters >= 1000
           ? "${(meters / 1000).toStringAsFixed(1)}km"
           : "${meters.toInt()}m";
-      debugPrint('🗺️ [MapScreen] 거리 계산: $meters m -> $distanceString');
+      debugPrint(
+        ' [MapScreen] 거리 계산: $meters m -> $distanceString',
+      );
     } else {
-      debugPrint('🗺️ [MapScreen] 위치를 가져올 수 없어 거리 계산 안함');
+      debugPrint('[MapScreen] 위치를 가져올 수 없어 거리 계산 안함');
     }
-    
-    debugPrint('🗺️ [MapScreen] StoreDetailSheet에 전달: distance=$distanceString');
+
+    debugPrint(
+      ' [MapScreen] StoreDetailSheet에 전달: distance=$distanceString',
+    );
     if (!mounted) return;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

@@ -6,7 +6,7 @@ import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/drawer.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
-import 'package:table_now_app/view/map/web_view.dart';
+import 'package:table_now_app/view/map/yeeun/web_view.dart';
 import 'package:url_launcher/url_launcher.dart'; // 길찾기 외부 앱 호출용
 import 'package:table_now_app/model/store.dart';
 

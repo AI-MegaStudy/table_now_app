@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/view/map/region_list_screen.dart';
-import 'package:table_now_app/view/map/screen.dart';
-import 'package:table_now_app/view/map/storebooking.dart';
+import 'package:table_now_app/view/map/yeeun/screen.dart';
+import 'package:table_now_app/view/map/yeeun/storebooking.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
