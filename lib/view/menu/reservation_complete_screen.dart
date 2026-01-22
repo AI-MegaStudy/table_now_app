@@ -69,34 +69,40 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                 decoration: BoxDecoration(
                   color: p.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: p.divider),
                 ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('예약 상세 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      '예약 상세 정보',
+                      style: mainTitleStyle.copyWith(color: p.textPrimary),
+                    ),
                     const SizedBox(height: 10),
-                    const Divider(),
+                    Divider(color: p.divider),
                     const SizedBox(height: 20),
                     
                     // 상세 정보 항목들
-                    _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate),
-                    _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}'),
-                    _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명'),
-                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_seat'] ?? 'T4'}'),
+                    _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate, p),
+                    _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}', p),
+                    _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명', p),
+                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_seat'] ?? 'T4'}', p),
                     
                     // 메뉴 섹션
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.restaurant_menu, color: Colors.green, size: 20),
+                        Icon(Icons.restaurant_menu, color: p.stepActive, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('메뉴', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                              Text(
+                                '메뉴',
+                                style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+                              ),
                               const SizedBox(height: 8),
                               _buildMenuList(menuAsync, menus),
                             ],
@@ -105,7 +111,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                       ],
                     ),
                     const SizedBox(height: 30),
-                    const Divider(),
+                    Divider(color: p.divider),
                     
                     // 총 결제 금액
                     Padding(
@@ -113,8 +119,17 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('총 결제 금액', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          Text(CustomCommonUtil.formatCurrency(widget.price), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green.shade700)),
+                          Text(
+                            '총 결제 금액',
+                            style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+                          ),
+                          Text(
+                            CustomCommonUtil.formatCurrency(widget.price),
+                            style: mainMediumTitleStyle.copyWith(
+                              color: p.stepActive,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -129,14 +144,21 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
               width: double.infinity,
-              height: 55,
+              height: mainButtonHeight,
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: p.primary,
+                  foregroundColor: p.textOnPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
                 ),
-                child: const Text('결제하기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text(
+                  '결제하기',
+                  style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+                ),
               ),
             ),
           ),
@@ -148,54 +170,83 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
   // 상단 스텝 바 (숫자 아이콘)
   Widget _buildStepIndicator() {
     final p = context.palette;
+    final labels = ['정보', '좌석', '메뉴', '확인'];
+    final currentStep = 3; // 확인 단계
 
     return Container(
-      color: p.background,
+      color: p.cardBackground,
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _stepCircle("1", "정보", isCompleted: true),
-          _stepLine(),
-          _stepCircle("2", "좌석", isCompleted: true),
-          _stepLine(),
-          _stepCircle("3", "메뉴", isCompleted: true),
-          _stepLine(),
-          _stepCircle("4", "확인", isCurrent: true),
-        ],
+        children: List.generate(labels.length, (index) {
+          final isActive = index == currentStep;
+          final isCompleted = index < currentStep;
+          
+          return Row(
+            children: [
+              Column(
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: isActive || isCompleted 
+                        ? p.stepActive 
+                        : p.stepInactive,
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isActive || isCompleted 
+                            ? Colors.white 
+                            : p.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    labels[index],
+                    style: mainSmallTextStyle.copyWith(
+                      color: isActive ? p.stepActive : p.textSecondary,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              if (index < labels.length - 1)
+                Container(
+                  width: 30,
+                  height: 1,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: isCompleted ? p.stepActive : p.stepInactive,
+                ),
+            ],
+          );
+        }),
       ),
     );
   }
 
-  Widget _stepCircle(String num, String label, {bool isCompleted = false, bool isCurrent = false}) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: isCurrent ? Colors.green : (isCompleted ? Colors.green : Colors.grey.shade300),
-          child: Text(num, style: const TextStyle(color: Colors.white, fontSize: 12)),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 11, color: isCurrent || isCompleted ? Colors.green : Colors.grey)),
-      ],
-    );
-  }
-
-  Widget _stepLine() => Container(width: 40, height: 1, color: Colors.green);
-
   // 정보 한 줄 (아이콘 + 제목 + 내용)
-  Widget _buildInfoRow(IconData icon, String title, String content) {
+  Widget _buildInfoRow(IconData icon, String title, String content, dynamic p) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
       child: Row(
         children: [
-          Icon(icon, color: Colors.green, size: 20),
+          Icon(icon, color: p.stepActive, size: 20),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-              Text(content, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Text(
+                title,
+                style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+              ),
+              Text(
+                content,
+                style: mainBodyTextStyle.copyWith(
+                  color: p.textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ],
@@ -220,21 +271,27 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
           decoration: BoxDecoration(
             color: p.cardBackground,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade200)
+            border: Border.all(color: p.divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(menu.menu_name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                menu.menu_name,
+                style: mainSmallTitleStyle.copyWith(color: p.textPrimary),
+              ),
               const SizedBox(height: 4),
-              Text('수량: ${entry.value.count}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                '수량: ${entry.value.count}',
+                style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+              ),
               Text(
                 entry.value.options.isEmpty
                     ? '옵션 없음'
                     : '옵션: ${entry.value.options.values
                             .map((o) => '${o.name} x ${o.count}')
                             .join(', ')}',
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                style: mainSmallTextStyle.copyWith(color: p.textSecondary),
               ),
             ],
           ),

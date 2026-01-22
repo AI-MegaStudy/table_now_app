@@ -83,7 +83,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                   'https://cheng80.myqnapcloud.com/tablenow/${menu[widget.index].menu_image}',
                   fit: BoxFit.cover,
                 ),
-                orElse: () => Container(color: Colors.grey[200]),
+                orElse: () => Container(color: p.divider),
               ),
             ),
           ),
@@ -98,16 +98,25 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(m.menu_name, style: mainLargeTitleStyle),
+                      Text(
+                        m.menu_name,
+                        style: mainLargeTitleStyle.copyWith(color: p.textPrimary),
+                      ),
                       const SizedBox(height: 8),
-                      Text(m.menu_description, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                      Text(
+                        m.menu_description,
+                        style: mainBodyTextStyle.copyWith(color: p.textSecondary),
+                      ),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             CustomCommonUtil.formatCurrency(m.menu_price),
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                            style: mainMediumTitleStyle.copyWith(
+                              color: p.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           _buildQuantityControl(
                             count: menuCount,
@@ -116,15 +125,25 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                           ),
                         ],
                       ),
-                      const Divider(height: 40),
-                      const Text("추가 옵션", style: mainTitleStyle),
+                      Divider(height: 40, color: p.divider),
+                      Text(
+                        "추가 옵션",
+                        style: mainTitleStyle.copyWith(color: p.textPrimary),
+                      ),
                       const SizedBox(height: 10),
                     ],
                   ),
                 );
               },
-              error: (e, _) => Center(child: Text('Error: $e')),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Text(
+                  'Error: $e',
+                  style: mainBodyTextStyle.copyWith(color: Colors.red),
+                ),
+              ),
+              loading: () => Center(
+                child: CircularProgressIndicator(color: p.primary),
+              ),
             ),
           ),
 
@@ -134,12 +153,14 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 (context, index) {
                   final o = options[index];
                   final optionCount = orderState.menus[widget.menu.menu_seq]?.options[o.option_seq]?.count ?? 0;
+                  final p = context.palette;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[200]!),
+                        color: p.cardBackground,
+                        border: Border.all(color: p.divider),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -148,9 +169,14 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(o.option_name, style: mainMediumTextStyle),
-                                Text("+ ${CustomCommonUtil.formatCurrency(o.option_price)}",
-                                    style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                                Text(
+                                  o.option_name,
+                                  style: mainMediumTextStyle.copyWith(color: p.textPrimary),
+                                ),
+                                Text(
+                                  "+ ${CustomCommonUtil.formatCurrency(o.option_price)}",
+                                  style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+                                ),
                               ],
                             ),
                           ),
@@ -168,8 +194,19 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                 childCount: options.length,
               ),
             ),
-            error: (e, _) => const SliverToBoxAdapter(child: SizedBox()),
-            loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+            error: (e, _) => SliverToBoxAdapter(
+              child: Center(
+                child: Text(
+                  'Error: $e',
+                  style: mainBodyTextStyle.copyWith(color: Colors.red),
+                ),
+              ),
+            ),
+            loading: () => SliverToBoxAdapter(
+              child: Center(
+                child: CircularProgressIndicator(color: p.primary),
+              ),
+            ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -179,22 +216,34 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: p.background,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+          boxShadow: [
+            BoxShadow(
+              color: p.textSecondary.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
-        child: ElevatedButton(
-          onPressed: () {
-            ref.read(orderNotifierProvider.notifier).confirmMenu(widget.menu.menu_seq);
-            Navigator.pop(context, menuTotalPrice + optionTotalPrice);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          child: Text(
-            '${CustomCommonUtil.formatCurrency(menuTotalPrice + optionTotalPrice)} 담기',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        child: SizedBox(
+          width: double.infinity,
+          height: mainButtonHeight,
+          child: ElevatedButton(
+            onPressed: () {
+              ref.read(orderNotifierProvider.notifier).confirmMenu(widget.menu.menu_seq);
+              Navigator.pop(context, menuTotalPrice + optionTotalPrice);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: p.primary,
+              foregroundColor: p.textOnPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              '${CustomCommonUtil.formatCurrency(menuTotalPrice + optionTotalPrice)} 담기',
+              style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+            ),
           ),
         ),
       ),
@@ -207,31 +256,39 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     required VoidCallback onRemove,
     bool isSmall = false,
   }) {
+    final p = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: context.palette.chipUnselectedBg,
+        color: p.chipUnselectedBg,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: context.palette.accent)
+        border: Border.all(color: p.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _circleButton(Icons.remove, onRemove, isSmall),
+          _circleButton(Icons.remove, onRemove, isSmall, p),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('$count', style: TextStyle(fontSize: isSmall ? 14 : 16, fontWeight: FontWeight.bold)),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: isSmall ? 14 : 16,
+                fontWeight: FontWeight.bold,
+                color: p.textPrimary,
+              ),
+            ),
           ),
-          _circleButton(Icons.add, onAdd, isSmall),
+          _circleButton(Icons.add, onAdd, isSmall, p),
         ],
       ),
     );
   }
 
-  Widget _circleButton(IconData icon, VoidCallback onPressed, bool isSmall) {
+  Widget _circleButton(IconData icon, VoidCallback onPressed, bool isSmall, dynamic p) {
     return IconButton(
       constraints: BoxConstraints(minWidth: isSmall ? 32 : 40, minHeight: isSmall ? 32 : 40),
       padding: EdgeInsets.zero,
-      icon: Icon(icon, size: isSmall ? 18 : 22, color: Colors.black87),
+      icon: Icon(icon, size: isSmall ? 18 : 22, color: p.textPrimary),
       onPressed: onPressed,
     );
   }
