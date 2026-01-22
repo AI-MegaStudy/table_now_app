@@ -20,6 +20,11 @@ class RegionListScreen extends ConsumerWidget {
     final asyncStore = ref.watch(storeNotifierProvider);
     final p = context.palette;
 
+    // final expandedList = [];
+    // for (int i = 0; i < 6; i++) {
+    //   expandedList.addAll(storeList);
+    // }
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: p.background,
