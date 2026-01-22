@@ -30,6 +30,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     37.5665,
     126.9780,
   );
+  final bool isLoading = false;
 
   @override
   void initState() {
@@ -131,6 +132,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             onPressed: () =>
                 _scaffoldKey.currentState?.openDrawer(),
           ),
+
+          IconButton(
+            icon: Icon(
+              Icons.refresh_rounded,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () async {
+              await _getUserLocation();
+
+              if (mounted) _applyBounds();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("주변 매장 위치로 화면을 맞춥니다."),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: GoogleMap(
@@ -152,7 +172,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      /* floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await _getUserLocation();
 
@@ -165,11 +185,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           );
         },
+
         backgroundColor: p.primary,
         child: Icon(Icons.my_location, color: Colors.white),
-      ),
+      ),*/
     );
   }
+
+  /* CustomCommonUtil.showSuccessSnackbar(
+              context: context,
+              title: '로그인 성공',
+              message: '$customerName님, 환영합니다!',
+            ); */
 
   Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
