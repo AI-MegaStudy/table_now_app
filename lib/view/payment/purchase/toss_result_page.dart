@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/utils_core.dart';
+import 'package:table_now_app/vm/payment_list_notifier.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/tosspayments_result.dart';
 
 /// Reverve, Selected Menu list
 /// 성공했으면 저장.
 
 /// [ResultPage] class는 결제의 성공 혹은 실패 여부를 보여주는 위젯입니다.
-class TossResultPage extends StatelessWidget {
+class TossResultPage extends ConsumerWidget {
   /// 기본 생성자입니다.
   
   final dynamic result;
@@ -83,6 +85,9 @@ class TossResultPage extends StatelessWidget {
                 makeRow('errorMessage', result.errorMessage),
                 const SizedBox(height: 20),
                 makeRow('orderId', result.orderId),
+         
+
+
               ],
             );
           }
@@ -99,15 +104,26 @@ class TossResultPage extends StatelessWidget {
   /// [Success]인 경우, '인증 성공!' 메시지를 표시하며,
   /// 그 외의 경우, '결제에 실패하였습니다' 메시지를 표시합니다.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // dynamic result = Get.arguments;
     String message;
+    final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
+    // final paymentState = ref.watch(paymentListAsyncNotifierProvider.select((value) => value.,))
+      
+       
+
+
 
     if (result is Success) {
       message = '인증 성공! 결제승인API를 호출해 결제를 완료하세요!';
+      paymentValue.purchase().then((r){
+        paymentValue.purchaseUpdate({'payment_key':result.paymentKey,'payment_status':'DONE','reserve_seq':result.orderId});
+      });
     } else {
       message = '결제에 실패하였습니다';
+      paymentValue.purchaseUpdate({'payment_key':result.errorCode.toString(),'payment_status':'FAIL','reserve_seq':result.orderId});
     }
+
     return Scaffold(
         appBar: AppBar(
           title: const Text('결제 결과'),
@@ -120,6 +136,8 @@ class TossResultPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+
+
                 Text(
                   message,
                   style: const TextStyle(
@@ -130,6 +148,54 @@ class TossResultPage extends StatelessWidget {
                 const SizedBox(height: 50),
                 getContainer(result),
                 const SizedBox(height: 40),
+
+                
+                result is Fail 
+                ?Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 10,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        CustomNavigationUtil.back(context);
+                       
+                      },
+                      style: ElevatedButton.styleFrom(
+                        // elevation: 0,
+                        // shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(3)
+                        )
+                      ),
+                      child: const Text(
+                        '다시 결제 시도',
+                        style: TextStyle(fontSize: 13, color: Colors.black),
+                      ),
+                      
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        paymentValue.reset();
+                        CustomNavigationUtil.back(context);
+                        CustomNavigationUtil.back(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        // elevation: 0,
+                        // shadowColor: Colors.transparent,
+                         shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(3)
+                        )
+                      ),
+                      child: const Text(
+                        '기존 주문 지우기',
+                        style: TextStyle(fontSize: 13, color: Colors.black),
+                      ),
+                      
+                    ),
+
+                  ],
+                )
+                :
                 ElevatedButton.icon(
                   onPressed: () {
                     CustomNavigationUtil.back(context);

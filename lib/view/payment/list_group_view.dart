@@ -64,7 +64,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
   final double detailBoxHeight = 170;
   final storage = GetStorage();
   late PurchaseReserve? purchaseReserve = null;
-  late Map<String,dynamic>? items;
+  late Map<String, dynamic>? items;
 
   @override
   void initState() {
@@ -73,23 +73,47 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
     _initialize();
   }
 
+  // 초기화 작업
+  // storage에 reserve/reserve2, order테이터가 저장되있음.
+  // 3개의 storage에 값이 없으면 진입 안되게 처리
+  // storage데이터로 결제 정보 보여주기
+  //  - 따로 DB에서 메뉴/option 정보를 가져올 필요는 없음.
+  //  - 필요 정보를 storage에 저장 해야 함.
   void _initialize() async {
-
+    // Notifier
+    print('================_initialize================');
     final ppp = ref.read(paymentListAsyncNotifierProvider.notifier);
-    final data = storage.read<Map<String, dynamic>>('reserve');
-    items = storage.read< Map<String, dynamic>>('order');
+  
+    // 기존에 미결제 정보가 있는 지 확인. 미결제 정보가 있다면,
 
-    final data2 = storage.read<Map<String,dynamic>>('reserve2');
+    // reserve 정보를 storage 부터 가져옴.
+    final data = storage.read<Map<String, dynamic>>('reserve');
+    final data2 = storage.read<Map<String, dynamic>>('reserve2');
+
+    // menu 정보를 storage부터 가져옴.
+    items = storage.read<Map<String, dynamic>>('order');
+
     try {
       if (data != null) {
+        // Reserve정보를 Object에 담기
         purchaseReserve = PurchaseReserve.fromJson(data);
-        
+
         if (purchaseReserve != null) {
-          purchaseReserve!.reserve_tables =
-              data2!=null? data2['reserve_tables']:'';
-          await ppp.insertReserve(purchaseReserve!);
+          purchaseReserve!.reserve_tables = data2 != null
+              ? data2['reserve_tables']
+              : '';
+          // Reserve 생성
+          print('================_initialize: CurrentStatus ${ppp.isInPurchaseProcess}');
+        
+          if(ppp.isInPurchaseProcess == 0) await ppp.insertReserve(purchaseReserve!);
+          // 생성된 reserve_seq를 Object에저장.
           purchaseReserve!.reserve_seq = ppp.reserve_seq;
           purchaseReserve!.payment_status = 'PROCESS';
+
+          // 데이터를
+          ref
+              .read(paymentListAsyncNotifierProvider.notifier)
+              .setData(purchaseReserve!, items!, 20000);
         }
       }
     } catch (error) {
@@ -115,18 +139,38 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
     }
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
-    paymentValue.setReserve(purchaseReserve!);
-    if(items != null) paymentValue.setItems(items!);
-
+    // paymentValue.setReserve(purchaseReserve!);
+    // if(items != null) paymentValue.setItems(items!);
+    final menus = items!['menus'].values.toList();
+    final menus_seq = items!['menus'].keys.toList();
+    print('================ CurrentStatus: ${paymentValue.isInPurchaseProcess}');
+    // Show message
+    
+    /*
+static void showSuccessDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+    String confirmText = 'OK',
+    bool barrierDismissible = false,
+  }) 
+    */
+    
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(4.0),
-          child: paymentState.when(
-            data: (data) => data.length > 0
-                ? Column(
+          child:  
+             
+
+          
+          paymentState.when(
+            data: (data) => data.length == 0
+                ? const CircularProgressIndicator()
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -173,70 +217,113 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
                                 color: p.background,
                                 height: 400,
                                 child: ListView.builder(
-                                  itemCount: data.length,
+                                  itemCount: menus.length,
                                   itemBuilder: (context, index) {
-                                    return Card(
-                                      child: Row(
-                                        spacing: 10,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
+                                    final menu = menus[index];
+                                    final menu_seq = menus_seq[index];
 
-                                        children: [
-                                          // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
-                                          Image.network(
-                                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
-                                            height: 50,
-                                          ),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                    // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
+                                    final options = menu['options'].values
+                                        .toList();
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
 
+                                      children: [
+                                        Card(
+                                          child: Row(
+                                            spacing: 10,
                                             children: [
-                                              // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
-                                              // Text('예약번호: ${data[index].reserve_seq}'),
-                                              // Text("전체갯수: ${data[index].total_count}"),
-                                              Text(
-                                                '${data[index].menu_name}',
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              Text(
-                                                "${data[index].option_name != null ? data[index].option_name : ''}",
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey[700],
-                                                ),
-                                              ),
+                                              Text("ID: ${menu_seq}"),
+                                              Text("Price: ${menu['price']}"),
+                                              Text("Count: ${menu['count']}"),
+
+                                              // menu['options'] != null
+                                              // ? Column( children: [
+                                              //   Text("${menu['options'].values}"),
+                                              // ]
+                                              // )
+                                              // : Text(''),
                                             ],
                                           ),
-
-                                          SizedBox(
-                                            width:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width /
-                                                1.8,
-
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
-                                                Text(
-                                                  "${data[index].total_count}개",
+                                        ),
+                                        menu['options'] != null
+                                            ? Card(
+                                                child: Column(
+                                                  children: List.generate(
+                                                    options.length,
+                                                    (i) => _optionMenus(
+                                                      options[i],
+                                                    ),
+                                                  ),
                                                 ),
-                                                Text(
-                                                  "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                              )
+                                            : Text(''),
+                                      ],
                                     );
+
+                                    // Card(
+                                    //   child: Row(
+                                    //     spacing: 10,
+                                    //     crossAxisAlignment:
+                                    //         CrossAxisAlignment.center,
+
+                                    //     children: [
+                                    //       // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
+                                    //       Image.network(
+                                    //         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                    //         height: 50,
+                                    //       ),
+                                    //       Column(
+                                    //         crossAxisAlignment:
+                                    //             CrossAxisAlignment.start,
+
+                                    //         children: [
+                                    //           // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
+                                    //           // Text('예약번호: ${data[index].reserve_seq}'),
+                                    //           // Text("전체갯수: ${data[index].total_count}"),
+                                    //           Text(
+                                    //             '${data[index].menu_name}',
+                                    //             style: TextStyle(
+                                    //               fontSize: 15,
+                                    //               fontWeight: FontWeight.bold,
+                                    //             ),
+                                    //           ),
+                                    //           Text(
+                                    //             "${data[index].option_name != null ? data[index].option_name : ''}",
+                                    //             style: TextStyle(
+                                    //               fontSize: 11,
+                                    //               color: Colors.grey[700],
+                                    //             ),
+                                    //           ),
+                                    //         ],
+                                    //       ),
+
+                                    //       SizedBox(
+                                    //         width:
+                                    //             MediaQuery.of(
+                                    //               context,
+                                    //             ).size.width /
+                                    //             1.8,
+
+                                    //         child: Column(
+                                    //           crossAxisAlignment:
+                                    //               CrossAxisAlignment.end,
+                                    //           mainAxisAlignment:
+                                    //               MainAxisAlignment.end,
+                                    //           children: [
+                                    //             Text(
+                                    //               "${data[index].total_count}개",
+                                    //             ),
+                                    //             Text(
+                                    //               "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
+                                    //             ),
+                                    //           ],
+                                    //         ),
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    // );
                                   },
                                 ),
                               ),
@@ -257,6 +344,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
                           children: [
                             Text(
                               '결제금액: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}',
+                              // '결제금액: ${CustomCommonUtil.formatPrice(totalPrice)}',
                               style: TextStyle(fontSize: 20),
                             ),
                             SizedBox(
@@ -273,8 +361,8 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
                         ),
                       ),
                     ],
-                  )
-                : const CircularProgressIndicator(),
+                  ),
+
             error: (error, stackTrace) => Text('ERROR: $error'),
             loading: () => const CircularProgressIndicator(),
           ),
@@ -284,6 +372,17 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
   }
 
   // == widget
+  Widget _optionMenus(Map<String, dynamic> option) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      spacing: 10,
+      children: [
+        Text("수량: ${option['count']}"),
+        Text("가격: ${option['price']}"),
+      ],
+    );
+  }
+
   Widget textSubTitle(String label) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
@@ -340,6 +439,9 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
         onPressed: () async {
           /// 카드 결제 전 Data를 추가한다.
           // await paymentValue.purchase();
+          // 결제 진행중. 
+          paymentValue.purchaseUpdate({'payment_key':'payment_key','payment_status':'PROCESS','reserve_seq':0});
+
 
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
