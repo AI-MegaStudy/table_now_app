@@ -295,6 +295,8 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
   }
 
 
+
+
   // id가 있다면 특정 payment만 가져온다.
   // 유저의 payments를 전부 가져온다.
   Future<List<PaymentResponse>> fetchData() async {
