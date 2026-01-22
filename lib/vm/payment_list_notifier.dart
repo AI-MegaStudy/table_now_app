@@ -225,7 +225,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
 
   int _reserve_seq = 0;
   int _total_payment = 0;
-  
+
   // 현재 것이 미결제 인지 확인
   // 0: ready, 1: reserve생성, 2: 결제 진행, 3: 결제 진행 실패, 4: 결제 완료.
   int _isInPurchaseProcess = 0;
@@ -244,6 +244,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
   String get iv => _iv;
   int get reserve_seq => _reserve_seq;
   int get isInPurchaseProcess => _isInPurchaseProcess;
+  int? get customerSeq => _customerSeq;
 
   @override
   FutureOr<Map<String,dynamic>> build() async {
