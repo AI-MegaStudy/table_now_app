@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_common_util.dart';
-import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
@@ -324,3 +323,4 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
 // 2026-01-19 임소연: 초기 생성
 // 2026-01-20 임소연: 주문 메뉴 리스트 추가
 // 2026-01-21 임소연: 예약 데이터 추가, 디자인 수정, 공용앱바 추가
+// 2026-01-22 임소연: 옵션 데이터 추가

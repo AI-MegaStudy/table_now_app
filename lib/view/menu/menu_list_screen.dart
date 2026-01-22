@@ -31,10 +31,17 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
       final args = CustomNavigationUtil.arguments<Map<String, dynamic>>(context);
       if (args != null) {
         store_seq = args['store_seq'] as int;
+        print(store_seq);
       }
 
       ref.read(menuNotifierProvider.notifier).fetchMenu(store_seq);
     });
+
+    Future.microtask(() {
+      ref.read(menuNotifierProvider.notifier)
+         .loadMenuDetail(store_seq);
+    });
+
     
   }
 

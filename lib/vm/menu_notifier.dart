@@ -11,12 +11,17 @@ class MenuNotifier extends AsyncNotifier<List<Menu>>{
 
   @override
   FutureOr<List<Menu>> build() async{
-    return await fetchMenu(1); // 앞단에서 받아오기
+    return [];
   }
 
   List<Menu> menus = [];
   bool isLoading = false;
   String? error;
+
+  Future<void> loadMenuDetail(int seq) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => fetchMenu(seq));
+  }
 
 
   Future<List<Menu>> fetchMenus() async{ 
@@ -103,3 +108,4 @@ final menuNotifierProvider = AsyncNotifierProvider<MenuNotifier, List<Menu>>(
 // 수정 이력
 // ============================================================
 // 2026-01-16 임소연: 초기 생성
+// 2026-01-22 임소연: 화면에서 받은 store sequence로 매장별 메뉴 조회
