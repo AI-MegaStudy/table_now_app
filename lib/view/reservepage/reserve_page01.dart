@@ -419,6 +419,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         'store_seq' : store_seq,
                         'customer_seq': customer_seq,
                         'reserve_capacity': numberController.text,
+                        'store_description': store.store_description,
                         'reserve_date': "${data.selectedDay.toString().substring(0,10)}T${data.selectedTime}:00"
                       };
                       box.write('reserve', reserve);

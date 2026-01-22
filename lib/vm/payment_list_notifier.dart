@@ -69,6 +69,7 @@ class PurchaseReserve {
   final String reserve_date;
   String? payment_key;
   String? payment_status;
+  String? store_description;
 
   PurchaseReserve({
     this.reserve_seq,
@@ -79,6 +80,7 @@ class PurchaseReserve {
     required this.reserve_date,
     this.payment_key,
     this.payment_status,
+    this.store_description
   });
 
   factory PurchaseReserve.fromJson(Map<String, dynamic> json) {
@@ -91,6 +93,7 @@ class PurchaseReserve {
       reserve_date: json['reserve_date'],
       payment_key: json['payment_key'],
       payment_status: json['payment_status'],
+      store_description: json['store_description']
     );
   }
 
@@ -104,6 +107,7 @@ class PurchaseReserve {
       "reserve_date": reserve_date,
       "payment_key": payment_key,
       "payment_status": payment_status,
+      "store_description": store_description
     };
   }
 }
@@ -248,6 +252,15 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
     if (customer != null) {
       _customerSeq = customer.customerSeq;
     }
+
+    // GetStorage
+    final _storage = GetStorage();
+    _storage.read('reserve');
+    _storage.read('reserve2');
+    _storage.read('order');
+
+
+
     await getKey();  
     return {};
   }
@@ -358,7 +371,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
   Future<bool> purchaseUpdate(Map<String,dynamic> data) async {
     try{
       // {'payment_key':'payment_key','payment_status':'DONE','reserve_seq':0}
-     
+        
         data['reserve_seq'] = _reserve_seq;
         // reserve_seq를 업데이트 시켜야 함. 
         //payment_key:str, payment_status:str, reserve_seq:int
@@ -378,9 +391,10 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
             throw Exception("P업데이트 실패(2): ${response.statusCode}");
           }
         }
+
         if(data['payment_status'] == 'FAIL') _isInPurchaseProcess = 3;
         else if(data['payment_status'] == 'DONE') reset();
-         
+        else if(data['payment_status'] == 'PROCESS') _isInPurchaseProcess = 2;
         
         return true;
       
@@ -393,6 +407,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
 
   Future<void> insertReserve(PurchaseReserve purchaseReserve)async{
     try{
+      
       if(_isInPurchaseProcess == 0){
         final response = await http.post(
           Uri.parse("$url/api/pay/insert_reserve"),
@@ -405,9 +420,14 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         final result = data['result'];
         if(result == 'Error')  throw Exception("R 업데이트 실패(2): ${response.statusCode}");
+        purchaseReserve.reserve_seq = result['reserve_seq'];
         _reserve_seq = result['reserve_seq'];
         _isInPurchaseProcess = 1;
+        final currentState = state.value;
+        final items = currentState!['items'];
+        state = AsyncValue.data({'reserve':purchaseReserve,'items':items});
       }
+      
     }catch(error,stackTrace){
       state = AsyncValue.error(error, stackTrace);
     }

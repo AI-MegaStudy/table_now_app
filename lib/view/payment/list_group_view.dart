@@ -137,14 +137,13 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
       CustomNavigationUtil.back(context);
       return Scaffold(
         backgroundColor: p.background,
-        appBar: AppBar(title: Text('결제 하기')),
+        appBar: AppBar(title: Text('결제 확인')),
         body: Center(child: Text('Reserve is empty')),
       );
     }
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     final paymentState = ref.watch(paymentListAsyncNotifierProvider);
-    // paymentValue.setReserve(purchaseReserve!);
-    // if(items != null) paymentValue.setItems(items!);
+
     final menus = items!['menus'].values.toList();
     final menus_seq = items!['menus'].keys.toList();
     print(
@@ -208,7 +207,7 @@ static void showSuccessDialog({
                                     Text(
                                       '테이블 번호: ${purchaseReserve!.reserve_tables}',
                                     ),
-                                    Text('상점: 상점 이름'),
+                                    Text('상점: ${purchaseReserve!.store_description}'),
                                   ],
                                 ),
                               ),
@@ -234,30 +233,33 @@ static void showSuccessDialog({
                   
                                         children: [
                                           Card(
-                                            child: Row(
-                                              spacing: 10,
-                                              children: [
-                                                // Text("ID: ${menu_seq}"),
-                                                Image.network(
-                                                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
-                                                  height: 50,
-                                                ),
-                                                Text("${menu['name']}"),
-                                                Expanded(
-                                                  child: Row(
-                                                    spacing: 10,
-                                                    mainAxisAlignment: MainAxisAlignment.end,
-                                                    children: [
-                                                    Text("${menu['count']}개"),
-                                                  Text(
-                                                    "${CustomCommonUtil.formatPrice(menu['price'])}",
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(5.0),
+                                              child: Row(
+                                                spacing: 10,
+                                                children: [
+                                                  // Text("ID: ${menu_seq}"),
+                                                  Image.network(
+                                                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                                    height: 50,
                                                   ),
-                                                  ],),
-                                                )
-                                              
-                  
-                                             
-                                              ],
+                                                  Text("${menu['name']}"),
+                                                  Expanded(
+                                                    child: Row(
+                                                      spacing: 10,
+                                                      mainAxisAlignment: MainAxisAlignment.end,
+                                                      children: [
+                                                      Text("${menu['count']}개"),
+                                                    Text(
+                                                      "${CustomCommonUtil.formatPrice(menu['price'])}",
+                                                    ),
+                                                    ],),
+                                                  )
+                                                
+                                                                
+                                               
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           menu['options'] != null
