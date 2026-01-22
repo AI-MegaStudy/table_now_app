@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/view/map/storebooking.dart'; // 클래스명 확인 필요
+import 'package:table_now_app/view/map/storebooking.dart';
+import 'package:table_now_app/view/reservepage/reserve_page01.dart'; // 클래스명 확인 필요
 
 class StoreDetailSheet extends StatelessWidget {
   final Store store;
@@ -88,10 +89,10 @@ class StoreDetailSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                CustomNavigationUtil.to(
-                  context,
-                  StoreBookingInfoScreen(store: store),
-                );
+                // CustomNavigationUtil.to(
+                //   context,
+                //   ReservePage01(store: store),
+                // );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
