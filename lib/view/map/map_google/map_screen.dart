@@ -9,15 +9,11 @@ import '../../../utils/common_app_bar.dart';
 import '../../../config/ui_config.dart';
 import '../../../theme/app_colors.dart';
 
-/// 목적지 정보를 담는 클래스 (Route Arguments용)
 class DestinationArguments {
-  /// 도착지 위도
   final double latitude;
 
-  /// 도착지 경도
   final double longitude;
 
-  /// 도착지 이름 (선택사항)
   final String? name;
 
   DestinationArguments({
@@ -26,7 +22,6 @@ class DestinationArguments {
     this.name,
   });
 
-  /// Map으로부터 생성
   factory DestinationArguments.fromMap(
     Map<String, dynamic> map,
   ) {
@@ -37,7 +32,6 @@ class DestinationArguments {
     );
   }
 
-  /// Map으로 변환
   Map<String, dynamic> toMap() {
     return {
       'latitude': latitude,
@@ -47,15 +41,11 @@ class DestinationArguments {
   }
 }
 
-/// Google Maps를 표시하고 경로를 그리는 화면 위젯
 class MapScreen extends ConsumerStatefulWidget {
-  /// 도착지 위도 (선택사항 - Route Arguments가 우선)
   final double? destinationLatitude;
 
-  /// 도착지 경도 (선택사항 - Route Arguments가 우선)
   final double? destinationLongitude;
 
-  /// 도착지 이름 (선택사항)
   final String? destinationName;
 
   const MapScreen({
@@ -71,28 +61,16 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  /// Google Maps 컨트롤러
   GoogleMapController? _mapController;
-
-  /// 출발지 마커
   Marker? _startMarker;
-
-  /// 도착지 마커
   Marker? _endMarker;
-
-  /// 경로를 그리는 Polyline
   Set<Polyline> _polylines = {};
-
-  /// 목적지 정보 (Route Arguments 또는 생성자 값)
   DestinationArguments? _destination;
-
-  /// Route Arguments 로드 여부 (한 번만 로드하기 위해)
   bool _destinationLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    // 화면이 로드되면 현재 위치 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
     });
@@ -101,35 +79,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Route Arguments는 didChangeDependencies에서 로드
-    // (context가 사용 가능한 상태가 된 후)
     if (!_destinationLoaded) {
       _loadDestinationFromArguments();
       _destinationLoaded = true;
     }
   }
 
-  /// Route Arguments에서 목적지 정보 로드
   void _loadDestinationFromArguments() {
-    // Route Arguments 확인
     final arguments = ModalRoute.of(
       context,
     )?.settings.arguments;
 
     if (arguments != null) {
-      // Map 형태로 전달된 경우
       if (arguments is Map<String, dynamic>) {
         _destination = DestinationArguments.fromMap(
           arguments,
         );
-      }
-      // DestinationArguments 객체로 전달된 경우
-      else if (arguments is DestinationArguments) {
+      } else if (arguments is DestinationArguments) {
         _destination = arguments;
       }
     }
 
-    // Route Arguments가 없으면 생성자 값 사용
     if (_destination == null &&
         widget.destinationLatitude != null &&
         widget.destinationLongitude != null) {
@@ -141,25 +111,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  /// 목적지 위도 가져오기
   double? get _destinationLatitude =>
       _destination?.latitude;
 
-  /// 목적지 경도 가져오기
   double? get _destinationLongitude =>
       _destination?.longitude;
 
-  /// 목적지 이름 가져오기
   String? get _destinationName =>
       _destination?.name ?? widget.destinationName;
 
-  /// 현재 위치 초기화 및 경로 가져오기
   /// [forceRefresh] true이면 위치를 강제로 다시 가져옴
   Future<void> _initializeLocation({
     bool forceRefresh = false,
   }) async {
     try {
-      // 현재 위치 가져오기 (강제 새로고침 옵션 포함)
       await ref
           .read(locationProvider.notifier)
           .getCurrentLocation(forceRefresh: forceRefresh);
@@ -167,13 +132,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final currentLocation = ref.read(locationProvider);
 
       if (currentLocation.isLoaded) {
-        // 목적지 정보 확인
         if (_destinationLatitude == null ||
             _destinationLongitude == null) {
           throw Exception('목적지 좌표가 설정되지 않았습니다.');
         }
 
-        // 경로 정보 가져오기
         await ref
             .read(routeProvider.notifier)
             .fetchRoute(
@@ -182,12 +145,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               _destinationLatitude!,
               _destinationLongitude!,
             );
-
-        // 마커 및 경로 업데이트
         _updateMap();
       }
     } catch (e) {
-      // 에러 발생 시 사용자에게 알림
       if (mounted) {
         final errorMessage = e.toString().replaceAll(
           'Exception: ',
@@ -203,7 +163,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     label: '설정 열기',
                     textColor: Colors.white,
                     onPressed: () async {
-                      // 설정 앱으로 이동
                       await Geolocator.openAppSettings();
                     },
                   )
@@ -214,14 +173,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  /// 지도에 마커와 경로 업데이트
   void _updateMap() {
     final currentLocation = ref.read(locationProvider);
     final routeAsyncValue = ref.read(routeProvider);
-
     if (!currentLocation.isLoaded) return;
-
-    // 출발지 마커 생성
     _startMarker = Marker(
       markerId: const MarkerId('start'),
       position: LatLng(
@@ -236,8 +191,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         snippet: '현재 위치',
       ),
     );
-
-    // 도착지 마커 생성
     if (_destinationLatitude != null &&
         _destinationLongitude != null) {
       _endMarker = Marker(
@@ -256,7 +209,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    // 경로 정보가 있으면 Polyline 생성
     routeAsyncValue.whenData((route) {
       if (route != null) {
         _polylines = {
@@ -274,7 +226,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
         };
 
-        // 지도에 모든 마커와 경로가 보이도록 카메라 이동
         _fitBounds(route);
       }
     });
@@ -282,17 +233,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     setState(() {});
   }
 
-  /// 지도에 모든 마커와 경로가 보이도록 카메라 위치 조정
   void _fitBounds(RouteModel route) {
     if (_mapController == null) return;
 
-    // 모든 좌표를 포함하는 bounds 계산
     double minLat = route.startLatitude;
     double maxLat = route.startLatitude;
     double minLng = route.startLongitude;
     double maxLng = route.startLongitude;
 
-    // 출발지와 도착지 좌표 비교
     minLat = minLat < route.endLatitude
         ? minLat
         : route.endLatitude;
@@ -306,7 +254,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ? maxLng
         : route.endLongitude;
 
-    // Polyline의 모든 좌표도 포함
     for (var point in route.polylinePoints) {
       final lat = point['latitude']!;
       final lng = point['longitude']!;
@@ -316,14 +263,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       maxLng = maxLng > lng ? maxLng : lng;
     }
 
-    // 카메라 이동
     _mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
           southwest: LatLng(minLat, minLng),
           northeast: LatLng(maxLat, maxLng),
         ),
-        100.0, // 패딩
+        100.0,
       ),
     );
   }
@@ -333,7 +279,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final currentLocation = ref.watch(locationProvider);
     final routeAsyncValue = ref.watch(routeProvider);
 
-    // 목적지 정보 확인
     if (_destinationLatitude == null ||
         _destinationLongitude == null) {
       return Builder(
@@ -358,14 +303,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     size: 64,
                     color: p.textSecondary,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     '목적지가 설정되지 않았습니다.',
                     style: mainBodyTextStyle.copyWith(
                       color: p.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Route Arguments 또는 생성자로\n목적지 좌표를 전달해주세요.',
                     textAlign: TextAlign.center,
@@ -381,7 +326,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    // 현재 위치가 로드되지 않았으면 로딩 화면 표시
     if (!currentLocation.isLoaded) {
       return Builder(
         builder: (context) {
@@ -396,7 +340,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
             ),
-            body: const Center(
+            body: Center(
               child: CircularProgressIndicator(),
             ),
           );
@@ -404,7 +348,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    // 초기 카메라 위치 (출발지)
     final initialCameraPosition = CameraPosition(
       target: LatLng(
         currentLocation.latitude,
@@ -426,13 +369,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
             actions: [
-              // 경로 새로고침 버튼
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: Icon(Icons.refresh),
                 tooltip: '경로 새로고침',
                 color: p.textOnPrimary,
                 onPressed: () {
-                  // 경로 다시 가져오기 (강제 새로고침)
                   _initializeLocation(forceRefresh: true);
                 },
               ),
@@ -440,14 +381,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
           body: Stack(
             children: [
-              // Google Maps
               GoogleMap(
                 initialCameraPosition:
                     initialCameraPosition,
                 onMapCreated:
                     (GoogleMapController controller) {
                       _mapController = controller;
-                      // 지도가 생성되면 마커와 경로 업데이트
                       _updateMap();
                     },
                 markers: {
@@ -455,12 +394,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   if (_endMarker != null) _endMarker!,
                 },
                 polylines: _polylines,
-                myLocationEnabled: true, // 현재 위치 버튼 표시
+                myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 zoomControlsEnabled: true,
               ),
-
-              // 경로 정보 표시 카드
               Positioned(
                 bottom: 20,
                 left: 20,
@@ -490,7 +427,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                     context,
                                   ).textTheme.titleLarge,
                                 ),
-                                // 이동 방식 표시
                                 Container(
                                   padding:
                                       const EdgeInsets.symmetric(
@@ -518,9 +454,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                         size: 16,
                                         color: Colors.white,
                                       ),
-                                      const SizedBox(
-                                        width: 4,
-                                      ),
+                                      SizedBox(width: 4),
                                       Text(
                                         route
                                             .travelModeText,
@@ -539,7 +473,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               mainAxisAlignment:
                                   MainAxisAlignment
@@ -557,11 +491,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                 ),
                               ],
                             ),
-                            // 단계별 안내 정보 (최대 3개만 표시)
+
                             if (route.steps.isNotEmpty) ...[
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                               const Divider(),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text(
                                 '경로 안내',
                                 style: Theme.of(context)
@@ -572,7 +506,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                           FontWeight.bold,
                                     ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               ...route.steps
                                   .take(3)
                                   .map(
@@ -593,14 +527,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                             color:
                                                 Colors.blue,
                                           ),
-                                          const SizedBox(
+                                          SizedBox(
                                             width: 8,
                                           ),
                                           Expanded(
                                             child: Text(
                                               step.instruction,
                                               style:
-                                                  const TextStyle(
+                                                  TextStyle(
                                                     fontSize:
                                                         12,
                                                   ),
@@ -610,12 +544,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                                       .ellipsis,
                                             ),
                                           ),
-                                          const SizedBox(
+                                          SizedBox(
                                             width: 8,
                                           ),
                                           Text(
                                             step.distanceText,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
                                               color: Colors
                                                   .grey,
@@ -628,7 +562,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               if (route.steps.length > 3)
                                 Text(
                                   '외 ${route.steps.length - 3}개 단계...',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
                                     color: Colors.grey,
                                     fontStyle:
@@ -659,15 +593,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.error,
                             color: Colors.red,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               '경로를 불러오는데 실패했습니다: $error',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.red,
                               ),
                             ),
@@ -685,7 +619,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  /// 정보 아이템 위젯 생성
   Widget _buildInfoItem(
     IconData icon,
     String label,
@@ -694,20 +627,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return Row(
       children: [
         Icon(icon, size: 20),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey,
               ),
             ),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -718,7 +651,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  /// 이동 방식에 따른 아이콘 반환
   IconData _getTravelModeIcon(String travelMode) {
     switch (travelMode.toLowerCase()) {
       case 'driving':
@@ -734,7 +666,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  /// 이동 방식에 따른 색상 반환
   Color _getTravelModeColor(String travelMode) {
     switch (travelMode.toLowerCase()) {
       case 'driving':
