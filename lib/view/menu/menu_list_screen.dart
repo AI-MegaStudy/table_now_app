@@ -200,7 +200,6 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                         builder: (context) =>
                             ReservationCompleteScreen(price: totalPrice)),
                   );
-                  ref.read(orderNotifierProvider.notifier).reset();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: totalPrice == 0 ? p.divider : p.primary,
