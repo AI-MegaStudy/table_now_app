@@ -81,7 +81,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                     const SizedBox(height: 20),
                     
                     // 상세 정보 항목들
-                    _buildInfoRow(Icons.calendar_today_outlined, '날짜', '$formattedDate'),
+                    _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate),
                     _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}'),
                     _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명'),
                     _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_seat'] ?? 'T4'}'),
@@ -228,6 +228,14 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
               Text(menu.menu_name, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text('수량: ${entry.value.count}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                entry.value.options.isEmpty
+                    ? '옵션 없음'
+                    : '옵션: ${entry.value.options.values
+                            .map((o) => '${o.name} x ${o.count}')
+                            .join(', ')}',
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ],
           ),
         );
