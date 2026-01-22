@@ -108,6 +108,66 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
 
           // 예약된 테이블 맵
           final Map<String, dynamic> reservedTables = tablesData[dateKey]?[timeKey] ?? {};
+          
+          // 사용 가능한 테이블의 총 수용 인원 계산
+          int totalAvailableCapacity = 0;
+          
+          for (var table in state.tableModelList) {
+            final StoreTable tableInfo = table as StoreTable;
+            final tableSeqStr = tableInfo.store_table_seq.toString();
+            if (!reservedTables.containsKey(tableSeqStr)) {
+              final int cap = tableInfo.store_table_capacity;
+              totalAvailableCapacity += cap;
+            }
+          }
+          
+          // 입력 인원이 전체 사용 가능한 테이블의 총 수용 인원을 초과하는 경우
+          if (reserve_capacity > totalAvailableCapacity) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '예약 불가',
+                      style: mainTitleStyle.copyWith(color: Colors.red),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '입력하신 인원 수($reserve_capacity명)가\n사용 가능한 테이블의 총 수용 인원($totalAvailableCapacity명)을 초과합니다.',
+                      textAlign: TextAlign.center,
+                      style: mainBodyTextStyle.copyWith(color: p.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: p.primary,
+                        foregroundColor: p.textOnPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        '이전으로 돌아가기',
+                        style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -148,30 +208,25 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                       // final int capacity =
                       //     tableInfo != null ? int.parse(tableInfo[1]) : 4;
                   
+                      // 테이블 선택 가능 여부 - 모든 테이블 선택 가능
+                      final bool isDisabled = false;
+                      
                       return TableItem(
                         name: tableName,
                         capacity: capacity,
                         isReserved: isReserved,
                         isSelected: isSelected,
+                        isDisabled: isDisabled,
                         onTap: () {
-                          final int left = reserve_capacity - state.usedCapacity!;
-
-                          // 선택하려는데 인원 부족하면 차단
-                          if (!isSelected && left <= 0) {
-                            CustomCommonUtil.showErrorSnackbar(
-                              context: context,
-                              message: '선택 가능한 인원을 초과했습니다.',
-                            );
-                            return;
-                          }
-
+                          final int currentUsedCapacity = state.usedCapacity ?? 0;
                           final List<String> selectedTableList = List<String>.from(state.selectedTable ?? []);
                           
-                          //눌러서 테이블 토글 (인원 차감)
                           if (!isSelected) {
+                            // 테이블 추가 시
                             selectedTableList.add(tableSeq.toString());
                             reserveValue.updateUsedCapacity(capacity);
                           } else {
+                            // 테이블 제거 시
                             selectedTableList.remove(tableSeq.toString());
                             reserveValue.updateUsedCapacity(-capacity);
                           }
@@ -182,6 +237,12 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                           CustomCommonUtil.showErrorSnackbar(
                             context: context,
                             message: '이미 예약된 테이블입니다.',
+                          );
+                        },
+                        onDisabledTap: () {
+                          CustomCommonUtil.showErrorSnackbar(
+                            context: context,
+                            message: '$capacity인 테이블은 $reserve_capacity명 예약에 사용할 수 없습니다.',
                           );
                         },
                       );
@@ -209,6 +270,16 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                           CustomCommonUtil.showErrorSnackbar(
                             context: context,
                             message: '테이블을 선택해주세요.',
+                          );
+                          return;
+                        }
+                        
+                        // 선택한 테이블의 총 수용 인원이 입력한 인원 수 이상인지 검증
+                        final int totalCapacity = state.usedCapacity ?? 0;
+                        if (totalCapacity < reserve_capacity) {
+                          CustomCommonUtil.showErrorSnackbar(
+                            context: context,
+                            message: '선택한 테이블의 총 수용 인원($totalCapacity명)이 인원 수($reserve_capacity명) 이상이어야 합니다.',
                           );
                           return;
                         }
@@ -315,9 +386,12 @@ class TableItem extends StatelessWidget {
   final int capacity;
   final bool isReserved;
   final bool isSelected;
+  final bool isDisabled;
   final VoidCallback onTap;
   /// 예약된 테이블 클릭 시 호출되는 콜백 (피드백 제공용)
   final VoidCallback? onReservedTap;
+  /// 비활성화된 테이블 클릭 시 호출되는 콜백
+  final VoidCallback? onDisabledTap;
 
   const TableItem({
     super.key,
@@ -325,8 +399,10 @@ class TableItem extends StatelessWidget {
     required this.capacity,
     required this.isReserved,
     required this.isSelected,
+    this.isDisabled = false,
     required this.onTap,
     this.onReservedTap,
+    this.onDisabledTap,
   });
 
   @override
@@ -335,16 +411,22 @@ class TableItem extends StatelessWidget {
     final double size = 48 + (capacity * 6); // 인원수 → 크기
 
     return GestureDetector(
-      onTap: isReserved ? onReservedTap : onTap,
+      onTap: isReserved 
+          ? onReservedTap 
+          : isDisabled 
+              ? onDisabledTap 
+              : onTap,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           color: isReserved 
               ? p.divider 
-              : isSelected 
-                  ? p.primary 
-                  : Colors.green,
+              : isDisabled
+                  ? Colors.grey.shade300
+                  : isSelected 
+                      ? p.primary 
+                      : Colors.green,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: p.divider),
         ),
@@ -354,15 +436,23 @@ class TableItem extends StatelessWidget {
             Text(
               name,
               style: mainSmallTitleStyle.copyWith(
-                color: isReserved ? Colors.grey.shade600 : Colors.white,
+                color: isReserved || isDisabled 
+                    ? Colors.grey.shade600 
+                    : Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              isReserved ? '예약됨' : '$capacity인',
+              isReserved 
+                  ? '예약됨' 
+                  : isDisabled
+                      ? '선택불가'
+                      : '$capacity인',
               style: mainSmallTextStyle.copyWith(
-                color: isReserved ? Colors.grey.shade600 : Colors.white,
+                color: isReserved || isDisabled 
+                    ? Colors.grey.shade600 
+                    : Colors.white,
               ),
             ),
           ],

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
-import 'package:table_now_app/view/map_google/destination_input_screen.dart';
+import 'package:table_now_app/view/map/map_google/destination_input_screen.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
