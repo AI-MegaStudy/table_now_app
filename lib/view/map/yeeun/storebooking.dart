@@ -7,7 +7,7 @@ import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/yeeun/navigator.dart';
 
-class StoreBookingInfoScreen extends ConsumerWidget {
+class StoreBookingInfoScreen extends ConsumerStatefulWidget {
   final Store store;
 
   const StoreBookingInfoScreen({
@@ -16,37 +16,44 @@ class StoreBookingInfoScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final p = context.palette;
-    final GlobalKey<ScaffoldState> scaffoldKey =
-        GlobalKey<ScaffoldState>();
+  ConsumerState<StoreBookingInfoScreen> createState() => _StoreBookingInfoScreenState();
+}
 
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: p.background,
-      drawer: const ProfileDrawer(),
-      appBar: CommonAppBar(
-        title: Text(
-          '${store.store_description ?? "매장상세"}',
-          style: mainAppBarTitleStyle.copyWith(
-            color: p.textOnPrimary,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.account_circle,
-              color: p.textOnPrimary,
+class _StoreBookingInfoScreenState extends ConsumerState<StoreBookingInfoScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        final p = context.palette;
+        
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: p.background,
+          drawer: const ProfileDrawer(),
+          appBar: CommonAppBar(
+            title: Text(
+              widget.store.store_description ?? "매장상세",
+              style: mainAppBarTitleStyle.copyWith(
+                color: p.textOnPrimary,
+              ),
             ),
-            onPressed: () {
-              scaffoldKey.currentState?.openDrawer();
-            },
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.account_circle,
+                  color: p.textOnPrimary,
+                ),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
+          body: Column(
+            children: [
+              Padding(
             padding: const EdgeInsets.symmetric(
               vertical: 20,
               horizontal: 30,
@@ -64,9 +71,9 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                 _buildStep(4, '확인'),
               ],
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
+              ),
+              Expanded(
+                child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Card(
                 shape: RoundedRectangleBorder(
@@ -117,7 +124,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                store.store_description ??
+                                widget.store.store_description ??
                                     "매장 정보 없음",
                                 style: TextStyle(
                                   fontSize: 20,
@@ -140,7 +147,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  store.store_address ??
+                                  widget.store.store_address ??
                                       "주소 정보 없음",
                                   style: TextStyle(
                                     fontSize: 15,
@@ -159,7 +166,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               ),
                               SizedBox(width: 4),
                               Text(
-                                '영업시간: ${store.store_open_time ?? "-"} - ${store.store_close_time ?? "-"}',
+                                '영업시간: ${widget.store.store_open_time ?? "-"} - ${widget.store.store_close_time ?? "-"}',
                                 style: TextStyle(
                                   color: Colors.grey,
                                   fontSize: 14,
@@ -176,7 +183,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
             ),
           ),
 
-          Padding(
+              Padding(
             padding: const EdgeInsets.fromLTRB(
               16,
               8,
@@ -192,7 +199,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          NavigatorScreen(store: store),
+                          NavigatorScreen(store: widget.store),
                     ),
                   );
                 },
@@ -212,9 +219,11 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

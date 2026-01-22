@@ -7,7 +7,7 @@ import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/map_screen.dart';
 
-class DistrictListScreen extends ConsumerWidget {
+class DistrictListScreen extends ConsumerStatefulWidget {
   final String regionName;
   final List<Store> storesInRegion;
 
@@ -18,13 +18,18 @@ class DistrictListScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final GlobalKey<ScaffoldState> _scaffoldKey =
-        GlobalKey<ScaffoldState>();
+  ConsumerState<DistrictListScreen> createState() => _DistrictListScreenState();
+}
+
+class _DistrictListScreenState extends ConsumerState<DistrictListScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     final p = context.palette;
 
     final Map<String, List<Store>> groupedDistricts = {};
-    for (var store in storesInRegion) {
+    for (var store in widget.storesInRegion) {
       final parts = store.store_address.split(' ');
 
       final district = parts.length > 1 ? parts[1] : '기타';
@@ -36,14 +41,16 @@ class DistrictListScreen extends ConsumerWidget {
 
     final districts = groupedDistricts.keys.toList();
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: p.background,
-      // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(),
-      appBar: CommonAppBar(
+    return Builder(
+      builder: (context) {
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: p.background,
+          // drawer: const AppDrawer(),
+          drawer: const ProfileDrawer(),
+          appBar: CommonAppBar(
         title: Text(
-          '$regionName 세부지역',
+          '${widget.regionName} 세부지역',
           style: mainAppBarTitleStyle.copyWith(
             color: p.textOnPrimary,
           ),
@@ -122,6 +129,8 @@ class DistrictListScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+      },
     );
   }
 }

@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/firebase_options.dart';
-import 'package:table_now_app/view/home.dart';
+import 'package:table_now_app/view/auth/auth_screen.dart';
+import 'package:table_now_app/view/map/region_list_screen.dart';
 import 'package:table_now_app/vm/fcm_notifier.dart';
 import 'package:table_now_app/vm/theme_notifier.dart';
 import 'package:table_now_app/vm/auth_notifier.dart';
@@ -225,8 +226,22 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         brightness: Brightness.dark,
         colorSchemeSeed: seedColor,
       ),
-      home: const Home(),
+      home: _getInitialScreen(),
       debugShowCheckedModeBanner: false,
     );
+  }
+
+  /// 로그인 상태에 따라 초기 화면 결정
+  Widget _getInitialScreen() {
+    // 현재 로그인 상태 확인 (동기적)
+    final authState = ref.read(authNotifierProvider);
+
+    if (authState.isLoggedIn) {
+      // 로그인되어 있으면 RegionListScreen으로 이동
+      return const RegionListScreen();
+    } else {
+      // 로그인되어 있지 않으면 AuthScreen으로 이동
+      return const AuthScreen();
+    }
   }
 }

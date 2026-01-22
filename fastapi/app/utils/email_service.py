@@ -20,8 +20,19 @@ class EmailService:
     SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
     SMTP_USER = os.getenv('SMTP_USER', '')  # 발신자 이메일
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')  # 발신자 비밀번호 또는 앱 비밀번호
-    FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@tablenow.com')
     FROM_NAME = os.getenv('FROM_NAME', 'Table Now')
+    
+    @classmethod
+    def get_from_email(cls) -> str:
+        """
+        발신자 이메일 주소 반환
+        Gmail 사용 시 SMTP_USER와 일치해야 하므로 자동으로 설정
+        """
+        from_email = os.getenv('FROM_EMAIL', '')
+        # Gmail 사용 시 또는 FROM_EMAIL이 설정되지 않은 경우 SMTP_USER 사용
+        if not from_email or 'gmail.com' in cls.SMTP_HOST.lower():
+            return cls.SMTP_USER if cls.SMTP_USER else 'noreply@tablenow.com'
+        return from_email
     
     @classmethod
     def send_password_reset_email(
@@ -81,7 +92,7 @@ class EmailService:
             # 이메일 메시지 생성
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = f"{cls.FROM_NAME} <{cls.FROM_EMAIL}>"
+            msg['From'] = f"{cls.FROM_NAME} <{cls.get_from_email()}>"
             msg['To'] = to_email
             
             # 텍스트 및 HTML 내용 추가
@@ -151,7 +162,7 @@ class EmailService:
             
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = f"{cls.FROM_NAME} <{cls.FROM_EMAIL}>"
+            msg['From'] = f"{cls.FROM_NAME} <{cls.get_from_email()}>"
             msg['To'] = to_email
             
             part = MIMEText(html_content, 'html', 'utf-8')

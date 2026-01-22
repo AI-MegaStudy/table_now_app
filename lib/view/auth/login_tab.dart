@@ -14,6 +14,7 @@ import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/view/Dev/dev_07.dart';
+import 'package:table_now_app/view/map/region_list_screen.dart';
 import 'package:table_now_app/vm/auth_notifier.dart';
 
 /// 로그인 탭 위젯
@@ -39,6 +40,33 @@ class _LoginTabState extends ConsumerState<LoginTab> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// 로그인 성공 후 공통 처리 (스낵바 표시 + 페이지 이동)
+  Future<void> _onLoginSuccess({
+    required Map<String, dynamic> customerData,
+    required String title,
+    required String message,
+    Widget? nextScreen,
+  }) async {
+    // Customer 모델 생성
+    final customer = Customer.fromJson(customerData);
+
+    // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
+    await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
+
+    if (mounted) {
+      // 환영 메시지 스낵바 표시
+      CustomCommonUtil.showSuccessSnackbar(
+        context: context,
+        title: title,
+        message: message,
+      );
+
+      // 지정된 화면으로 이동 (없으면 기본값: RegionListScreen)
+      final screen = nextScreen ?? const RegionListScreen();
+      await CustomNavigationUtil.offAll(context, screen);
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -99,23 +127,11 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customerData = responseData['result'];
           final customerName = customerData['customer_name'] ?? '고객';
 
-          // Customer 모델 생성
-          final customer = Customer.fromJson(customerData);
-
-          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
-
-          if (mounted) {
-            // 환영 메시지 스낵바 표시
-            CustomCommonUtil.showSuccessSnackbar(
-              context: context,
-              title: '로그인 성공',
-              message: '$customerName님, 환영합니다!',
-            );
-
-            // dev_07 페이지로 이동
-            await CustomNavigationUtil.offAll(context, const Dev_07());
-          }
+          await _onLoginSuccess(
+            customerData: customerData,
+            title: '로그인 성공',
+            message: '$customerName님, 환영합니다!',
+          );
         } else {
           // 서버 에러 응답
           final errorMsg = responseData['errorMsg'] ?? '로그인에 실패했습니다.';
@@ -310,23 +326,13 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customerData = responseData['result'];
           final customerName = customerData['customer_name'] ?? '고객';
 
-          // Customer 모델 생성
-          final customer = Customer.fromJson(customerData);
-
-          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
-
-          if (mounted) {
-            // 환영 메시지 스낵바 표시
-            CustomCommonUtil.showSuccessSnackbar(
-              context: context,
-              title: '로그인 성공',
-              message: '$customerName님, 환영합니다!',
-            );
-
-            // dev_07 페이지로 이동
-            await CustomNavigationUtil.offAll(context, const Dev_07());
-          }
+          // 로그인 성공 처리
+          await _onLoginSuccess(
+            customerData: customerData,
+            title: '로그인 성공',
+            message: '$customerName님, 환영합니다!',
+            // nextScreen: const Dev_07(), //지정하지 않으면 기본값으로 RegionListScreen으로 이동
+          );
         } else {
           // 서버 에러 응답
           final errorMsg = responseData['errorMsg'] ?? '로그인에 실패했습니다.';
@@ -454,23 +460,11 @@ class _LoginTabState extends ConsumerState<LoginTab> {
           final customerData = responseData['result'];
           final customerName = customerData['customer_name'] ?? '고객';
 
-          // Customer 모델 생성
-          final customer = Customer.fromJson(customerData);
-
-          // 인증 Notifier를 통해 로그인 처리 (GetStorage 자동 저장 및 전역 상태 업데이트)
-          await ref.read(authNotifierProvider.notifier).login(customer, _autoLoginEnabled);
-
-          if (mounted) {
-            // 환영 메시지 스낵바 표시
-            CustomCommonUtil.showSuccessSnackbar(
-              context: context,
-              title: '계정 통합 완료',
-              message: '$customerName님, 계정이 통합되었습니다!',
-            );
-
-            // dev_07 페이지로 이동
-            await CustomNavigationUtil.offAll(context, const Dev_07());
-          }
+          await _onLoginSuccess(
+            customerData: customerData,
+            title: '계정 통합 완료',
+            message: '$customerName님, 계정이 통합되었습니다!',
+          );
         } else {
           // 서버 에러 응답
           final errorMsg = responseData['errorMsg'] ?? '계정 통합에 실패했습니다.';
