@@ -93,6 +93,13 @@ class StoreDetailSheet extends StatelessWidget {
                 //   context,
                 //   ReservePage01(store: store),
                 // );
+                CustomNavigationUtil.to(
+                  context,
+                  const ReservePage01(),
+                  settings: RouteSettings(
+                    arguments: {'store_seq': store.store_seq},
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,

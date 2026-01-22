@@ -7,6 +7,7 @@ import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/utils/location_util.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/map/store_detail_sheet.dart';
@@ -30,7 +31,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     37.5665,
     126.9780,
   );
-  final bool isLoading = false;
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -125,31 +126,48 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
         actions: [
           IconButton(
+            icon: _isLocating
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: p.textOnPrimary,
+                    ),
+                  )
+                : Icon(
+                    Icons.refresh_rounded,
+                    color: p.textOnPrimary,
+                  ),
+            onPressed: _isLocating
+                ? null
+                : () async {
+                    setState(() => _isLocating = true);
+
+                    try {
+                      await _getUserLocation();
+                      if (mounted) _applyBounds();
+
+                      if (mounted) {
+                        CustomCommonUtil.showSuccessSnackbar(
+                          context: context,
+                          title: "매장 위치 로드",
+                          message: "주변 매장 위치로 화면을 맞춥니다.",
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isLocating = false);
+                    }
+                  },
+          ),
+
+          IconButton(
             icon: Icon(
               Icons.account_circle,
               color: p.textOnPrimary,
             ),
             onPressed: () =>
                 _scaffoldKey.currentState?.openDrawer(),
-          ),
-
-          IconButton(
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: p.textOnPrimary,
-            ),
-            onPressed: () async {
-              await _getUserLocation();
-
-              if (mounted) _applyBounds();
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("주변 매장 위치로 화면을 맞춥니다."),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-            },
           ),
         ],
       ),
