@@ -89,10 +89,10 @@ class StoreDetailSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                CustomNavigationUtil.to(
-                  context,
-                  ReservePage01(store: store),
-                );
+                // CustomNavigationUtil.to(
+                //   context,
+                //   ReservePage01(store: store),
+                // );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,

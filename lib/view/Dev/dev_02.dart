@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/view/map/region_list_screen.dart';
+import 'package:table_now_app/view/map/screen.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
@@ -63,6 +64,22 @@ class _Dev_02State extends ConsumerState<Dev_02> {
                 spacing: mainLargeSpacing,
                 children: [
                   // 여기에 컨텐츠 추가
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Screen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'temp',
+                      style: mainMediumTitleStyle.copyWith(
+                        color: p.textOnPrimary,
+                      ),
+                    ),
+                  ),
                   Center(
                     child: SizedBox(
                       width: mainButtonMaxWidth,
