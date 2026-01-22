@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/menu/menu_detail_screen.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
@@ -16,8 +18,11 @@ class MenuListScreen extends ConsumerStatefulWidget {
 }
 
 class _MenuListScreenState extends ConsumerState<MenuListScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
+
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final orderState = ref.watch(orderNotifierProvider);
@@ -33,16 +38,29 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
     // ref.read(menuNotifierProvider.notifier).fetchMenu(2);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: const Text("메뉴 선택", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: mainAppBarCenterTitle,
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
-        elevation: 0,
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '메뉴 선택',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
+          _buildStepIndicator(),
           Expanded(
             child: menuAsync.when(
               data: (menus) {
@@ -65,7 +83,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: p.cardBackground,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -83,7 +101,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                                       'https://cheng80.myqnapcloud.com/tablenow/${m.menu_image}',
                                       width: 80,
                                       height: 80,
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.fill,
                                       errorBuilder:
                                           (context, error, stackTrace) =>
                                               Container(
@@ -106,7 +124,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                                               m.menu_price),
                                           style: TextStyle(
                                             fontSize: 16,
-                                            color: Colors.grey[800],
+                                            color: Colors.grey[700],
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -142,7 +160,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: totalPrice == 0 ? Colors.grey : Colors.black,
+                backgroundColor: totalPrice == 0 ? Colors.grey : Colors.orange,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
@@ -159,5 +177,56 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
         ],
       ),
     );
+  } // build
+  // 상단 스텝 바 (숫자 아이콘)
+  Widget _buildStepIndicator() {
+    final p = context.palette;
+
+    return Container(
+      color: p.background,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _stepCircle("1", "정보", isCompleted: true),
+          _stepLine(),
+          _stepCircle("2", "좌석", isCompleted: true),
+          _stepLine(),
+          _stepCircle("3", "메뉴", isCompleted: true),
+          _stepLine(),
+          _stepCircle("4", "확인", isCurrent: false),
+        ],
+      ),
+    );
   }
+
+  Widget _stepCircle(String num, String label, {bool isCompleted = false, bool isCurrent = false}) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: isCurrent ? Colors.green : (isCompleted ? Colors.green : Colors.grey.shade300),
+          child: Text(num, style: TextStyle(color: isCompleted ? Colors.white : Colors.grey[800], fontSize: 12)),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: isCurrent || isCompleted ? Colors.green : Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _stepLine() => Container(width: 40, height: 1, color: Colors.green);
+  
 }
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-19
+// 작성자: 임소연
+// 설명: Menu List Screen
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-19 임소연: 초기 생성
+// 2026-01-19 임소연: 디자인 수정, 공용앱바 추가

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/model/menu.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
@@ -18,8 +20,11 @@ class MenuDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
+
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final optionAsync = ref.watch(optionNotifierProvider);
@@ -47,7 +52,26 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     );
 
     return Scaffold(
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
       backgroundColor: p.background,
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '메뉴 선택',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
+      ),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -163,7 +187,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
             Navigator.pop(context, menuTotalPrice + optionTotalPrice);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.orange,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -185,8 +209,9 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: context.palette.chipUnselectedBg,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: context.palette.accent)
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -211,3 +236,18 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
     );
   }
 }
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-19
+// 작성자: 임소연
+// 설명: Menu Detail Screen
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-19 임소연: 초기 생성
+// 2026-01-19 임소연: totalPrice 계산, 추가/제거 버튼 추가
+// 2026-01-20 임소연: totalPrice 수정, 디자인 수정
+// 2026-01-21 임소연: totalPrice 수정, 공용앱바 추가

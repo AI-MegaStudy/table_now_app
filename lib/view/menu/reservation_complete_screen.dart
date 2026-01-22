@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_common_util.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
 
@@ -15,8 +18,11 @@ class ReservationCompleteScreen extends ConsumerStatefulWidget {
 }
 
 class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
+    
     final p = context.palette;
     final menuAsync = ref.watch(menuNotifierProvider);
     final orderState = ref.watch(orderNotifierProvider);
@@ -31,15 +37,25 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
     String formattedDate = "${dateParts[0]}년 ${dateParts[1]}월 ${dateParts[2]}일";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // 연한 회색 배경
-      appBar: AppBar(
-        title: const Text('잠실점', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () => Navigator.pop(context)),
-        actions: [IconButton(icon: const Icon(Icons.person_outline), onPressed: () {})],
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      backgroundColor: p.background,
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '예약 확인',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -51,7 +67,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
               padding: const EdgeInsets.all(16.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: p.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
@@ -131,17 +147,19 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
 
   // 상단 스텝 바 (숫자 아이콘)
   Widget _buildStepIndicator() {
+    final p = context.palette;
+
     return Container(
-      color: Colors.white,
+      color: p.background,
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _stepCircle("1", "정보", isCompleted: true),
           _stepLine(),
-          _stepCircle("2", "메뉴", isCompleted: true),
+          _stepCircle("2", "좌석", isCompleted: true),
           _stepLine(),
-          _stepCircle("3", "좌석", isCompleted: true),
+          _stepCircle("3", "메뉴", isCompleted: true),
           _stepLine(),
           _stepCircle("4", "확인", isCurrent: true),
         ],
@@ -188,6 +206,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
   // 선택한 메뉴 리스트 가젯
   Widget _buildMenuList(AsyncValue<List<dynamic>> menuAsync, Map<int, dynamic> orderMenus) {
     final allMenus = menuAsync.maybeWhen(data: (d) => d, orElse: () => []);
+    final p = context.palette;
     
     return Column(
       children: orderMenus.entries.map((entry) {
@@ -199,8 +218,9 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: p.cardBackground,
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200)
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,3 +235,17 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
     );
   }
 }
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-19
+// 작성자: 임소연
+// 설명: Menu Notifier
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-19 임소연: 초기 생성
+// 2026-01-20 임소연: 주문 메뉴 리스트 추가
+// 2026-01-21 임소연: 예약 데이터 추가, 디자인 수정, 공용앱바 추가

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/view/menu/menu_list_screen.dart';
-import 'package:table_now_app/view/menu/reservation_complete_screen.dart';
 import '../../config/ui_config.dart';
 import '../../theme/app_colors.dart';
 
