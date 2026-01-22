@@ -63,7 +63,7 @@ class _Dev_01State extends ConsumerState<Dev_01> {
                         ),
                         ElevatedButton(
                           // CustomNavigationUtil.to(context, const AuthScreen());
-                          onPressed: () => CustomNavigationUtil.to(context, const PaymentListGroupView()),
+                          onPressed: () => CustomNavigationUtil.to(context, const PaymentListGroupView(totalPrice: 20000,)),
                           child: Text('유저의 reservation 결제 페이지'),
                         ),
                         // ElevatedButton(
