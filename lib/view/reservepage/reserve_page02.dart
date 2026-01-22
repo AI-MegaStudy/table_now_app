@@ -219,9 +219,16 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                         };
                         box.write('reserve2', reserve);
                         //다음 페이지로
+                        // CustomNavigationUtil.to(
+                        //   context,
+                        //   MenuListScreen()
+                        // );
                         CustomNavigationUtil.to(
                           context,
-                          MenuListScreen()
+                          const MenuListScreen(),
+                          settings: RouteSettings(
+                            arguments: {'store_seq': store_seq},
+                          ),
                         );
                       },
                       child: Text(
