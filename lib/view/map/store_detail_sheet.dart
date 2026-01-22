@@ -3,41 +3,8 @@ import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/view/map/map_google/destination_input_screen.dart';
 import 'package:table_now_app/view/map/map_google/map_screen.dart';
 import 'package:table_now_app/view/reservepage/reserve_page01.dart';
-
-class DestinationArguments {
-  final double latitude;
-
-  final double longitude;
-
-  final String? name;
-
-  DestinationArguments({
-    required this.latitude,
-    required this.longitude,
-    this.name,
-  });
-
-  factory DestinationArguments.fromMap(
-    Map<String, dynamic> map,
-  ) {
-    return DestinationArguments(
-      latitude: map['latitude']?.toDouble() ?? 0.0,
-      longitude: map['longitude']?.toDouble() ?? 0.0,
-      name: map['name'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'latitude': latitude,
-      'longitude': longitude,
-      if (name != null) 'name': name,
-    };
-  }
-}
 
 class StoreDetailSheet extends StatelessWidget {
   final Store store;
