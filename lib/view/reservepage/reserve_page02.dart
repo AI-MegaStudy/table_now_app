@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store_table.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/utils/custom_common_util.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
+import 'package:table_now_app/view/menu/menu_list_screen.dart';
 import 'package:table_now_app/view/reservepage/reserve_page01.dart';
 import 'package:table_now_app/vm/reserve_page02_notifier.dart';
 
 class ReservePage02 extends ConsumerStatefulWidget {
-  ReservePage02({super.key});
+  const ReservePage02({super.key});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _ReservePage02State();
   }
 
 class _ReservePage02State extends ConsumerState<ReservePage02>{
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool loading = true;
 
   int store_seq = 1;
@@ -60,29 +66,46 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
     final p = context.palette;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: p.primary,
-        elevation: 0,
-        leading: const BackButton(),
-        title: const Text('테이블 선택'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.person),
+      key: _scaffoldKey,
+      backgroundColor: p.background,
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '테이블 선택',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
         ],
       ),
       body: reserveAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
+        loading: () => Center(child: CircularProgressIndicator(color: p.primary)),
+        error: (e, _) => Center(
+          child: Text(
+            e.toString(),
+            style: mainBodyTextStyle.copyWith(color: Colors.red),
+          ),
+        ),
         data: (state) {
           if (selectedDay == "" || selectedTime == "") {
-            return const Center(child: Text('날짜와 시간을 선택해주세요'));
+            return Center(
+              child: Text(
+                '날짜와 시간을 선택해주세요',
+                style: mainBodyTextStyle.copyWith(color: p.textSecondary),
+              ),
+            );
           }
 
-          final dateKey =
-              selectedDay!.toString().substring(0, 10);
-          final timeKey = selectedTime!;
+          final dateKey = selectedDay.substring(0, 10);
+          final timeKey = selectedTime;
 
           // 예약된 테이블 맵
           final Map<String, dynamic> reservedTables = tablesData[dateKey]?[timeKey] ?? {};
@@ -92,40 +115,7 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
             child: Column(
               children: [
                 /// STEP INDICATOR
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(4, (index) {
-                      final isActive = index == 1;
-                      final labels = ['정보', '좌석', '메뉴', '확인'];
-
-                      return Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor:
-                                isActive ? p.primary : Colors.grey.shade300,
-                            child: Text(
-                              '${index + 1}',
-                              style: TextStyle(
-                                color: isActive ? Colors.white : Colors.black,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            labels[index],
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isActive ? p.primary : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
+                _buildStepIndicator(p, currentStep: 1),
 
                 Expanded(
                   child: GridView.builder(
@@ -189,47 +179,112 @@ class _ReservePage02State extends ConsumerState<ReservePage02>{
                   ),
                 ),
                 /// NEXT BUTTON
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: p.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: mainButtonHeight,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: p.primary,
+                        foregroundColor: p.textOnPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
                       ),
-                    ),
-                    onPressed: () {
-                      //스토리지에 예약 정보 저장
-                      if(state.selectedTable == null || state.selectedTable!.isEmpty){
-                        return;
-                      }
-                      final reserve = {
-                        'reserve_tables' : state.selectedTable!.join(','),
-                      };
-                      box.write('reserve2', reserve);
-                      //다음 페이지로
-                      CustomNavigationUtil.to(
-                        context,
-                        ReservePage01(),
-                      );
-                    },
-                    child: Text(
-                      '다음',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: p.textOnPrimary
+                      onPressed: () {
+                        // 유효성 검사
+                        if (state.selectedTable == null || state.selectedTable!.isEmpty) {
+                          CustomCommonUtil.showErrorSnackbar(
+                            context: context,
+                            message: '테이블을 선택해주세요.',
+                          );
+                          return;
+                        }
+                        
+                        //스토리지에 예약 정보 저장
+                        final reserve = {
+                          'reserve_tables' : state.selectedTable!.join(','),
+                        };
+                        box.write('reserve2', reserve);
+                        //다음 페이지로
+                        CustomNavigationUtil.to(
+                          context,
+                          MenuListScreen()
+                        );
+                      },
+                      child: Text(
+                        '다음',
+                        style: mainMediumTitleStyle.copyWith(
+                          color: p.textOnPrimary,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  //-----Widgets------
+  
+  /// Step Indicator 위젯
+  Widget _buildStepIndicator(dynamic p, {required int currentStep}) {
+    final labels = ['정보', '좌석', '메뉴', '확인'];
+    
+    return Container(
+      color: p.cardBackground,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(labels.length, (index) {
+          final isActive = index == currentStep;
+          final isCompleted = index < currentStep;
+          
+          return Row(
+            children: [
+              Column(
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: isActive || isCompleted 
+                        ? p.primary 
+                        : p.divider,
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isActive || isCompleted 
+                            ? p.textOnPrimary 
+                            : p.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    labels[index],
+                    style: mainSmallTextStyle.copyWith(
+                      color: isActive ? p.primary : p.textSecondary,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              if (index < labels.length - 1)
+                Container(
+                  width: 30,
+                  height: 1,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: isCompleted ? p.primary : p.divider,
+                ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -256,6 +311,7 @@ class TableItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final double size = 48 + (capacity * 6); // 인원수 → 크기
 
     return GestureDetector(
@@ -264,16 +320,20 @@ class TableItem extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isReserved ? Colors.grey.shade400 : isSelected ? Colors.orange : Colors.green,
+          color: isReserved 
+              ? p.divider 
+              : isSelected 
+                  ? p.primary 
+                  : Colors.green,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black12),
+          border: Border.all(color: p.divider),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               name,
-              style: const TextStyle(
+              style: mainSmallTitleStyle.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -281,9 +341,8 @@ class TableItem extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$capacity인',
-              style: const TextStyle(
+              style: mainSmallTextStyle.copyWith(
                 color: Colors.white,
-                fontSize: 12,
               ),
             ),
           ],
