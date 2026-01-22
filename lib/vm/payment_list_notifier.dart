@@ -343,7 +343,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
   // Future<void> purchase(Map<String,dynamic> data) async {
   Future<void> purchase() async {
     try {
-      if(_isInPurchaseProcess == 1) {
+
         final response = await http.post(
           Uri.parse('$url/api/pay/purchase'),
           headers: {'Content-Type': 'application/json'},
@@ -363,7 +363,7 @@ class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
           }
         
         }
-      }
+      
     } catch (error, stackTrace) {
       
       state = AsyncValue.error(error, stackTrace);
