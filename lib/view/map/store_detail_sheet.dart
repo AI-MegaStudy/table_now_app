@@ -3,6 +3,7 @@ import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
+import 'package:table_now_app/view/map/map_google/destination_input_screen.dart';
 import 'package:table_now_app/view/reservepage/reserve_page01.dart';
 
 class StoreDetailSheet extends StatelessWidget {
@@ -17,7 +18,9 @@ class StoreDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('📍 [StoreDetailSheet] 받은 distance: $distance');
+    debugPrint(
+      ' [StoreDetailSheet] 받은 distance: $distance',
+    );
     final p = context.palette;
     return Container(
       padding: EdgeInsets.only(
@@ -42,9 +45,7 @@ class StoreDetailSheet extends StatelessWidget {
               color: p.primary,
             ),
           ),
-
-          const SizedBox(height: 12),
-
+          SizedBox(height: 12),
           if (distance != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -55,7 +56,7 @@ class StoreDetailSheet extends StatelessWidget {
                     size: 18,
                     color: p.primary,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     "내 위치에서 $distance",
                     style: mainBodyTextStyle.copyWith(
@@ -66,7 +67,6 @@ class StoreDetailSheet extends StatelessWidget {
                 ],
               ),
             ),
-
           _buildInfoRow(
             context,
             Icons.location_on_outlined,
@@ -82,44 +82,77 @@ class StoreDetailSheet extends StatelessWidget {
             Icons.access_time_outlined,
             "${store.store_open_time ?? "-"} ~ ${store.store_close_time ?? "-"}",
           ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            width: double.infinity,
-            height: mainButtonHeight,
-            child: ElevatedButton(
-              onPressed: () {
-                CustomNavigationUtil.to(
-                  context,
-                  const ReservePage01(),
-                  settings: RouteSettings(
-                    arguments: {'store_seq': store.store_seq},
+          SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    CustomNavigationUtil.to(
+                      context,
+                      const ReservePage01(),
+                      settings: RouteSettings(
+                        arguments: {
+                          'store_seq': store.store_seq,
+                        },
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: p.primary,
+                    foregroundColor: p.textOnPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                    ),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: p.primary,
-                foregroundColor: p.textOnPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                "매장 예약",
-                style: mainMediumTitleStyle.copyWith(
-                  color: p.textOnPrimary,
+                  child: Text("매장 예약"),
                 ),
               ),
-            ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const DestinationInputScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.directions),
+                  label: Text("길찾기"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String text,
+  ) {
     final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -127,7 +160,7 @@ class StoreDetailSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: p.textSecondary),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
