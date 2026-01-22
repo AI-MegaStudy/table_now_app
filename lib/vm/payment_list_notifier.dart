@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config.dart';
 import 'package:table_now_app/model/customer.dart';
 import 'package:table_now_app/model/payment.dart';
@@ -121,6 +122,7 @@ Map<String, dynamic> testData = {
     "payment_status": "PROCESS",
   },
   "items": {
+    "totalPrice": int,
     "menus": {
       "1": {
         "count": 2, 
@@ -150,7 +152,69 @@ Map<String, dynamic> testData = {
   },
 };
 
-class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
+
+class PurchaseMenuOptions{
+  int? option_seq;
+  final String name;
+  final int price;
+  final int count;
+
+  PurchaseMenuOptions({
+    this.option_seq,
+    required this.name,
+    required this.price,
+    required this.count
+  });
+
+  factory PurchaseMenuOptions.fromJson(Map<String,dynamic> json){
+    return PurchaseMenuOptions(
+      option_seq: json['option_seq'],
+      name: json['name'], 
+      price: json['price'], 
+      count: json['count']
+    );
+  }
+
+
+
+
+
+}
+
+class PurchaseMenus{
+  int? menu_seq;
+  final int count;
+  final int price;
+  final String date;
+  final PurchaseMenuOptions? options;
+
+  PurchaseMenus({
+    this.menu_seq,
+    required this.count,
+    required this.price,
+    required this.date,
+    this.options
+  });
+
+  factory PurchaseMenus.fromJson(Map<String,dynamic>json){
+    return PurchaseMenus(
+      menu_seq: json['menu_seq'],
+      count: json['count'], 
+      price: json['price'], 
+      date: json['date'],
+      options: PurchaseMenuOptions.fromJson(json['options'])
+    );
+  }
+
+
+
+}
+
+
+
+
+// class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
+class PaymentListAsyncNotifier extends AsyncNotifier<Map<String,dynamic>> {
   late final String url = getApiBaseUrl();
   final String error = '';
   final Map<String,dynamic> receiveData = {'reserve':'','items':''};
@@ -158,8 +222,9 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   int _reserve_seq = 0;
   int _total_payment = 0;
   
-  // todo: 확인용 -> 삭제 할것.
-  bool _isPurchaseInsertSuccess = false;
+  // 현재 것이 미결제 인지 확인
+  // 0: ready, 1: reserve생성, 2: 결제 진행, 3: 결제 진행 실패, 4: 결제 완료.
+  int _isInPurchaseProcess = 0;
 
   // decrypt key
   late String _k = '';
@@ -174,22 +239,17 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   String get k => _k;
   String get iv => _iv;
   int get reserve_seq => _reserve_seq;
-  bool get isPurchaseInsertSuccess => _isPurchaseInsertSuccess;
+  int get isInPurchaseProcess => _isInPurchaseProcess;
 
   @override
-  FutureOr<List<PaymentResponse>> build() async {
+  FutureOr<Map<String,dynamic>> build() async {
     // Get CustomerSeq from Storage
     final Customer? customer = CustomerStorage.getCustomer();
     if (customer != null) {
       _customerSeq = customer.customerSeq;
     }
-    await getKey();
-    // Get Reservation OBJ
-
-    // Need MenuList picked
-    // 메뉴리스트를 받는다. 어떤 형식?
-
-    return fetchData();
+    await getKey();  
+    return {};
   }
 
   // decrypt key, iv를 가져오기 위한 부분.
@@ -207,15 +267,19 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
   void setReserve(PurchaseReserve purchaseReserve){
     receiveData['reserve'] = purchaseReserve;
-    print(purchaseReserve.toJson());
   }
 
   void setItems(Map<String,dynamic> items){
     receiveData['items'] = items;
-    print(items);
     // receiveData['items'] = testData['items'];
   }
 
+  void setData(PurchaseReserve purchaseReserve,Map<String,dynamic> items, int totalPrice){
+    receiveData['reserve'] = purchaseReserve;
+    receiveData['items'] = items;
+    _total_payment = totalPrice;
+    state = AsyncValue.data({'reserve':purchaseReserve,'items':items});
+  }
 
 
   // id가 있다면 특정 payment만 가져온다.
@@ -260,60 +324,66 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
   //     state = AsyncValue.data(await _fetchData(id));
   // }
 
+  // 결제가 완료 됬을때 실행.
   // Future<void> purchase(Map<String,dynamic> data) async {
   Future<void> purchase() async {
     try {
-      final response = await http.post(
-        Uri.parse('$url/api/pay/purchase'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(receiveData),
-      );
-      if (response.statusCode != 200) {
-        throw Exception("지불 실패(1): ${response.statusCode}");
-      } else {
-        // 결과가 성공했음. reserve id를 받아서 저장.
-        final jsonData = json.decode(utf8.decode(response.bodyBytes));
-        final results = jsonData["results"];
-        if(results == "Error") {
-          throw Exception("지불 실패(2): ${response.statusCode}");
-        }else{
-          print('${results['reserve_seq']}');
-          _reserve_seq = results['reserve_seq'];
-          print('================== xxxxx $_reserve_seq');
-
-          _isPurchaseInsertSuccess = true;
+      if(_isInPurchaseProcess == 1) {
+        final response = await http.post(
+          Uri.parse('$url/api/pay/purchase'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(receiveData),
+        );
+        if (response.statusCode != 200) {
+          throw Exception("지불 실패(1): ${response.statusCode}");
+        } else {
+          // 결과가 성공했음. reserve id를 받아서 저장.
+          final jsonData = json.decode(utf8.decode(response.bodyBytes));
+          final results = jsonData["results"];
+          if(results == "Error") {
+            throw Exception("지불 실패(2): ${response.statusCode}");
+          }else{
+            _reserve_seq = results['reserve_seq'];
+            _isInPurchaseProcess = 2;
+          }
+        
         }
-      
       }
     } catch (error, stackTrace) {
-      _isPurchaseInsertSuccess = false;
+      
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   Future<bool> purchaseUpdate(Map<String,dynamic> data) async {
     try{
-      data['reserve_seq'] = _reserve_seq;
-      print("======================= $_reserve_seq");
-      // reserve_seq를 업데이트 시켜야 함. 
-      //payment_key:str, payment_status:str, reserve_seq:int
-       final response = await http.post(
-        Uri.parse('$url/api/pay/purchase/update'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(data),
-      );
+      // {'payment_key':'payment_key','payment_status':'DONE','reserve_seq':0}
      
-      if (response.statusCode != 200) {
-        throw Exception("P업데이트 실패(1): ${response.statusCode}");
-      } else {
-        // 결과가 성공했음. reserve id를 받아서 저장.
-        final jsonData = json.decode(utf8.decode(response.bodyBytes));
-        final result = jsonData["result"];
-        if(result == "Error") {
-          throw Exception("P업데이트 실패(2): ${response.statusCode}");
+        data['reserve_seq'] = _reserve_seq;
+        // reserve_seq를 업데이트 시켜야 함. 
+        //payment_key:str, payment_status:str, reserve_seq:int
+        final response = await http.post(
+          Uri.parse('$url/api/pay/purchase/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(data),
+        );
+      
+        if (response.statusCode != 200) {
+          throw Exception("P업데이트 실패(1): ${response.statusCode}");
+        } else {
+          // 결과가 성공했음. reserve id를 받아서 저장.
+          final jsonData = json.decode(utf8.decode(response.bodyBytes));
+          final result = jsonData["result"];
+          if(result == "Error") {
+            throw Exception("P업데이트 실패(2): ${response.statusCode}");
+          }
         }
-      }
-      return true;
+        if(data['payment_status'] == 'FAIL') _isInPurchaseProcess = 3;
+        else if(data['payment_status'] == 'DONE') reset();
+         
+        
+        return true;
+      
     }catch(error){
       //
       print('===== ERROR: $error');
@@ -323,19 +393,21 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
   Future<void> insertReserve(PurchaseReserve purchaseReserve)async{
     try{
-      final response = await http.post(
-        Uri.parse("$url/api/pay/insert_reserve"),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(purchaseReserve.toJson()),
-        );
-      if (response.statusCode != 200) {
-         throw Exception("R 업데이트 실패(1): ${response.statusCode}");
+      if(_isInPurchaseProcess == 0){
+        final response = await http.post(
+          Uri.parse("$url/api/pay/insert_reserve"),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode(purchaseReserve.toJson()),
+          );
+        if (response.statusCode != 200) {
+          throw Exception("R 업데이트 실패(1): ${response.statusCode}");
+        }
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final result = data['result'];
+        if(result == 'Error')  throw Exception("R 업데이트 실패(2): ${response.statusCode}");
+        _reserve_seq = result['reserve_seq'];
+        _isInPurchaseProcess = 1;
       }
-      final data = json.decode(utf8.decode(response.bodyBytes));
-      final result = data['result'];
-      if(result == 'Error')  throw Exception("R 업데이트 실패(2): ${response.statusCode}");
-      _reserve_seq = result['reserve_seq'];
-      
     }catch(error,stackTrace){
       state = AsyncValue.error(error, stackTrace);
     }
@@ -343,78 +415,84 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 
 
 
-
-  void clearPurchase() {
-    _isPurchaseInsertSuccess = false;
+  // 결제가 완료 되면 실행 Success or Fail. 
+  void reset() {
+    _isInPurchaseProcess = 0;
     _reserve_seq = 0;
     _total_payment = 0;
+
+    // 스토리지 정보 삭제
+    final storage = GetStorage();
+    storage.remove('reserve');
+    storage.remove('reserve2');
+    storage.remove('order');
   }
 
 
 
-  // 유저의 Payment를 추가 한다.
-  Future<void> addData(PaymentResponse payment) async {
-    final currentPayment = state.value ?? [];
-    state = AsyncValue.data([...currentPayment, payment]);
+  // // 유저의 Payment를 추가 한다.
+  // Future<void> addData(PaymentResponse payment) async {
+  //   final currentPayment = state.value ?? [];
+  //   state = AsyncValue.data([...currentPayment, payment]);
 
-    try {
-      // Insert
-      final response = await http.post(
-        Uri.parse('$url/api/pay/insert'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode([
-          Payment(
-            reserve_seq: 1,
-            store_seq: 1,
-            menu_seq: 5,
-            pay_quantity: 2,
-            pay_amount: 500,
-            created_at: DateTime.now(),
-          ).toJson(),
-          Payment(
-            reserve_seq: 1,
-            store_seq: 1,
-            menu_seq: 5,
-            pay_quantity: 2,
-            pay_amount: 500,
-            created_at: DateTime.now(),
-          ).toJson(),
-        ]),
-      );
-      if (response.statusCode != 200) {
-        throw Exception("데이터 추가 실패: ${response.statusCode}");
-      }
-      // final jsonData = json.decode(utf8.decode(response.bodyBytes));
-      // final List results = jsonData["results"];
-    } catch (e) {
-      state = AsyncValue.data(currentPayment);
-      rethrow;
-    }
-  }
+  //   try {
+  //     // Insert
+  //     final response = await http.post(
+  //       Uri.parse('$url/api/pay/insert'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: json.encode([
+  //         Payment(
+  //           reserve_seq: 1,
+  //           store_seq: 1,
+  //           menu_seq: 5,
+  //           pay_quantity: 2,
+  //           pay_amount: 500,
+  //           created_at: DateTime.now(),
+  //         ).toJson(),
+  //         Payment(
+  //           reserve_seq: 1,
+  //           store_seq: 1,
+  //           menu_seq: 5,
+  //           pay_quantity: 2,
+  //           pay_amount: 500,
+  //           created_at: DateTime.now(),
+  //         ).toJson(),
+  //       ]),
+  //     );
+  //     if (response.statusCode != 200) {
+  //       throw Exception("데이터 추가 실패: ${response.statusCode}");
+  //     }
+  //     // final jsonData = json.decode(utf8.decode(response.bodyBytes));
+  //     // final List results = jsonData["results"];
+  //   } catch (e) {
+  //     state = AsyncValue.data(currentPayment);
+  //     rethrow;
+  //   }
+  // }
 
-  // 유저의 payment를 업데이트 한다.
-  Future<void> updateData(PaymentResponse payment) async {
-    final currentPayment = state.value ?? [];
+  // // 유저의 payment를 업데이트 한다.
+  // Future<void> updateData(PaymentResponse payment) async {
+  //   final currentPayment = state.value ?? [];
 
-    // 업데이트
-    final updatedList = currentPayment.map((p) {
-      return p.reserve_seq == payment.reserve_seq ? payment : p;
-    }).toList();
+  //   // 업데이트
+  //   final updatedList = currentPayment.map((p) {
+  //     return p.reserve_seq == payment.reserve_seq ? payment : p;
+  //   }).toList();
 
-    state = AsyncValue.data(updatedList);
+  //   state = AsyncValue.data(updatedList);
 
-    try {
-      // Update
-      final response = await http.put(Uri.parse('...'));
-      if (response.statusCode != 200) {
-        throw Exception("데이터 로딩 실패: ${response.statusCode}");
-      }
-    } catch (e) {
-      // 실패 시 원래 상태로 복구
-      state = AsyncValue.data(currentPayment);
-      rethrow;
-    }
-  }
+  //   try {
+  //     // Update
+  //     final response = await http.put(Uri.parse('...'));
+  //     if (response.statusCode != 200) {
+  //       throw Exception("데이터 로딩 실패: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     // 실패 시 원래 상태로 복구
+  //     state = AsyncValue.data(currentPayment);
+  //     rethrow;
+  //   }
+  // }
 
   Future<String> getDecodedData() async {
     print(await http.get(Uri.parse(url + "api/pay/get_toss_client_key")));
@@ -448,5 +526,5 @@ class PaymentListAsyncNotifier extends AsyncNotifier<List<PaymentResponse>> {
 final paymentListAsyncNotifierProvider =
     AsyncNotifierProvider.autoDispose<
       PaymentListAsyncNotifier,
-      List<PaymentResponse>
+      Map<String,dynamic>
     >(PaymentListAsyncNotifier.new);

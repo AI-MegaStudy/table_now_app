@@ -33,19 +33,9 @@ class TossPayment extends ConsumerWidget {
       clientKey: MyCrypt.mycrypt.ase_decrypt(paymentValue.k,paymentValue.iv),
       data: data,
       success: (Success success) async {
-        // todo: 결제가 성공하였음. data를 insert해야 함. 
-        // Insert into Payment with menuIds
-        // 업데이트 reserve 데이터
-        //   //payment_key:str, payment_status:str, reserve_seq:int
-        await paymentValue.purchase();
-        final result = await ref.read(paymentListAsyncNotifierProvider.notifier).purchaseUpdate({'payment_key':'payment_key','payment_status':'DONE','reserve_seq':0});
-        print("===================SUCCESS RESULT: $result");
-        
         CustomNavigationUtil.back(context,result: success);
       },
       fail: (Fail fail) async{
-        final result = await ref.read(paymentListAsyncNotifierProvider.notifier).purchaseUpdate({'payment_key':'payment_key','payment_status':'FAIL','reserve_seq':0});
-        print("===================FAIL RESULT: $result");
         CustomNavigationUtil.back(context,result: fail);
       },
     );
