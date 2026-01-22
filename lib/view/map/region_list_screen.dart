@@ -16,15 +16,15 @@ class RegionListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GlobalKey<ScaffoldState> _scaffoldKey =
-        GlobalKey<ScaffoldState>(); //
+        GlobalKey<ScaffoldState>();
     final asyncStore = ref.watch(storeNotifierProvider);
     final p = context.palette;
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
       // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      drawer: const ProfileDrawer(),
       appBar: CommonAppBar(
         title: Text(
           '카레하우스',
@@ -103,9 +103,7 @@ class RegionListScreen extends ConsumerWidget {
                   ),
                   subtitle: Text(
                     '매장 $count개',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(color: Colors.grey),
                   ),
                   trailing: Icon(
                     Icons.arrow_forward_ios,

@@ -107,10 +107,10 @@ class _NavigationScreenState
     final store = widget.store;
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
-      drawer: const AppDrawer(), //<<<<< 프로필 드로워 세팅
-      // drawer: const ProfileDrawer(),
+      drawer: const AppDrawer(),
+
       appBar: CommonAppBar(
         title: Text(
           '실시간 경로 추적',

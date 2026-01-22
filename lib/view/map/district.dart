@@ -37,10 +37,10 @@ class DistrictListScreen extends ConsumerWidget {
     final districts = groupedDistricts.keys.toList();
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
       // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      drawer: const ProfileDrawer(),
       appBar: CommonAppBar(
         title: Text(
           '$regionName 세부지역',

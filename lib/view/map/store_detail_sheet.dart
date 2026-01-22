@@ -88,15 +88,6 @@ class StoreDetailSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                /*
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StoreBookingInfoScreen(store: store),
-                  ),
-                );
-                */
-
                 CustomNavigationUtil.to(
                   context,
                   StoreBookingInfoScreen(store: store),
@@ -104,7 +95,7 @@ class StoreDetailSheet extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                foregroundColor: Colors.white, // 글자색 설정
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -130,7 +121,7 @@ class StoreDetailSheet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: Colors.grey),
           SizedBox(width: 10),
           Expanded(
             child: Text(
