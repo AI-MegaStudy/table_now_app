@@ -37,10 +37,10 @@ class DistrictListScreen extends ConsumerWidget {
     final districts = groupedDistricts.keys.toList();
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
       // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      drawer: const ProfileDrawer(),
       appBar: CommonAppBar(
         title: Text(
           '$regionName 세부지역',
@@ -70,14 +70,14 @@ class DistrictListScreen extends ConsumerWidget {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: p.cardBackground,
               borderRadius: BorderRadius.circular(15),
-
-              boxShadow: const [
+              border: Border.all(color: p.divider),
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
+                  color: p.textSecondary.withOpacity(0.1),
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -87,26 +87,25 @@ class DistrictListScreen extends ConsumerWidget {
                 vertical: 10,
               ),
               leading: CircleAvatar(
-                backgroundColor: p.primary.withOpacity(0.1),
+                backgroundColor: p.background,
                 child: Icon(Icons.map, color: p.primary),
               ),
               title: Text(
                 districtName,
-                style: TextStyle(
-                  color: p.chipSelectedBg,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: mainTitleStyle.copyWith(
+                  color: p.textPrimary,
                 ),
               ),
               subtitle: Text(
                 '매장 $count개',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
+                style: mainSmallTextStyle.copyWith(
+                  color: p.textSecondary,
                 ),
               ),
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
+                color: p.textSecondary,
               ),
               onTap: () {
                 Navigator.push(

@@ -65,7 +65,6 @@ class StoreBookingInfoScreen extends ConsumerWidget {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -96,7 +95,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                             ) => Container(
                               height: 220,
                               color: Colors.grey[300],
-                              child: const Icon(
+                              child: Icon(
                                 Icons.image_not_supported,
                                 size: 50,
                               ),
@@ -162,8 +161,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
                               Text(
                                 '영업시간: ${store.store_open_time ?? "-"} - ${store.store_close_time ?? "-"}',
                                 style: TextStyle(
-                                  color:
-                                      Colors.grey.shade700,
+                                  color: Colors.grey,
                                   fontSize: 14,
                                 ),
                               ),
@@ -231,7 +229,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
           radius: 18,
           backgroundColor: isActive
               ? Colors.green
-              : Colors.grey[300],
+              : Colors.grey,
           child: Text(
             '$number',
             style: TextStyle(
@@ -259,7 +257,7 @@ class StoreBookingInfoScreen extends ConsumerWidget {
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       height: 1,
-      color: Colors.grey[300],
+      color: Colors.grey,
     ),
   );
 }

@@ -5,31 +5,37 @@ import 'package:get_storage/get_storage.dart';
 /// Option 모델
 /// ===========================
 class OrderOption {
+  final String name;
   final int count;
   final int price; // 옵션 1개 단가
 
   OrderOption({
+    this.name = '',
     this.count = 0,
     this.price = 0,
   });
 
   OrderOption copyWith({
+    String? name,
     int? count,
     int? price,
   }) {
     return OrderOption(
+      name: name ?? this.name,
       count: count ?? this.count,
       price: price ?? this.price,
     );
   }
 
   Map<String, dynamic> toMap() => {
+        'name': name,
         'count': count,
         'price': price,
       };
 
   factory OrderOption.fromMap(Map<String, dynamic> map) {
     return OrderOption(
+      name: map['name'] ?? '',
       count: map['count'] ?? 0,
       price: map['price'] ?? 0,
     );
@@ -40,12 +46,14 @@ class OrderOption {
 /// Menu 모델
 /// ===========================
 class OrderMenu {
+  final String name;
   final int count;
   final int price;
   final String date;
   final Map<int, OrderOption> options;
 
   OrderMenu({
+    this.name = '',
     this.count = 1,
     this.price = 0,
     this.date = '',
@@ -53,12 +61,14 @@ class OrderMenu {
   });
 
   OrderMenu copyWith({
+    String? name,
     int? count,
     int? price,
     String? date,
     Map<int, OrderOption>? options,
   }) {
     return OrderMenu(
+      name: name ?? this.name,
       count: count ?? this.count,
       price: price ?? this.price,
       date: date ?? this.date,
@@ -67,6 +77,7 @@ class OrderMenu {
   }
 
   Map<String, dynamic> toMap() => {
+        'name': name,
         'count': count,
         'price': price,
         'date': date,
@@ -77,6 +88,7 @@ class OrderMenu {
 
   factory OrderMenu.fromMap(Map<String, dynamic> map) {
     return OrderMenu(
+      name: map['name'] ?? '',
       count: map['count'] ?? 1,
       price: map['price'] ?? 0,
       date: map['date'] ?? '',
@@ -146,6 +158,7 @@ class OrderNotifier extends Notifier<OrderState> {
   /// 메뉴 추가
   void addMenu({
     required int menuSeq,
+    required String menuName,
     required int price,
     required String date,
   }) {
@@ -154,6 +167,7 @@ class OrderNotifier extends Notifier<OrderState> {
         ...state.menus,
         menuSeq: state.menus[menuSeq] ??
             OrderMenu(
+              name: menuName,
               count: 1,
               price: price,
               date: date,
@@ -164,21 +178,19 @@ class OrderNotifier extends Notifier<OrderState> {
   }
 
   /// 메뉴 수량 증가
-void addOrIncrementMenu(int menuSeq, int menuPrice) {
-  final menu = state.menus[menuSeq];
+  void addOrIncrementMenu(int menuSeq, String menuName, int menuPrice) {
+    final currentMenu = state.menus[menuSeq];
 
-  state = OrderState(
-    menus: {
-      ...state.menus,
-      menuSeq: menu == null
-          ? OrderMenu(count: 1, price: menuPrice)
-          : menu.copyWith(count: menu.count + 1),
-    },
-  );
-
-  saveOrder(state);
-}
-
+    state = OrderState(
+      menus: {
+        ...state.menus,
+        menuSeq: currentMenu == null
+            ? OrderMenu(name: menuName, count: 1, price: menuPrice)
+            : currentMenu.copyWith(count: currentMenu.count + 1),
+      },
+    );
+    saveOrder(state);
+  }
 
   /// 메뉴 수량 감소 (최소 1)
   void decrementMenu(int menuSeq) {
@@ -195,34 +207,35 @@ void addOrIncrementMenu(int menuSeq, int menuPrice) {
   }
 
 // 옵션 수량 증가 (+ price 저장)
-void incrementOption(int menuSeq, int optionSeq, int optionPrice) {
-  final menu = state.menus[menuSeq];
-  if (menu == null) return;
+  void incrementOption(
+      int menuSeq, int optionSeq, String optionName, int optionPrice) {
+    final menu = state.menus[menuSeq];
+    if (menu == null) return;
 
-  final current = menu.options[optionSeq];
+    final current = menu.options[optionSeq];
 
-  state = OrderState(
-    menus: {
-      ...state.menus,
-      menuSeq: menu.copyWith(
-        options: {
-          ...menu.options,
-          optionSeq: current == null
-              ? OrderOption(
-                  count: 1,
-                  price: optionPrice,
-                )
-              : current.copyWith(
-                  count: current.count + 1,
-                ),
-        },
-      ),
-    },
-  );
+    state = OrderState(
+      menus: {
+        ...state.menus,
+        menuSeq: menu.copyWith(
+          options: {
+            ...menu.options,
+            optionSeq: current == null
+                ? OrderOption(
+                    name: optionName,
+                    count: 1,
+                    price: optionPrice,
+                  )
+                : current.copyWith(
+                    count: current.count + 1,
+                  ),
+          },
+        ),
+      },
+    );
 
-  saveOrder(state);
-}
-
+    saveOrder(state);
+  }
 
   /// 옵션 수량 감소
   void decrementOption(int menuSeq, int optionSeq) {
@@ -280,3 +293,17 @@ final orderNotifierProvider =
     NotifierProvider<OrderNotifier, OrderState>(
   OrderNotifier.new,
 );
+
+// ============================================================
+// 생성 이력
+// ============================================================
+// 작성일: 2026-01-20
+// 작성자: 임소연
+// 설명: Order Notifier
+//
+// ============================================================
+// 수정 이력
+// ============================================================
+// 2026-01-20 임소연: 초기 생성
+// 2026-01-20 임소연: get storage helper 추가
+// 2026-01-22 임소연: 메뉴, 옵션에 이름(name) 필드 추가

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/model/store.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/view/map/storebooking.dart'; // 클래스명 확인 필요
+import 'package:table_now_app/view/reservepage/reserve_page01.dart';
 
 class StoreDetailSheet extends StatelessWidget {
   final Store store;
@@ -16,6 +17,7 @@ class StoreDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('📍 [StoreDetailSheet] 받은 distance: $distance');
     final p = context.palette;
     return Container(
       padding: EdgeInsets.only(
@@ -24,9 +26,9 @@ class StoreDetailSheet extends StatelessWidget {
         top: 16,
         bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: p.cardBackground,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
         ),
       ),
@@ -36,14 +38,12 @@ class StoreDetailSheet extends StatelessWidget {
         children: [
           Text(
             store.store_description ?? "매장 이름 없음",
-            style: TextStyle(
+            style: mainLargeTitleStyle.copyWith(
               color: p.primary,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
             ),
           ),
 
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
 
           if (distance != null)
             Padding(
@@ -53,15 +53,14 @@ class StoreDetailSheet extends StatelessWidget {
                   Icon(
                     Icons.near_me,
                     size: 18,
-                    color: Colors.orange,
+                    color: p.primary,
                   ),
-                  SizedBox(width: 6),
+                  const SizedBox(width: 6),
                   Text(
                     "내 위치에서 $distance",
-                    style: TextStyle(
-                      color: Colors.orange,
+                    style: mainBodyTextStyle.copyWith(
+                      color: p.primary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
                     ),
                   ),
                 ],
@@ -69,42 +68,39 @@ class StoreDetailSheet extends StatelessWidget {
             ),
 
           _buildInfoRow(
+            context,
             Icons.location_on_outlined,
-            store.store_address ?? "주소 정보 없음",
+            store.store_address,
           ),
           _buildInfoRow(
+            context,
             Icons.phone_outlined,
-            store.store_phone ?? "전화 정보 없음",
+            store.store_phone,
           ),
           _buildInfoRow(
+            context,
             Icons.access_time_outlined,
             "${store.store_open_time ?? "-"} ~ ${store.store_close_time ?? "-"}",
           ),
 
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: mainButtonHeight,
             child: ElevatedButton(
               onPressed: () {
-                /*
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StoreBookingInfoScreen(store: store),
-                  ),
-                );
-                */
-
                 CustomNavigationUtil.to(
                   context,
-                  StoreBookingInfoScreen(store: store),
+                  const ReservePage01(),
+                  settings: RouteSettings(
+                    arguments: {'store_seq': store.store_seq},
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white, // 글자색 설정
+                backgroundColor: p.primary,
+                foregroundColor: p.textOnPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -112,9 +108,8 @@ class StoreDetailSheet extends StatelessWidget {
               ),
               child: Text(
                 "매장 예약",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                style: mainMediumTitleStyle.copyWith(
+                  color: p.textOnPrimary,
                 ),
               ),
             ),
@@ -124,20 +119,20 @@ class StoreDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
+    final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          SizedBox(width: 10),
+          Icon(icon, size: 20, color: p.textSecondary),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.black87,
+              style: mainBodyTextStyle.copyWith(
+                color: p.textPrimary,
               ),
             ),
           ),

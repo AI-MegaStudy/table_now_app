@@ -59,9 +59,10 @@ class LocalNotificationService {
         return;
       }
 
-      // Android Notification Channel 생성
+      // Android Notification Channel 생성 및 권한 요청
       if (Platform.isAndroid) {
         await _createNotificationChannel();
+        await _requestAndroidNotificationPermission();
       }
 
       if (kDebugMode) {
@@ -95,6 +96,43 @@ class LocalNotificationService {
 
     if (kDebugMode) {
       print('✅ Android Notification Channel 생성 완료');
+    }
+  }
+
+  /// Android 13+ 알림 권한 요청
+  ///
+  /// Android 13 (API 33) 이상에서는 POST_NOTIFICATIONS 권한을 런타임에 요청해야 합니다.
+  static Future<void> _requestAndroidNotificationPermission() async {
+    try {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        if (kDebugMode) {
+          print('📱 Android 알림 권한 요청 중...');
+        }
+        
+        // Android 13+ 시스템 권한 다이얼로그 표시
+        final bool? granted = await androidImplementation.requestNotificationsPermission();
+        
+        if (kDebugMode) {
+          if (granted == true) {
+            print('✅ Android 알림 권한이 허용되었습니다.');
+          } else {
+            print('⚠️  Android 알림 권한이 거부되었습니다.');
+            print('💡 설정 > 앱 > TableNow > 알림에서 권한을 활성화하세요.');
+          }
+        }
+      } else {
+        if (kDebugMode) {
+          print('📱 Android 13 미만 - 런타임 권한 요청 불필요');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  Android 알림 권한 요청 실패: $e');
+      }
     }
   }
 

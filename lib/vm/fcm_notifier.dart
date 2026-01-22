@@ -41,6 +41,7 @@ class FCMState {
 /// Firebase Cloud Messaging 토큰 관리 및 알림 권한 처리를 담당합니다.
 class FCMNotifier extends Notifier<FCMState> {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  bool _isRefreshingToken = false; // 토큰 새로고침 중복 방지 플래그
 
   @override
   FCMState build() {
@@ -108,56 +109,19 @@ class FCMNotifier extends Notifier<FCMState> {
           print('📱 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
         }
 
+        // iOS: 로컬 알림 서비스 초기화 (포그라운드 알림 표시용)
+        await LocalNotificationService.initialize();
+        
         // iOS: APNs 토큰이 등록될 때까지 대기 (권한이 허용된 경우에만)
         await _waitForAPNSToken();
       } else if (Platform.isAndroid) {
-        // Android 13 (API 33) 이상에서 알림 권한 요청
-        // iOS와 동일하게 권한 상태를 먼저 확인하고, 필요할 때만 요청
-        try {
-          // 현재 알림 권한 상태 확인
-          final currentStatus = await _messaging.getNotificationSettings();
-          print('📱 Android 현재 알림 권한 상태: ${currentStatus.authorizationStatus}');
-          
-          // 권한이 없으면 요청 (notDetermined 상태일 때만)
-          if (currentStatus.authorizationStatus == AuthorizationStatus.notDetermined) {
-            print('📱 Android 알림 권한 요청 중...');
-            final permission = await _messaging.requestPermission(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
-
-            // 알림 권한 상태 로컬 저장
-            final isGranted =
-                permission.authorizationStatus ==
-                    AuthorizationStatus.authorized ||
-                permission.authorizationStatus == AuthorizationStatus.provisional;
-            await FCMStorage.saveNotificationPermissionStatus(isGranted);
-
-            print('📱 Android 알림 권한 요청 결과: ${permission.authorizationStatus}');
-          } else if (currentStatus.authorizationStatus == AuthorizationStatus.authorized ||
-                     currentStatus.authorizationStatus == AuthorizationStatus.provisional) {
-            // 이미 권한이 허용되어 있으면 요청하지 않음
-            print('📱 Android 알림 권한이 이미 허용되어 있습니다: ${currentStatus.authorizationStatus}');
-            
-            // 로컬 저장소에도 허용 상태 저장
-            await FCMStorage.saveNotificationPermissionStatus(true);
-          } else {
-            // 권한이 거부된 경우
-            print('⚠️  Android 알림 권한이 거부되어 있습니다: ${currentStatus.authorizationStatus}');
-            await FCMStorage.saveNotificationPermissionStatus(false);
-          }
-        } catch (e) {
-          print('⚠️  Android 알림 권한 확인/요청 실패: $e');
-          print('💡 Android 13 미만에서는 런타임 권한 요청이 필요 없습니다.');
-        }
+        // Android: 로컬 알림 서비스 초기화 및 권한 요청 (FCM 토큰 발급 전에 먼저!)
+        print('📱 Android: 알림 권한 요청 및 로컬 알림 서비스 초기화...');
+        await LocalNotificationService.initialize();
       }
 
-      // 초기 토큰 가져오기
+      // 초기 토큰 가져오기 (권한 허용 후)
       await _refreshToken();
-
-      // 로컬 노티피케이션 서비스 초기화 (포그라운드 알림 표시용)
-      await LocalNotificationService.initialize();
 
       // 토큰 갱신 리스너 설정
       _setupTokenRefreshListener();
@@ -228,39 +192,83 @@ class FCMNotifier extends Notifier<FCMState> {
   }
 
   /// 토큰 새로고침
+  /// 
+  /// "Too many server requests" 오류 발생 시 재시도 로직 포함
   Future<void> _refreshToken() async {
+    // 중복 호출 방지
+    if (_isRefreshingToken) {
+      print('⏸️  FCM 토큰 새로고침이 이미 진행 중입니다.');
+      return;
+    }
+    
+    _isRefreshingToken = true;
+    
     try {
-      final token = await _messaging.getToken();
+      const maxRetries = 3;
+      const baseDelay = Duration(seconds: 2);
+      
+      for (int attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // 재시도 시 지연 시간 추가 (지수 백오프)
+          if (attempt > 0) {
+            final delay = baseDelay * (attempt + 1);
+            print('⏳ FCM 토큰 요청 재시도 중... (${attempt + 1}/$maxRetries, ${delay.inSeconds}초 대기)');
+            await Future.delayed(delay);
+          }
+          
+          final token = await _messaging.getToken();
 
-      // 토큰을 로컬에 저장
-      if (token != null) {
-        await FCMStorage.saveFCMToken(token);
-      }
+          // 토큰을 로컬에 저장
+          if (token != null) {
+            await FCMStorage.saveFCMToken(token);
+          }
 
-      state = state.copyWith(token: token, removeErrorMessage: true);
+          state = state.copyWith(token: token, removeErrorMessage: true);
 
-      // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
-      if (token != null) {
-        print('🔥 FCM_TOKEN updated: $token');
-        print('💾 FCM 토큰 로컬 저장 완료');
+          // 프로필/릴리스 모드에서도 토큰 상태 확인 가능하도록 항상 출력
+          if (token != null) {
+            print('🔥 FCM_TOKEN updated: $token');
+            print('💾 FCM 토큰 로컬 저장 완료');
 
-        // 토큰이 변경되었는지 확인
-        final lastSentToken = FCMStorage.getLastSentToken();
-        if (lastSentToken != token) {
-          print('🔄 토큰이 변경되었습니다. 서버에 전송이 필요합니다.');
-        } else {
-          print('✅ 토큰이 서버와 동기화되어 있습니다.');
+            // 토큰이 변경되었는지 확인
+            final lastSentToken = FCMStorage.getLastSentToken();
+            if (lastSentToken != token) {
+              print('🔄 토큰이 변경되었습니다. 서버에 전송이 필요합니다.');
+            } else {
+              print('✅ 토큰이 서버와 동기화되어 있습니다.');
+            }
+          } else {
+            print('⚠️  FCM token is null.');
+            print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
+          }
+          
+          // 성공 시 반환
+          return;
+        } catch (e) {
+          final errorMessage = e.toString();
+          
+          // "Too many server requests" 오류인 경우 재시도
+          if (errorMessage.contains('Too many server requests') && attempt < maxRetries - 1) {
+            print('⚠️  FCM 서버 요청 제한 초과. 재시도 예정...');
+            continue;
+          }
+          
+          // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
+          print('❌ Failed to get FCM token: $e');
+          if (attempt == maxRetries - 1) {
+            print('💡 최대 재시도 횟수에 도달했습니다. 잠시 후 다시 시도하세요.');
+          } else {
+            print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
+          }
+          
+          // 마지막 시도에서도 실패한 경우에만 에러 상태 설정
+          if (attempt == maxRetries - 1) {
+            state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.');
+          }
         }
-      } else {
-        print('⚠️  FCM token is null.');
-        print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
       }
-    } catch (e, stackTrace) {
-      // 프로필/릴리스 모드에서도 에러 확인 가능하도록 항상 출력
-      print('❌ Failed to get FCM token: $e');
-      print('Stack trace: $stackTrace');
-      print('💡 실기기에서 실행하거나, Google Play Services가 설치된 환경에서 실행하세요.');
-      state = state.copyWith(errorMessage: '토큰을 가져오는 중 오류가 발생했습니다.');
+    } finally {
+      _isRefreshingToken = false;
     }
   }
 
@@ -314,11 +322,7 @@ class FCMNotifier extends Notifier<FCMState> {
         print('   Body: ${message.notification?.body}');
         print('   Data: ${message.data}');
         print(
-          '   Platform: ${Platform.isIOS
-              ? 'iOS'
-              : Platform.isAndroid
-              ? 'Android'
-              : 'Unknown'}',
+          '   Platform: ${Platform.isIOS ? "iOS" : Platform.isAndroid ? "Android" : "Unknown"}',
         );
       }
 

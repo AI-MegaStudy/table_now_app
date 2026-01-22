@@ -2,112 +2,244 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
-import 'package:table_now_app/model/menu.dart';
+import 'package:table_now_app/custom/custom_common_util.dart';
 import 'package:table_now_app/theme/palette_context.dart';
-import 'package:table_now_app/utils/custom_common_util.dart';
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
-import 'package:table_now_app/vm/option_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
-import 'package:table_now_app/vm/reservation_notifier.dart';
 
 class ReservationCompleteScreen extends ConsumerStatefulWidget {
-  const ReservationCompleteScreen({super.key});
+  const ReservationCompleteScreen({super.key, required this.price});
+  final int price;
 
   @override
   ConsumerState<ReservationCompleteScreen> createState() => _ReservationCompleteScreenState();
 }
 
 class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
+    
     final p = context.palette;
-    final reservationAsync = ref.watch(reservationNotifierProvider);
-    final optionAsync = ref.watch(optionNotifierProvider);
     final menuAsync = ref.watch(menuNotifierProvider);
     final orderState = ref.watch(orderNotifierProvider);
-
-//     final menu = menuAsync.maybeWhen(
-//   data: (menus) => menus,
-//   orElse: () => [], // 아직 로딩 중이면 빈 리스트
-// );
-
-final menus = ref.watch(orderNotifierProvider).menus;
-
-
-    final box = GetStorage();
-    final data = box.read('order'); // Map<String, dynamic>
-    print(data);
+    final menus = orderState.menus;
     
-    orderState.menus.forEach((menuSeq, orderMenu) {
-      print('메뉴 $menuSeq: ${orderMenu.count}개');
-    });
-print(box.read('reserve'));
+    final box = GetStorage();
+    final reserveData = box.read('reserve') ?? {};
+    
+    // 날짜 포맷팅 가공 (예: 2026년 1월 20일 (화))
+    String rawDate = reserveData['reserve_date'] ?? '2026-01-01';
+    List<String> dateParts = rawDate.split('T')[0].split('-');
+    String formattedDate = "${dateParts[0]}년 ${dateParts[1]}월 ${dateParts[2]}일";
+
     return Scaffold(
+      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
       backgroundColor: p.background,
-      appBar: AppBar(
-        centerTitle: mainAppBarCenterTitle,
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
-      ),
-      body: Center(
-        child: Column(
-          children: [ // 날짜 시간 인원 좌석 메뉴
-            // Text('${box.read('reserve')['reserve_date']}'),
-            // Text('${box.read('reserve')['reserve_capacity']}'),
-
-Expanded(
-  child: ListView(
-    children: menus.entries.map((entry) {
-      final menu_seq = entry.key;
-      final orderMenu = entry.value;
-
-      // AsyncValue에서 List<Menu> 추출
-      final allMenus = menuAsync.maybeWhen(
-        data: (menus) => menus,
-        orElse: () => [],
-      );
-
-      // menu_seq에 대응되는 메뉴 찾기 (nullable 변수 사용)
-      final menu = allMenus.where((m) => m.menu_seq == menu_seq).toList();
-      if (menu.isEmpty) return SizedBox.shrink(); // 없으면 표시 안함
-
-      return Card(
-        child: Column(
-          children: [
-        Text(menu.first.menu_name),
-        Text('수량: ${orderMenu.count}'),
-        Text(CustomCommonUtil.formatCurrency(menu.first.menu_price * orderMenu.count))
-
-          ],
-        )
-      );
-    }).toList(),
-  ),
-),
-
-
-
-  // menuAsync.when(
-  //   data: (menus) {
-  //     return menus.isEmpty
-  //     ? Center(child: Text('예약 내역이 없습니다.'),)
-  //     : ListView.builder(
-  //       itemCount: menus.length,
-  //       itemBuilder: (context, index) {
-  //         final m = menus[index];
-  //         return Card(
-            
-  //         );
-  //       });
-  //   }, 
-  //             error: (error, stackTrace) => Center(child: Text('Error: $error')),
-  //             loading: () => const Center(child: CircularProgressIndicator()),
-  // )
-
-  
-          ],
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '예약 확인',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.account_circle,
+              color: p.textOnPrimary,
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
       ),
+      body: Column(
+        children: [
+          // 1. 단계 표시기 (Step Indicator)
+          _buildStepIndicator(),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: p.cardBackground,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('예약 상세 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    const Divider(),
+                    const SizedBox(height: 20),
+                    
+                    // 상세 정보 항목들
+                    _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate),
+                    _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}'),
+                    _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명'),
+                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_seat'] ?? 'T4'}'),
+                    
+                    // 메뉴 섹션
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.restaurant_menu, color: Colors.green, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('메뉴', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                              const SizedBox(height: 8),
+                              _buildMenuList(menuAsync, menus),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    const Divider(),
+                    
+                    // 총 결제 금액
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('총 결제 금액', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(CustomCommonUtil.formatCurrency(widget.price), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green.shade700)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // 하단 결제 버튼
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('결제하기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 상단 스텝 바 (숫자 아이콘)
+  Widget _buildStepIndicator() {
+    final p = context.palette;
+
+    return Container(
+      color: p.background,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _stepCircle("1", "정보", isCompleted: true),
+          _stepLine(),
+          _stepCircle("2", "좌석", isCompleted: true),
+          _stepLine(),
+          _stepCircle("3", "메뉴", isCompleted: true),
+          _stepLine(),
+          _stepCircle("4", "확인", isCurrent: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepCircle(String num, String label, {bool isCompleted = false, bool isCurrent = false}) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: isCurrent ? Colors.green : (isCompleted ? Colors.green : Colors.grey.shade300),
+          child: Text(num, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: isCurrent || isCompleted ? Colors.green : Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _stepLine() => Container(width: 40, height: 1, color: Colors.green);
+
+  // 정보 한 줄 (아이콘 + 제목 + 내용)
+  Widget _buildInfoRow(IconData icon, String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.green, size: 20),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+              Text(content, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 선택한 메뉴 리스트 가젯
+  Widget _buildMenuList(AsyncValue<List<dynamic>> menuAsync, Map<int, dynamic> orderMenus) {
+    final allMenus = menuAsync.maybeWhen(data: (d) => d, orElse: () => []);
+    final p = context.palette;
+    
+    return Column(
+      children: orderMenus.entries.map((entry) {
+        final menu = allMenus.cast<dynamic>().firstWhere((m) => m.menu_seq == entry.key, orElse: () => null);
+        if (menu == null) return const SizedBox.shrink();
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: p.cardBackground,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200)
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(menu.menu_name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('수량: ${entry.value.count}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                entry.value.options.isEmpty
+                    ? '옵션 없음'
+                    : '옵션: ${entry.value.options.values
+                            .map((o) => '${o.name} x ${o.count}')
+                            .join(', ')}',
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -115,12 +247,13 @@ Expanded(
 // ============================================================
 // 생성 이력
 // ============================================================
-// 작성일: 2026-01-16
+// 작성일: 2026-01-19
 // 작성자: 임소연
-// 설명: 사용자가 결제 전 예약된 사항을 확인하는 페이지
+// 설명: Menu Notifier
 //
 // ============================================================
 // 수정 이력
 // ============================================================
-// 2026-01-16 임소연: 초기 생성
-// 2026-01-20 임소연: 사용자가 선택한 메뉴 보여주기
+// 2026-01-19 임소연: 초기 생성
+// 2026-01-20 임소연: 주문 메뉴 리스트 추가
+// 2026-01-21 임소연: 예약 데이터 추가, 디자인 수정, 공용앱바 추가

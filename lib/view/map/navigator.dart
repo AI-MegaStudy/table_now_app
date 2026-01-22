@@ -22,7 +22,7 @@ class NavigatorScreen extends ConsumerStatefulWidget {
 class _BookingLocationScreenState
     extends ConsumerState<NavigatorScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>(); //
+      GlobalKey<ScaffoldState>();
   GoogleMapController? _mapController;
 
   Future<void> _openMapDirections() async {
@@ -48,10 +48,10 @@ class _BookingLocationScreenState
     final storeLocation = LatLng(s.store_lat, s.store_lng);
 
     return Scaffold(
-      key: _scaffoldKey, //<<<<< 스캐폴드 키 지정
+      key: _scaffoldKey,
       backgroundColor: p.background,
       // drawer: const AppDrawer(),
-      drawer: const ProfileDrawer(), //<<<<< 프로필 드로워 세팅
+      drawer: const ProfileDrawer(),
       appBar: CommonAppBar(
         title: Text(
           '매장위치 확인',
