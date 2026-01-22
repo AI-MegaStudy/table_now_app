@@ -61,6 +61,12 @@ class AppColorScheme {
   // Primary 색상 배경에 사용할 텍스트 색 (반전색, 기본: 흰색)
   Color get textOnPrimary => tableNow?.textOnPrimary ?? common.textOnPrimary;
 
+  // 스텝 인디케이터 활성/완료 색상 (초록색 계열)
+  Color get stepActive => tableNow?.stepActive ?? common.stepActive;
+
+  // 스텝 인디케이터 비활성 색상
+  Color get stepInactive => tableNow?.stepInactive ?? common.stepInactive;
+
   // ============================================================================
   // TableNow 앱 전용 컬러 접근자
   // ============================================================================

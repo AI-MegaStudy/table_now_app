@@ -97,7 +97,7 @@ async def select_all_8(date: str):
                reserve_capacity, reserve_date,
                created_at, payment_key, payment_status
         FROM reserve
-        WHERE created_at BETWEEN %s AND %s
+        WHERE reserve_date BETWEEN %s AND %s
         ORDER BY reserve_seq
     """, (start_dt, end_dt))
 
@@ -146,7 +146,7 @@ async def select_all_8_store(date: str, seq: int):
                created_at, payment_key, payment_status
         FROM reserve
         WHERE store_seq = %s
-        AND created_at BETWEEN %s AND %s
+        AND reserve_date BETWEEN %s AND %s
         ORDER BY reserve_seq
     """, (seq, start_dt, end_dt))
 

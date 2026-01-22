@@ -10,6 +10,7 @@ import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/utils/custom_common_util.dart';
 import 'package:table_now_app/utils/customer_storage.dart';
+import 'package:table_now_app/utils/reservation_validator.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/reservepage/reserve_page02.dart';
 import 'package:table_now_app/vm/reserve_page01_notifier.dart';
@@ -290,9 +291,24 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                         itemBuilder: (context, index) {
                           final time = times[index];
                           final selected = data.selectedTime == time;
+                          
+                          // 현재 선택된 날짜에서 이 시간에 이미 예약이 있는지 확인
+                          final dateKey = data.selectedDay?.toString().substring(0, 10) ?? '';
+                          final bool hasExistingReservation = ReservationValidator.hasCustomerReservation(
+                            customerReservations: data.customerReservations,
+                            date: dateKey,
+                            time: time,
+                          );
 
                           return GestureDetector(
                             onTap: () {
+                              if (hasExistingReservation) {
+                                CustomCommonUtil.showErrorSnackbar(
+                                  context: context,
+                                  message: '이미 해당 시간에 예약이 있습니다.',
+                                );
+                                return;
+                              }
                               ref.read(reservePage01NotifierProvider.notifier).selectTime(time);
                             },
                             child: Container(
@@ -300,16 +316,41 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: selected ? p.primary : p.divider,
+                                  color: hasExistingReservation 
+                                      ? Colors.grey 
+                                      : selected 
+                                          ? p.primary 
+                                          : p.divider,
                                 ),
-                                color: selected ? p.primary : p.cardBackground,
+                                color: hasExistingReservation
+                                    ? Colors.grey.shade300
+                                    : selected 
+                                        ? p.primary 
+                                        : p.cardBackground,
                               ),
-                              child: Text(
-                                time,
-                                style: mainBodyTextStyle.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: selected ? p.textOnPrimary : p.textPrimary,
-                                ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    time,
+                                    style: mainBodyTextStyle.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: hasExistingReservation
+                                          ? Colors.grey.shade600
+                                          : selected 
+                                              ? p.textOnPrimary 
+                                              : p.textPrimary,
+                                    ),
+                                  ),
+                                  if (hasExistingReservation)
+                                    Text(
+                                      '예약됨',
+                                      style: mainSmallTextStyle.copyWith(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           );
@@ -444,14 +485,14 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: isActive || isCompleted 
-                        ? p.primary 
-                        : p.divider,
+                        ? p.stepActive 
+                        : p.stepInactive,
                     child: Text(
                       '${index + 1}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isActive || isCompleted 
-                            ? p.textOnPrimary 
+                            ? Colors.white 
                             : p.textSecondary,
                       ),
                     ),
@@ -460,7 +501,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                   Text(
                     labels[index],
                     style: mainSmallTextStyle.copyWith(
-                      color: isActive ? p.primary : p.textSecondary,
+                      color: isActive ? p.stepActive : p.textSecondary,
                       fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -471,7 +512,7 @@ class _ReservePage01State extends ConsumerState<ReservePage01> {
                   width: 30,
                   height: 1,
                   margin: const EdgeInsets.only(bottom: 16),
-                  color: isCompleted ? p.primary : p.divider,
+                  color: isCompleted ? p.stepActive : p.stepInactive,
                 ),
             ],
           );
