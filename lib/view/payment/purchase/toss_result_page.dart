@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/utils_core.dart';
+import 'package:table_now_app/theme/app_colors.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/tosspayments_result.dart';
 
@@ -19,16 +21,32 @@ class TossResultPage extends ConsumerWidget {
   /// [title]과 [message]는 [Text] 위젯의 일부로 포함됩니다.
   ///
   /// [title]는 회색 텍스트 스타일로, [message]는 기본 텍스트 스타일로 표시됩니다.
-  Row makeRow(String title, String message) {
-    return Row(children: [
-      Expanded(
-          flex: 3,
-          child: Text(title, style: const TextStyle(color: Colors.grey))),
-      Expanded(
-        flex: 8,
-        child: Text(message),
-      )
-    ]);
+  Widget makeRow(String title, String message, dynamic p) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              title,
+              style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+            ),
+          ),
+          Expanded(
+            flex: 7,
+            child: Text(
+              message,
+              style: mainBodyTextStyle.copyWith(
+                color: p.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   /// 결제 결과에 따라 적절한 [Container]를 반환합니다.
@@ -36,66 +54,71 @@ class TossResultPage extends ConsumerWidget {
   /// [result]이 [Success] 타입이면 성공 메시지와 함께 세부 정보를 표시합니다.
   /// [result]이 [Fail] 타입이면 오류 메시지와 함께 세부 정보를 표시합니다.
   /// 그 외의 경우, 비어있는 [Container]를 반환합니다.
-  Container getContainer(dynamic result) {
-    return Container(
-      color: Colors.transparent,
-      child: Builder(
-        builder: (context) {
-          // Success 타입인 경우
-          if (result is Success) {
-            return Column(
+  Widget getContainer(dynamic result, dynamic p) {
+    return Builder(
+      builder: (context) {
+        // Success 타입인 경우
+        if (result is Success) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: p.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: p.divider),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                makeRow('paymentKey', result.paymentKey),
-                const SizedBox(height: 20),
-                makeRow('orderId', result.orderId),
-                const SizedBox(height: 20),
-                makeRow('amount', result.amount.toString()),
-                const SizedBox(height: 20),
-                ...?result.additionalParams?.entries.map<Widget>((e) => Column(
-                      children: [
-                        makeRow(e.key, e.value),
-                        const SizedBox(height: 10),
-                      ],
-                    )),
-                ElevatedButton(
-                  onPressed: () {
-                    // copyToClipboard 함수 구현 필요
-                    // copyToClipboard(result.toString());
-                  },
-                  child: const Center(
-                    child: Text(
-                      '복사하기',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                Text(
+                  '결제 정보',
+                  style: mainTitleStyle.copyWith(color: p.textPrimary),
+                ),
+                const SizedBox(height: 8),
+                Divider(color: p.divider),
+                const SizedBox(height: 12),
+                makeRow('결제 키', result.paymentKey, p),
+                makeRow('주문 ID', result.orderId, p),
+                makeRow('결제 금액', '${result.amount}원', p),
+                ...?result.additionalParams?.entries.map<Widget>((e) => 
+                  makeRow(e.key, e.value, p),
                 ),
               ],
-            );
-          }
+            ),
+          );
+        }
 
-          // Fail 타입인 경우
-          if (result is Fail) {
-            return Column(
+        // Fail 타입인 경우
+        if (result is Fail) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                makeRow('errorCode', result.errorCode),
-                const SizedBox(height: 20),
-                makeRow('errorMessage', result.errorMessage),
-                const SizedBox(height: 20),
-                makeRow('orderId', result.orderId),
-         
-
-
+                Text(
+                  '오류 정보',
+                  style: mainTitleStyle.copyWith(color: Colors.red.shade700),
+                ),
+                const SizedBox(height: 8),
+                Divider(color: Colors.red.shade200),
+                const SizedBox(height: 12),
+                makeRow('오류 코드', result.errorCode, p),
+                makeRow('오류 메시지', result.errorMessage, p),
+                makeRow('주문 ID', result.orderId, p),
               ],
-            );
-          }
+            ),
+          );
+        }
 
-          // Success 또는 Fail 타입이 아닌 경우
-          return const SizedBox(); // 빈 위젯 반환
-        },
-      ),
+        // Success 또는 Fail 타입이 아닌 경우
+        return const SizedBox(); // 빈 위젯 반환
+      },
     );
   }
 
@@ -105,17 +128,16 @@ class TossResultPage extends ConsumerWidget {
   /// 그 외의 경우, '결제에 실패하였습니다' 메시지를 표시합니다.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.palette;
     // dynamic result = Get.arguments;
     String message;
     final paymentValue = ref.read(paymentListAsyncNotifierProvider.notifier);
     // final paymentState = ref.watch(paymentListAsyncNotifierProvider.select((value) => value.,))
-      
-       
+    
+    final bool isSuccess = result is Success;
 
-
-
-    if (result is Success) {
-      message = '인증 성공! 결제승인API를 호출해 결제를 완료하세요!';
+    if (isSuccess) {
+      message = '결제가 완료되었습니다!';
       paymentValue.purchase().then((r){
         paymentValue.purchaseUpdate({'payment_key':result.paymentKey,'payment_status':'DONE','reserve_seq':result.orderId});
       });
@@ -125,95 +147,133 @@ class TossResultPage extends ConsumerWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('결제 결과'),
-          centerTitle: true,
-          automaticallyImplyLeading: false,
+      backgroundColor: p.background,
+      appBar: AppBar(
+        title: Text(
+          '결제 결과',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
         ),
-        body: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(30, 30, 30, 50),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-
-
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        backgroundColor: p.primary,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              
+              // 성공/실패 아이콘
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSuccess ? Colors.green.shade50 : Colors.red.shade50,
                 ),
-                const SizedBox(height: 50),
-                getContainer(result),
-                const SizedBox(height: 40),
+                child: Icon(
+                  isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                  size: 60,
+                  color: isSuccess ? Colors.green : Colors.red,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // 결과 메시지
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: mainMediumTitleStyle.copyWith(
+                  color: p.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // 결과 상세 정보
+              getContainer(result, p),
+              const SizedBox(height: 40),
 
-                
-                result is Fail 
-                ?Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 10,
+              // 버튼 영역
+              if (result is Fail)
+                Column(
                   children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        CustomNavigationUtil.back(context);
-                       
-                      },
-                      style: ElevatedButton.styleFrom(
-                        // elevation: 0,
-                        // shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(3)
-                        )
+                    SizedBox(
+                      width: double.infinity,
+                      height: mainButtonHeight,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          CustomNavigationUtil.back(context);
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: Text(
+                          '다시 결제 시도',
+                          style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.textOnPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
                       ),
-                      child: const Text(
-                        '다시 결제 시도',
-                        style: TextStyle(fontSize: 13, color: Colors.black),
-                      ),
-                      
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        paymentValue.reset();
-                        CustomNavigationUtil.back(context);
-                        CustomNavigationUtil.back(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        // elevation: 0,
-                        // shadowColor: Colors.transparent,
-                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(3)
-                        )
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: mainButtonHeight,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          paymentValue.reset();
+                          CustomNavigationUtil.back(context);
+                          CustomNavigationUtil.back(context);
+                        },
+                        icon: Icon(Icons.delete_outline, color: p.textSecondary),
+                        label: Text(
+                          '기존 주문 취소',
+                          style: mainMediumTitleStyle.copyWith(color: p.textSecondary),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: p.divider),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                       ),
-                      child: const Text(
-                        '기존 주문 지우기',
-                        style: TextStyle(fontSize: 13, color: Colors.black),
-                      ),
-                      
                     ),
-
                   ],
                 )
-                :
-                ElevatedButton.icon(
-                  onPressed: () {
-                    CustomNavigationUtil.back(context);
-                   
-                  },
-                  icon: const Icon(Icons.home,size: 30,),
-                  label: const Text(
-                    '홈으로',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: mainButtonHeight,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      CustomNavigationUtil.back(context);
+                    },
+                    icon: Icon(Icons.home, color: p.textOnPrimary),
+                    label: Text(
+                      '홈으로 돌아가기',
+                      style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: p.primary,
+                      foregroundColor: p.textOnPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom.dart';
 import 'package:table_now_app/theme/app_colors.dart';
-
+import 'package:table_now_app/utils/common_app_bar.dart';
+import 'package:table_now_app/view/drawer/profile_drawer.dart';
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
@@ -21,8 +23,9 @@ class PaymentListGroupView extends ConsumerStatefulWidget {
 }
 
 class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
-  final double cardBoxHeight = 50;
-  final double detailBoxHeight = 170;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final double cardBoxHeight = 70;
+  final double detailBoxHeight = 200;
   final storage = GetStorage();
   late PurchaseReserve? purchaseReserve = null;
   late Map<String, dynamic>? items;
@@ -119,24 +122,33 @@ static void showSuccessDialog({
     */
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: p.background,
-      appBar: AppBar(title: Text('결제 하기')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: paymentState.when(
-            data: (data) => data.length == 0
-                ? const CircularProgressIndicator()
-                : SafeArea(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // 메뉴정보및 주문 정보 박스
-                        SizedBox(
-                          height:
-                              MediaQuery.of(context).size.height -
-                              detailBoxHeight,
+      drawer: const ProfileDrawer(),
+      appBar: CommonAppBar(
+        title: Text(
+          '결제하기',
+          style: mainAppBarTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.account_circle, color: p.textOnPrimary),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: paymentState.when(
+          data: (data) => data.length == 0
+              ? Center(child: CircularProgressIndicator(color: p.primary))
+              : SafeArea(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 메뉴정보및 주문 정보 박스
+                      Expanded(
+                        child: SingleChildScrollView(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,101 +158,121 @@ static void showSuccessDialog({
                               textSubTitle('주문 정보'),
                   
                               Container(
-                                padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: p.cardBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: p.divider),
+                                ),
                                 child: Column(
-                                  spacing: 3,
+                                  spacing: 8,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '예약 번호: ${purchaseReserve!.reserve_seq}',
-                                    ),
-                                    Text(
-                                      '예약 날짜: ${purchaseReserve!.reserve_date}',
-                                    ),
-                                    Text(
-                                      '총 인원: ${purchaseReserve!.reserve_capacity}',
-                                    ),
-                                    Text(
-                                      '테이블 번호: ${purchaseReserve!.reserve_tables}',
-                                    ),
-                                    Text('상점: ${purchaseReserve!.store_description}'),
+                                    _buildInfoRow(Icons.confirmation_number_outlined, '예약 번호', '${purchaseReserve!.reserve_seq}', p),
+                                    _buildInfoRow(Icons.calendar_today_outlined, '예약 날짜', '${purchaseReserve!.reserve_date}', p),
+                                    _buildInfoRow(Icons.people_outline, '총 인원', '${purchaseReserve!.reserve_capacity}명', p),
+                                    _buildInfoRow(Icons.table_restaurant_outlined, '테이블', '${purchaseReserve!.reserve_tables}', p),
+                                    _buildInfoRow(Icons.store_outlined, '매장', '${purchaseReserve!.store_description}', p),
                                   ],
                                 ),
                               ),
                   
                               textSubTitle('주문 메뉴 정보'),
                   
-                              SingleChildScrollView(
-                                child: Container(
-                                  color: p.background,
-                                  height: 400,
-                                  child: ListView.builder(
-                                    itemCount: menus.length,
-                                    itemBuilder: (context, index) {
-                                      final menu = menus[index];
-                                      print(menu);
-                                      final menu_seq = menus_seq[index];
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: menus.length,
+                                itemBuilder: (context, index) {
+                                  final menu = menus[index];
+                                  print(menu);
+                                  final menu_seq = menus_seq[index];
                   
-                                      // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
-                                      final options = menu['options'].values
-                                          .toList();
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                  // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
+                                  final options = menu['options'].values
+                                      .toList();
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: p.cardBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: p.divider),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                   
-                                        children: [
-                                          Card(
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(5.0),
-                                              child: Row(
-                                                spacing: 10,
-                                                children: [
-                                                  // Text("ID: ${menu_seq}"),
-                                                  Image.network(
-                                                    "https://cheng80.myqnapcloud.com/tablenow/${ref.read(menuNotifierProvider).value![index].menu_image}",
-                                                    height: 50,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: Row(
+                                            spacing: 12,
+                                            children: [
+                                              // Text("ID: ${menu_seq}"),
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Image.network(
+                                                  "https://cheng80.myqnapcloud.com/tablenow/${ref.read(menuNotifierProvider).value![index].menu_image}",
+                                                  height: 60,
+                                                  width: 60,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => Container(
+                                                    width: 60,
+                                                    height: 60,
+                                                    color: p.divider,
+                                                    child: Icon(Icons.restaurant, color: p.textSecondary),
                                                   ),
-                                                  
-                                                  Text("${menu['name']}"),
-                                                  Expanded(
-                                                    child: Row(
-                                                      spacing: 10,
-                                                      mainAxisAlignment: MainAxisAlignment.end,
-                                                      children: [
-                                                      Text("${menu['count']}개"),
-                                                    Text(
-                                                      "${CustomCommonUtil.formatPrice(menu['price'])}",
-                                                    ),
-                                                    ],),
-                                                  )
-                                                
-                                                                
-                                               
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          menu['options'] != null
-                                              ? Padding(
-                                                  padding:
-                                                      const EdgeInsets.fromLTRB(
-                                                        50,
-                                                        5,
-                                                        0,
-                                                        5,
-                                                      ),
-                                                  child: Column(
-                                                    children: List.generate(
-                                                      options.length,
-                                                      (i) => _optionMenus(
-                                                        options[i],
-                                                      ),
+                                              
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "${menu['name']}",
+                                                      style: mainSmallTitleStyle.copyWith(color: p.textPrimary),
                                                     ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      "${menu['count']}개",
+                                                      style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Text(
+                                                "${CustomCommonUtil.formatPrice(menu['price'])}",
+                                                style: mainBodyTextStyle.copyWith(
+                                                  color: p.primary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        menu['options'] != null && options.isNotEmpty
+                                            ? Container(
+                                                width: double.infinity,
+                                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                                                decoration: BoxDecoration(
+                                                  color: p.background,
+                                                  borderRadius: const BorderRadius.only(
+                                                    bottomLeft: Radius.circular(12),
+                                                    bottomRight: Radius.circular(12),
                                                   ),
-                                                )
-                                              : Text(''),
-                                        ],
-                                      );
+                                                ),
+                                                child: Column(
+                                                  children: List.generate(
+                                                    options.length,
+                                                    (i) => _optionMenus(options[i], p),
+                                                  ),
+                                                ),
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ],
+                                    ),
+                                  );
                   
                                       // Card(
                                       //   child: Row(
@@ -306,86 +338,136 @@ static void showSuccessDialog({
                                       // );
                                     },
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
                   
-                        // 맨 밑에 메뉴 박스
-                        Container(
-                          height: cardBoxHeight,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            color: Colors.blue[100],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text(
-                                '결제금액: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}',
-                                // '결제금액: ${CustomCommonUtil.formatPrice(totalPrice)}',
-                                style: TextStyle(fontSize: 20),
-                              ),
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width / 5,
-                              ),
-                              paymentCardType(
-                                context,
-                                'image', // https://en.komoju.com/wp-content/uploads/2023/09/Toss-logo-1.png
-                                '결제 하기',
-                                paymentValue,
-                                p,
-                              ),
-                            ],
-                          ),
+                      // 맨 밑에 결제 박스
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: p.cardBackground,
+                          border: Border.all(color: p.divider),
+                          boxShadow: [
+                            BoxShadow(
+                              color: p.textSecondary.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, -2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '총 결제금액',
+                                  style: mainMediumTitleStyle.copyWith(color: p.textPrimary),
+                                ),
+                                Text(
+                                  CustomCommonUtil.formatPrice(paymentValue.total_payment),
+                                  style: mainMediumTitleStyle.copyWith(
+                                    color: p.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            paymentCardType(
+                              context,
+                              'image',
+                              '토스페이로 결제하기',
+                              paymentValue,
+                              p,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+              ),
 
-            error: (error, stackTrace) => Text('ERROR: $error'),
-            loading: () => const CircularProgressIndicator(),
+          error: (error, stackTrace) => Center(
+            child: Text(
+              '오류: $error',
+              style: mainBodyTextStyle.copyWith(color: Colors.red),
+            ),
           ),
+          loading: () => Center(child: CircularProgressIndicator(color: p.primary)),
         ),
       ),
     );
   }
 
+  // 정보 행 위젯
+  Widget _buildInfoRow(IconData icon, String title, String content, dynamic p) {
+    return Row(
+      children: [
+        Icon(icon, color: p.primary, size: 18),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+        ),
+        const Spacer(),
+        Text(
+          content,
+          style: mainBodyTextStyle.copyWith(
+            color: p.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   // == widget
-  Widget _optionMenus(Map<String, dynamic> option) {
+  Widget _optionMenus(Map<String, dynamic> option, dynamic p) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0,0,5,0),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
-        spacing: 10,
         children: [
-          Icon(Icons.done, color: Colors.grey[500], size: 25),
-          Text('${option['name']}'),
+          Icon(Icons.add_circle_outline, color: p.textSecondary, size: 16),
+          const SizedBox(width: 8),
           Expanded(
-            child: Row(
-              spacing: 18,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-              Text("${option['count']}개"),
-              Text("${CustomCommonUtil.formatPrice(option['price'])}"),
-            ],),
+            child: Text(
+              '${option['name']}',
+              style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+            ),
           ),
-          
+          Text(
+            "${option['count']}개",
+            style: mainSmallTextStyle.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            CustomCommonUtil.formatPrice(option['price']),
+            style: mainSmallTextStyle.copyWith(
+              color: p.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget textSubTitle(String label) {
+    final p = context.palette;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
+      padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 20,
+        style: mainTitleStyle.copyWith(
+          color: p.textPrimary,
           fontWeight: FontWeight.bold,
-          //
         ),
       ),
     );
@@ -414,7 +496,7 @@ static void showSuccessDialog({
     String imgUrl,
     String cardName,
     PaymentListAsyncNotifier paymentValue,
-    p,
+    dynamic p,
   ) {
     final prefix = 'toss-${purchaseReserve!.reserve_seq}';
     PaymentData data = PaymentData(
@@ -427,8 +509,9 @@ static void showSuccessDialog({
       successUrl: Constants.success,
       failUrl: Constants.fail,
     );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
+    return SizedBox(
+      width: double.infinity,
+      height: mainButtonHeight,
       child: ElevatedButton.icon(
         onPressed: () async {
           /// 카드 결제 전 Data를 추가한다.
@@ -453,19 +536,22 @@ static void showSuccessDialog({
             }
           });
         },
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          backgroundColor: p.background,
+        icon: Icon(
+          Icons.payment,
+          size: 20,
+          color: p.textOnPrimary,
         ),
-        // icon: Icon(Icons.card_giftcard),
-        label: Row(
-          spacing: 5,
-          children: [
-            imgUrl == 'image'
-                ? Icon(Icons.card_giftcard, size: 25)
-                : Image.network(imgUrl, width: 25),
-            Text(cardName),
-          ],
+        label: Text(
+          cardName,
+          style: mainMediumTitleStyle.copyWith(color: p.textOnPrimary),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: p.primary,
+          foregroundColor: p.textOnPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
         ),
       ),
     );
