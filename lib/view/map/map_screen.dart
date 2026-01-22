@@ -54,6 +54,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     } catch (e) {
       debugPrint("위치 획득 실패: $e");
+      if (!mounted) return;
+      
+      String message = '위치 정보를 가져올 수 없습니다.';
+      
+      if (e.toString().contains('비활성화')) {
+        message = '위치 서비스를 켜주세요.';
+      } else if (e.toString().contains('영구 거부')) {
+        message = '설정에서 위치 권한을 허용해주세요.';
+      } else if (e.toString().contains('권한 없음')) {
+        message = '위치 권한이 필요합니다.';
+      }
+      
+      CustomCommonUtil.showErrorSnackbar(
+        context: context,
+        message: message,
+      );
     }
   }
 
@@ -249,6 +265,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   void _showDetailSheet(Store s) {
     String? distanceString;
+    debugPrint('🗺️ [MapScreen] _userLocation: $_userLocation');
     if (_userLocation != null) {
       double meters = Geolocator.distanceBetween(
         _userLocation!.latitude,
@@ -259,7 +276,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       distanceString = meters >= 1000
           ? "${(meters / 1000).toStringAsFixed(1)}km"
           : "${meters.toInt()}m";
+      debugPrint('🗺️ [MapScreen] 거리 계산: $meters m -> $distanceString');
+    } else {
+      debugPrint('🗺️ [MapScreen] _userLocation이 null이라 거리 계산 안함');
     }
+    debugPrint('🗺️ [MapScreen] StoreDetailSheet에 전달: distance=$distanceString');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

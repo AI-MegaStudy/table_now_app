@@ -17,6 +17,7 @@ class StoreDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('📍 [StoreDetailSheet] 받은 distance: $distance');
     final p = context.palette;
     return Container(
       padding: EdgeInsets.only(
