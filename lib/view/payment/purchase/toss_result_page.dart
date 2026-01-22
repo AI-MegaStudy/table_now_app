@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/utils_core.dart';
 import 'package:table_now_app/theme/app_colors.dart';
+import 'package:table_now_app/utils/push_notification_service.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
 import 'package:tosspayments_widget_sdk_flutter/model/tosspayments_result.dart';
 
@@ -138,12 +139,31 @@ class TossResultPage extends ConsumerWidget {
 
     if (isSuccess) {
       message = '결제가 완료되었습니다!';
-      paymentValue.purchase().then((r){
+      paymentValue.purchase().then((r) {
         paymentValue.purchaseUpdate({'payment_key':result.paymentKey,'payment_status':'DONE','reserve_seq':result.orderId});
+        if(paymentValue.customerSeq != null){
+          PushNotificationService.sendToCustomer(
+            customerSeq: paymentValue.customerSeq!,
+            title: '예약(결제)가 완료됬습니다.',
+            body: '예약번호: ${result.orderId}',
+            data: {'type': 'test', 'timestamp': DateTime.now().toIso8601String()},
+          );
+        }
+
       });
     } else {
       message = '결제에 실패하였습니다';
       paymentValue.purchaseUpdate({'payment_key':result.errorCode.toString(),'payment_status':'FAIL','reserve_seq':result.orderId});
+        print('====================');
+        print(paymentValue.customerSeq.toString());
+        if(paymentValue.customerSeq != null){
+          PushNotificationService.sendToCustomer(
+            customerSeq: paymentValue.customerSeq!,
+            title: '예약(결제)가 실패했습니다.',
+            body: '예약번호: ${result.orderId}.',
+            data: {'type': 'test', 'timestamp': DateTime.now().toIso8601String()},
+          );
+        }
     }
 
     return Scaffold(
