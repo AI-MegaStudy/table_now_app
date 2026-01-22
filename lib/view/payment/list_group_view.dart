@@ -6,6 +6,7 @@ import 'package:table_now_app/theme/app_colors.dart';
 
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
+import 'package:table_now_app/vm/order_state_notifier.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
 
 import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
@@ -60,7 +61,7 @@ class PaymentListGroupView extends ConsumerStatefulWidget {
 }
 
 class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
-  final double cardBoxHeight = 80;
+  final double cardBoxHeight = 50;
   final double detailBoxHeight = 170;
   final storage = GetStorage();
   late PurchaseReserve? purchaseReserve = null;
@@ -83,7 +84,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
     // Notifier
     print('================_initialize================');
     final ppp = ref.read(paymentListAsyncNotifierProvider.notifier);
-  
+
     // 기존에 미결제 정보가 있는 지 확인. 미결제 정보가 있다면,
 
     // reserve 정보를 storage 부터 가져옴.
@@ -103,9 +104,12 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
               ? data2['reserve_tables']
               : '';
           // Reserve 생성
-          print('================_initialize: CurrentStatus ${ppp.isInPurchaseProcess}');
-        
-          if(ppp.isInPurchaseProcess == 0) await ppp.insertReserve(purchaseReserve!);
+          print(
+            '================_initialize: CurrentStatus ${ppp.isInPurchaseProcess}',
+          );
+
+          if (ppp.isInPurchaseProcess == 0)
+            await ppp.insertReserve(purchaseReserve!);
           // 생성된 reserve_seq를 Object에저장.
           purchaseReserve!.reserve_seq = ppp.reserve_seq;
           purchaseReserve!.payment_status = 'PROCESS';
@@ -143,9 +147,11 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
     // if(items != null) paymentValue.setItems(items!);
     final menus = items!['menus'].values.toList();
     final menus_seq = items!['menus'].keys.toList();
-    print('================ CurrentStatus: ${paymentValue.isInPurchaseProcess}');
+    print(
+      '================ CurrentStatus: ${paymentValue.isInPurchaseProcess}',
+    );
     // Show message
-    
+
     /*
 static void showSuccessDialog({
     required BuildContext context,
@@ -156,212 +162,227 @@ static void showSuccessDialog({
     bool barrierDismissible = false,
   }) 
     */
-    
+
     return Scaffold(
       backgroundColor: p.background,
       appBar: AppBar(title: Text('결제 하기')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(4.0),
-          child:  
-             
-
-          
-          paymentState.when(
+          child: paymentState.when(
             data: (data) => data.length == 0
                 ? const CircularProgressIndicator()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // 메뉴정보및 주문 정보 박스
-                      SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height -
-                            detailBoxHeight,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-                            // subOrderInfoBox(data[0].store_description),
-                            textSubTitle('주문 정보'),
-
-                            Container(
-                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
-                              child: Column(
-                                spacing: 3,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '예약 번호: ${purchaseReserve!.reserve_seq}',
-                                  ),
-                                  Text(
-                                    '예약 날짜: ${purchaseReserve!.reserve_date}',
-                                  ),
-                                  Text(
-                                    '총 인원: ${purchaseReserve!.reserve_capacity}',
-                                  ),
-                                  Text(
-                                    '테이블 번호: ${purchaseReserve!.reserve_tables}',
-                                  ),
-                                  Text('상점: 상점 이름'),
-                                ],
-                              ),
-                            ),
-
-                            textSubTitle('주문 메뉴 정보'),
-
-                            SingleChildScrollView(
-                              child: Container(
-                                color: p.background,
-                                height: 400,
-                                child: ListView.builder(
-                                  itemCount: menus.length,
-                                  itemBuilder: (context, index) {
-                                    final menu = menus[index];
-                                    final menu_seq = menus_seq[index];
-
-                                    // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
-                                    final options = menu['options'].values
-                                        .toList();
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-
-                                      children: [
-                                        Card(
-                                          child: Row(
-                                            spacing: 10,
-                                            children: [
-                                              Text("ID: ${menu_seq}"),
-                                              Text("Price: ${menu['price']}"),
-                                              Text("Count: ${menu['count']}"),
-
-                                              // menu['options'] != null
-                                              // ? Column( children: [
-                                              //   Text("${menu['options'].values}"),
-                                              // ]
-                                              // )
-                                              // : Text(''),
-                                            ],
-                                          ),
-                                        ),
-                                        menu['options'] != null
-                                            ? Card(
-                                                child: Column(
-                                                  children: List.generate(
-                                                    options.length,
-                                                    (i) => _optionMenus(
-                                                      options[i],
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                            : Text(''),
-                                      ],
-                                    );
-
-                                    // Card(
-                                    //   child: Row(
-                                    //     spacing: 10,
-                                    //     crossAxisAlignment:
-                                    //         CrossAxisAlignment.center,
-
-                                    //     children: [
-                                    //       // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
-                                    //       Image.network(
-                                    //         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
-                                    //         height: 50,
-                                    //       ),
-                                    //       Column(
-                                    //         crossAxisAlignment:
-                                    //             CrossAxisAlignment.start,
-
-                                    //         children: [
-                                    //           // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
-                                    //           // Text('예약번호: ${data[index].reserve_seq}'),
-                                    //           // Text("전체갯수: ${data[index].total_count}"),
-                                    //           Text(
-                                    //             '${data[index].menu_name}',
-                                    //             style: TextStyle(
-                                    //               fontSize: 15,
-                                    //               fontWeight: FontWeight.bold,
-                                    //             ),
-                                    //           ),
-                                    //           Text(
-                                    //             "${data[index].option_name != null ? data[index].option_name : ''}",
-                                    //             style: TextStyle(
-                                    //               fontSize: 11,
-                                    //               color: Colors.grey[700],
-                                    //             ),
-                                    //           ),
-                                    //         ],
-                                    //       ),
-
-                                    //       SizedBox(
-                                    //         width:
-                                    //             MediaQuery.of(
-                                    //               context,
-                                    //             ).size.width /
-                                    //             1.8,
-
-                                    //         child: Column(
-                                    //           crossAxisAlignment:
-                                    //               CrossAxisAlignment.end,
-                                    //           mainAxisAlignment:
-                                    //               MainAxisAlignment.end,
-                                    //           children: [
-                                    //             Text(
-                                    //               "${data[index].total_count}개",
-                                    //             ),
-                                    //             Text(
-                                    //               "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
-                                    //             ),
-                                    //           ],
-                                    //         ),
-                                    //       ),
-                                    //     ],
-                                    //   ),
-                                    // );
-                                  },
+                : SafeArea(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // 메뉴정보및 주문 정보 박스
+                        SizedBox(
+                          height:
+                              MediaQuery.of(context).size.height -
+                              detailBoxHeight,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                  
+                            children: [
+                              // subOrderInfoBox(data[0].store_description),
+                              textSubTitle('주문 정보'),
+                  
+                              Container(
+                                padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                child: Column(
+                                  spacing: 3,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '예약 번호: ${purchaseReserve!.reserve_seq}',
+                                    ),
+                                    Text(
+                                      '예약 날짜: ${purchaseReserve!.reserve_date}',
+                                    ),
+                                    Text(
+                                      '총 인원: ${purchaseReserve!.reserve_capacity}',
+                                    ),
+                                    Text(
+                                      '테이블 번호: ${purchaseReserve!.reserve_tables}',
+                                    ),
+                                    Text('상점: 상점 이름'),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
+                  
+                              textSubTitle('주문 메뉴 정보'),
+                  
+                              SingleChildScrollView(
+                                child: Container(
+                                  color: p.background,
+                                  height: 400,
+                                  child: ListView.builder(
+                                    itemCount: menus.length,
+                                    itemBuilder: (context, index) {
+                                      final menu = menus[index];
+                                      final menu_seq = menus_seq[index];
+                  
+                                      // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
+                                      final options = menu['options'].values
+                                          .toList();
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                  
+                                        children: [
+                                          Card(
+                                            child: Row(
+                                              spacing: 10,
+                                              children: [
+                                                // Text("ID: ${menu_seq}"),
+                                                Image.network(
+                                                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                                  height: 50,
+                                                ),
+                                                Text("${menu['name']}"),
+                                                Expanded(
+                                                  child: Row(
+                                                    spacing: 10,
+                                                    mainAxisAlignment: MainAxisAlignment.end,
+                                                    children: [
+                                                    Text("${menu['count']}개"),
+                                                  Text(
+                                                    "${CustomCommonUtil.formatPrice(menu['price'])}",
+                                                  ),
+                                                  ],),
+                                                )
+                                              
+                  
+                                             
+                                              ],
+                                            ),
+                                          ),
+                                          menu['options'] != null
+                                              ? Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                        50,
+                                                        5,
+                                                        0,
+                                                        5,
+                                                      ),
+                                                  child: Column(
+                                                    children: List.generate(
+                                                      options.length,
+                                                      (i) => _optionMenus(
+                                                        options[i],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : Text(''),
+                                        ],
+                                      );
+                  
+                                      // Card(
+                                      //   child: Row(
+                                      //     spacing: 10,
+                                      //     crossAxisAlignment:
+                                      //         CrossAxisAlignment.center,
+                  
+                                      //     children: [
+                                      //       // Image.network('https://cheng80.myqnapcloud.com/tablenow/${data[index].menu_image}', width: 50),
+                                      //       Image.network(
+                                      //         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                      //         height: 50,
+                                      //       ),
+                                      //       Column(
+                                      //         crossAxisAlignment:
+                                      //             CrossAxisAlignment.start,
+                  
+                                      //         children: [
+                                      //           // data[index].menu_image != null ? Text(data[index].menu_image!) : Text(''),
+                                      //           // Text('예약번호: ${data[index].reserve_seq}'),
+                                      //           // Text("전체갯수: ${data[index].total_count}"),
+                                      //           Text(
+                                      //             '${data[index].menu_name}',
+                                      //             style: TextStyle(
+                                      //               fontSize: 15,
+                                      //               fontWeight: FontWeight.bold,
+                                      //             ),
+                                      //           ),
+                                      //           Text(
+                                      //             "${data[index].option_name != null ? data[index].option_name : ''}",
+                                      //             style: TextStyle(
+                                      //               fontSize: 11,
+                                      //               color: Colors.grey[700],
+                                      //             ),
+                                      //           ),
+                                      //         ],
+                                      //       ),
+                  
+                                      //       SizedBox(
+                                      //         width:
+                                      //             MediaQuery.of(
+                                      //               context,
+                                      //             ).size.width /
+                                      //             1.8,
+                  
+                                      //         child: Column(
+                                      //           crossAxisAlignment:
+                                      //               CrossAxisAlignment.end,
+                                      //           mainAxisAlignment:
+                                      //               MainAxisAlignment.end,
+                                      //           children: [
+                                      //             Text(
+                                      //               "${data[index].total_count}개",
+                                      //             ),
+                                      //             Text(
+                                      //               "금액: ${CustomCommonUtil.formatPrice(data[index].total_pay)}",
+                                      //             ),
+                                      //           ],
+                                      //         ),
+                                      //       ),
+                                      //     ],
+                                      //   ),
+                                      // );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-
-                      // 맨 밑에 메뉴 박스
-                      Container(
-                        height: cardBoxHeight,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          color: Colors.blue[100],
+                  
+                        // 맨 밑에 메뉴 박스
+                        Container(
+                          height: cardBoxHeight,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            color: Colors.blue[100],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                '결제금액: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}',
+                                // '결제금액: ${CustomCommonUtil.formatPrice(totalPrice)}',
+                                style: TextStyle(fontSize: 20),
+                              ),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width / 5,
+                              ),
+                              paymentCardType(
+                                context,
+                                'image', // https://en.komoju.com/wp-content/uploads/2023/09/Toss-logo-1.png
+                                '결제 하기',
+                                paymentValue,
+                                p,
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              '결제금액: ${CustomCommonUtil.formatPrice(paymentValue.total_payment)}',
-                              // '결제금액: ${CustomCommonUtil.formatPrice(totalPrice)}',
-                              style: TextStyle(fontSize: 20),
-                            ),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width / 5,
-                            ),
-                            paymentCardType(
-                              context,
-                              'image', // https://en.komoju.com/wp-content/uploads/2023/09/Toss-logo-1.png
-                              '결제 하기',
-                              paymentValue,
-                              p,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                ),
 
             error: (error, stackTrace) => Text('ERROR: $error'),
             loading: () => const CircularProgressIndicator(),
@@ -373,13 +394,26 @@ static void showSuccessDialog({
 
   // == widget
   Widget _optionMenus(Map<String, dynamic> option) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      spacing: 10,
-      children: [
-        Text("수량: ${option['count']}"),
-        Text("가격: ${option['price']}"),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0,0,5,0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        spacing: 10,
+        children: [
+          Icon(Icons.done, color: Colors.grey[500], size: 25),
+          Text('${option['name']}'),
+          Expanded(
+            child: Row(
+              spacing: 18,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+              Text("${option['count']}개"),
+              Text("${CustomCommonUtil.formatPrice(option['price'])}"),
+            ],),
+          ),
+          
+        ],
+      ),
     );
   }
 
@@ -439,9 +473,12 @@ static void showSuccessDialog({
         onPressed: () async {
           /// 카드 결제 전 Data를 추가한다.
           // await paymentValue.purchase();
-          // 결제 진행중. 
-          paymentValue.purchaseUpdate({'payment_key':'payment_key','payment_status':'PROCESS','reserve_seq':0});
-
+          // 결제 진행중.
+          paymentValue.purchaseUpdate({
+            'payment_key': 'payment_key',
+            'payment_status': 'PROCESS',
+            'reserve_seq': 0,
+          });
 
           CustomNavigationUtil.to(context, TossPayment(data: data)).then((
             result,
