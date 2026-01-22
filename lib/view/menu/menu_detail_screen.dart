@@ -111,7 +111,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                           ),
                           _buildQuantityControl(
                             count: menuCount,
-                            onAdd: () => ref.read(orderNotifierProvider.notifier).addOrIncrementMenu(widget.menu.menu_seq, m.menu_price),
+                            onAdd: () => ref.read(orderNotifierProvider.notifier).addOrIncrementMenu(widget.menu.menu_seq, widget.menu.menu_name, m.menu_price),
                             onRemove: () => ref.read(orderNotifierProvider.notifier).decrementMenu(widget.menu.menu_seq),
                           ),
                         ],
@@ -156,7 +156,7 @@ class _MenuDetailScreenState extends ConsumerState<MenuDetailScreen> {
                           ),
                           _buildQuantityControl(
                             count: optionCount,
-                            onAdd: () => ref.read(orderNotifierProvider.notifier).incrementOption(widget.menu.menu_seq, o.option_seq, o.option_price),
+                            onAdd: () => ref.read(orderNotifierProvider.notifier).incrementOption(widget.menu.menu_seq, o.option_seq, o.option_name, o.option_price),
                             onRemove: () => ref.read(orderNotifierProvider.notifier).decrementOption(widget.menu.menu_seq, o.option_seq),
                             isSmall: true,
                           ),
