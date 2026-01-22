@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:table_now_app/config/ui_config.dart';
 import 'package:table_now_app/custom/custom_common_util.dart';
+import 'package:table_now_app/custom/util/navigation/custom_navigation_util.dart';
 import 'package:table_now_app/theme/palette_context.dart';
 import 'package:table_now_app/utils/common_app_bar.dart';
 import 'package:table_now_app/view/drawer/profile_drawer.dart';
+import 'package:table_now_app/view/payment/list_group_view.dart';
 import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/order_state_notifier.dart';
 
@@ -87,7 +89,7 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
                     _buildInfoRow(Icons.calendar_today_outlined, '날짜', formattedDate, p),
                     _buildInfoRow(Icons.access_time, '시간', '${reserveData['reserve_time'] ?? '11:30'}', p),
                     _buildInfoRow(Icons.people_outline, '인원', '${reserveData['reserve_capacity'] ?? '2'}명', p),
-                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_seat'] ?? 'T4'}', p),
+                    _buildInfoRow(Icons.location_on_outlined, '좌석', '${reserveData['reserve_tables'] ?? 'T4'}', p),
                     
                     // 메뉴 섹션
                     Row(
@@ -146,7 +148,9 @@ class _ReservationCompleteScreenState extends ConsumerState<ReservationCompleteS
               width: double.infinity,
               height: mainButtonHeight,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  CustomNavigationUtil.to(context, PaymentListGroupView());
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: p.primary,
                   foregroundColor: p.textOnPrimary,
