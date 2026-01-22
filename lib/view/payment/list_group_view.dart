@@ -6,54 +6,14 @@ import 'package:table_now_app/theme/app_colors.dart';
 
 import 'package:table_now_app/view/payment/purchase/toss_payment.dart';
 import 'package:table_now_app/view/payment/purchase/toss_result_page.dart';
-import 'package:table_now_app/vm/order_state_notifier.dart';
+import 'package:table_now_app/vm/menu_notifier.dart';
 import 'package:table_now_app/vm/payment_list_notifier.dart';
 
 import 'package:tosspayments_widget_sdk_flutter/model/paymentData.dart';
 
-final Map<String, dynamic> receiveData = {
-  "reserve": {
-    "store_seq": 1,
-    "customer_seq": 1,
-    "reserve_capacity": "4",
-    "reserve_tables": "1,2,3",
-    "weather_datetime": "2026-01-19 00:00:00",
-    "reserve_date": "2026-01-16 00:00:00",
-    "payment_key": "payment_key",
-    "payment_status": "PROCESS",
-  },
-  "items": {
-    "menus": {
-      "1": {
-        "count": 2,
-        "options": {
-          "1": {"count": 1, "price": 3000},
-          "2": {"count": 1, "price": 500},
-        },
-        "price": 10000,
-        "date": "2026-01-20 02:00:00",
-      },
-      "2": {
-        "count": 2,
-        "options": {
-          "1": {"count": 1, "price": 3000},
-          "2": {"count": 3, "price": 500},
-        },
-        "price": 20000,
-        "date": "2026-01-20 02:00:20",
-      },
-      "3": {
-        "count": 1,
-        "options": {},
-        "price": 8000,
-        "date": "2026-01-20 02:00:30",
-      },
-    },
-  },
-};
-
 class PaymentListGroupView extends ConsumerStatefulWidget {
-  const PaymentListGroupView({super.key});
+  final int totalPrice;
+  const PaymentListGroupView({super.key,required this.totalPrice});
 
   @override
   ConsumerState<PaymentListGroupView> createState() =>
@@ -82,7 +42,6 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
   //  - 필요 정보를 storage에 저장 해야 함.
   void _initialize() async {
     // Notifier
-    print('================_initialize================');
     final ppp = ref.read(paymentListAsyncNotifierProvider.notifier);
 
     // 기존에 미결제 정보가 있는 지 확인. 미결제 정보가 있다면,
@@ -103,10 +62,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
           purchaseReserve!.reserve_tables = data2 != null
               ? data2['reserve_tables']
               : '';
-          // Reserve 생성
-          print(
-            '================_initialize: CurrentStatus ${ppp.isInPurchaseProcess}',
-          );
+
 
           if (ppp.isInPurchaseProcess == 0)
             await ppp.insertReserve(purchaseReserve!);
@@ -117,7 +73,7 @@ class _PaymentListGroupViewState extends ConsumerState<PaymentListGroupView> {
           // 데이터를
           ref
               .read(paymentListAsyncNotifierProvider.notifier)
-              .setData(purchaseReserve!, items!, 20000);
+              .setData(purchaseReserve!, items!, widget.totalPrice);
         }
       }
     } catch (error) {
@@ -222,6 +178,7 @@ static void showSuccessDialog({
                                     itemCount: menus.length,
                                     itemBuilder: (context, index) {
                                       final menu = menus[index];
+                                      print(menu);
                                       final menu_seq = menus_seq[index];
                   
                                       // menu[index]['options'].values.map((d)=>Text("${d['price']}")).toList() as List<Widget>
@@ -240,9 +197,10 @@ static void showSuccessDialog({
                                                 children: [
                                                   // Text("ID: ${menu_seq}"),
                                                   Image.network(
-                                                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHP5M5s5eCfRsmmEp0KVGz7E1mPYbbRz7dqg&s}',
+                                                    "https://cheng80.myqnapcloud.com/tablenow/${ref.read(menuNotifierProvider).value![index].menu_image}",
                                                     height: 50,
                                                   ),
+                                                  
                                                   Text("${menu['name']}"),
                                                   Expanded(
                                                     child: Row(
