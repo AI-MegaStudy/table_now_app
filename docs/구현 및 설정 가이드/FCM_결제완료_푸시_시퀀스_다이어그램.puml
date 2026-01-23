@@ -1,0 +1,27 @@
+@startuml FCM 결제 완료 푸시 알림 시퀀스 다이어그램
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+title FCM 결제 완료 푸시 알림 발송 프로세스
+
+actor 사용자 as User
+participant "Flutter 앱" as FlutterApp
+participant "FastAPI 서버" as FastAPI
+participant "FCMService" as FCMService
+database "MySQL DB" as DB
+participant "Google Cloud FCM" as GoogleFCM
+participant "사용자 기기" as Device
+
+User -> FlutterApp: 결제 완료
+FlutterApp -> FastAPI: HTTP POST\n/api/customer/{seq}/push
+FastAPI -> FCMService: 푸시 발송 요청
+FCMService -> DB: FCM 토큰 조회
+DB --> FCMService: 토큰 목록
+FCMService -> GoogleFCM: Firebase Admin SDK\n메시지 발송
+GoogleFCM -> Device: 푸시 알림 전달
+Device --> User: 알림 표시
+
+@enduml

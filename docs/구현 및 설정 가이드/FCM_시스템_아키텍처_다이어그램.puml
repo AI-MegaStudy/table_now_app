@@ -1,0 +1,98 @@
+@startuml FCM 푸시 알림 시스템 아키텍처
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam roundcorner 10
+
+title FCM 푸시 알림 시스템 아키텍처
+
+package "클라이언트 (Flutter)" {
+  component [Flutter 앱] as FlutterApp {
+    component [toss_result_page.dart] as PaymentPage
+    component [PushNotificationService] as PushService
+    component [Firebase SDK] as FirebaseSDK
+  }
+  
+  PaymentPage --> PushService : 결제 완료 시 호출
+  PushService --> FirebaseSDK : FCM 토큰 관리
+}
+
+package "백엔드 (FastAPI)" {
+  component [FastAPI 서버] as FastAPI {
+    component [/api/customer/{seq}/push] as PushAPI
+    component [FCMService] as FCMService
+    component [Firebase Admin SDK] as FirebaseAdmin
+  }
+  
+  component [MySQL Database] as DB {
+    database "device_token 테이블" as DeviceToken
+    database "customer 테이블" as Customer
+  }
+  
+  PushAPI --> FCMService : 푸시 발송 요청
+  FCMService --> DB : FCM 토큰 조회
+  FCMService --> FirebaseAdmin : 메시지 발송
+}
+
+cloud "Google Cloud Platform" {
+  cloud "Firebase Cloud Messaging (FCM)" as GoogleFCM {
+    component [FCM 서버] as FCMServer
+  }
+  
+  cloud "Firebase Console" as FirebaseConsole {
+    component [서비스 계정 키] as ServiceAccountKey
+    component [APNs 인증 키] as APNsKey
+  }
+  
+  ServiceAccountKey --> FirebaseAdmin : 인증 정보 제공
+  FirebaseAdmin --> FCMServer : 푸시 메시지 전송
+}
+
+cloud "플랫폼 푸시 서비스" {
+  component [Apple Push Notification Service\n(APNs)] as APNs
+  component [Google Cloud Messaging\n(GCM)] as GCM
+}
+
+device "사용자 기기" {
+  component [iOS 기기] as iOSDevice
+  component [Android 기기] as AndroidDevice
+}
+
+' 연결 관계
+FlutterApp --> FastAPI : HTTP POST\n/api/customer/{seq}/push
+FCMService --> GoogleFCM : Firebase Admin SDK\n메시지 발송
+GoogleFCM --> APNs : iOS 푸시 전달
+GoogleFCM --> GCM : Android 푸시 전달
+APNs --> iOSDevice : 푸시 알림 전송
+GCM --> AndroidDevice : 푸시 알림 전송
+
+' 인증 관계
+FirebaseConsole --> FirebaseAdmin : serviceAccountKey.json\n다운로드 및 설정
+FirebaseConsole --> GoogleFCM : 프로젝트 설정\n및 APNs 키 업로드
+
+note right of FirebaseAdmin
+  **인증 방식:**
+  - serviceAccountKey.json 파일 사용
+  - Firebase Console에서 생성
+  - 서버에만 저장 (Git 제외)
+end note
+
+note right of GoogleFCM
+  **FCM 역할:**
+  - 메시지 라우팅
+  - 토큰 관리
+  - 전달 상태 추적
+end note
+
+note right of DeviceToken
+  **저장 정보:**
+  - customer_seq
+  - fcm_token
+  - device_type (ios/android)
+  - device_id
+  - created_at
+  - updated_at
+end note
+
+@enduml
